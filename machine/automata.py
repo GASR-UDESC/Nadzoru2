@@ -4,10 +4,12 @@
 
 
 class Event:
-    def __init__(self, name, ctrl=False, obs=True):
+    def __init__(self, name, controllable=False, observable=True, **kwargs):
+        """kwargs holds other properties"""
         self.name = name
-        self.ctrl = ctrl
-        self.obs = obs
+        self.controllable = controllable
+        self.observable = observable
+        self.__dict__.update(kwargs)
 
     def __repr__(self):
         return self.name
@@ -19,9 +21,10 @@ class State:
     Also, create a singly-linked list for the transitions of the state.
     Takes O(1) time.
     """
-    def __init__(self, name=None, mark=False):
+    def __init__(self, name=None, mark=False, **kwargs):
         self.name = name
         self.mark = mark
+        self.__dict__.update(kwargs)
 
     def __repr__(self):
         """

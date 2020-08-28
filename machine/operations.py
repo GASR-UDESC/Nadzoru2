@@ -305,7 +305,7 @@ def supc(k, g):
                         states_to_be_visited_in_sup.append(nxt_state)
                         states_to_be_visited_in_g.append(g.transitions[visiting_state_in_g][ev])
                 else:
-                    if not ev.ctrl and visiting_state_in_sup not in set_bad_state:
+                    if not ev.controllable and visiting_state_in_sup not in set_bad_state:
 
                         n_bad_states_in_sup += 1
                         set_bad_state.add(visiting_state_in_sup)
@@ -390,7 +390,7 @@ def supc2(g2, g1):
                 # check if destination state is bad state
                 flag_bad_state = False
                 for nxt_ev in g1.transitions[g1.transitions[s1][current_ev]].keys():
-                    if not nxt_ev.ctrl and nxt_ev.common and nxt_ev not in \
+                    if not nxt_ev.controllable and nxt_ev.common and nxt_ev not in \
                             g2.transitions[g2.transitions[s2][current_ev]].keys():
 
                         flag_bad_state = True
@@ -540,7 +540,7 @@ def supc3(g2, g1):
 
                     next_active_events_g -= next_active_events_spec
                     for event_1 in next_active_events_g.intersection(common_events):
-                        if not event_1.ctrl:
+                        if not event_1.controllable:
 
                             flag_bad_state_one = True
                             break
