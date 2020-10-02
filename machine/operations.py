@@ -332,7 +332,7 @@ def supc(k, g):
 
 
 def supc2(g2, g1):
-    """ This function is the faster calculation of the supervisor we got. The parameters are SPEC_global and G_global.
+    """ This function is the faster calculation of the supervisor we have got. The parameters are SPEC_global and G_global.
     The key to its performance is to identify bad states even before than creating them. So, instead of calculating the
     all K and then search a bad state and exclude it and trim (and do it again, and again)... We identify bad states
     in the process of calculating the composition of E_global and G_global and do not create them. Also, the loops run
@@ -341,13 +341,25 @@ def supc2(g2, g1):
     st_out = {}  # dictionary for transitions of the supervisor
 
     # g1 = GLOBAL PLANT
-    # g2 = GLOBAL SPEC
+    # g2 = GLOBAL SPECIFICATION
 
     states_to_be_visited_in_g1 = list()
     states_to_be_visited_in_g2 = list()
 
-    s1 = g1.initial_state
-    s2 = g2.initial_state
+    # Check if initial state is not a bad state, in order to visit it:
+
+    flag_bad_state = False
+
+    for nxt_ev in g1.transitions[g1.initial_state].keys():
+        if not nxt_ev.controllable and nxt_ev.common and nxt_ev not in \
+                g2.transitions[g2.initial_state].keys():
+            flag_bad_state = True
+            break
+    if not flag_bad_state:
+        s1 = g1.initial_state
+        s2 = g2.initial_state
+    else:
+        return
 
     current_state_out = automata.State(s1.name + '|' + s2.name, s1.mark and s2.mark)
 
@@ -359,8 +371,9 @@ def supc2(g2, g1):
     common_events = g1.events_set().intersection(g2.events_set())
 
     alphabet = set(g1.events_set())
-    print(alphabet)
     alphabet.update(g2.events_set())
+
+    flag_remained_bad_state = False
 
     for ev in alphabet:
         if ev in common_events:
@@ -394,7 +407,10 @@ def supc2(g2, g1):
                             g2.transitions[g2.transitions[s2][current_ev]].keys():
 
                         flag_bad_state = True
+                        if not current_ev.controllable:
+                            flag_remained_bad_state = True  # detects "retrocedent" bad states which were already added
                         break
+
                 if not flag_bad_state:  # if destination state is bad state, it is not included
                                         # in the output transitions
                     if g1.transitions[s1][current_ev].name + '|' + g2.transitions[s2][current_ev].name \
@@ -420,7 +436,10 @@ def supc2(g2, g1):
 
     supervisor = automata.Automaton(st_out, out_initial_state)
 
-    coaccessible(supervisor)  # the supervisor is already accessible, we only calculate coaccessible
+    if flag_remained_bad_state:
+        supervisor = supc(supervisor, g1)  # in order to guarantee there is no bad states left in the supervisor
+    else:
+        coaccessible(supervisor)  # the supervisor is already accessible, we only calculate coaccessible
 
     return supervisor
 

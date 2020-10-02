@@ -16,11 +16,6 @@ class Event:
 
 
 class State:
-    """
-    A state that is a node in the Automaton singly-linked list.
-    Also, create a singly-linked list for the transitions of the state.
-    Takes O(1) time.
-    """
     def __init__(self, name=None, mark=False, **kwargs):
         self.name = name
         self.mark = mark
