@@ -88,8 +88,15 @@ class State(Base):
         super().__init__(*args, **kwargs)
 
     def __str__(self):
-
         return self.name
+
+    # ---------------------------------------------
+    
+    def transition_in_add(self, transition):
+        self.in_transitions.add(transition)
+        
+    def transition_out_add(self, transition):
+        self.out_transitions.add(transition)
 
 
 class Automaton:
@@ -159,14 +166,6 @@ class Automaton:
             self._x = value[0]
             self._y = value[1]
 
-    # ---------------------------------------------
-    
-    def transition_in_add(self, transition):
-        self.in_transitions.add(transition)
-        
-    def transition_out_add(self, transition):
-        self.out_transitions.add(transition)
-
 
 class Transition(Base):
     def __init__(self, from_state, to_state, event, *args, **kwargs):
@@ -189,7 +188,7 @@ class Automaton(Base):
     def __init__(self, *args, **kwargs):
         self.events = set()
         self.states = set()
-            self.initial_state = None
+        self.initial_state = None
         super().__init__(*args, **kwargs)
 
     def __str__(self):
@@ -288,7 +287,7 @@ class Automaton(Base):
     def coaccessible(self, copy=False):
         pass
 
-    def trim(self, copy=False)
+    def trim(self, copy=False):
         return self.coaccessible(copy).accessible()
 
     def incoaccessible_states_join(self):
