@@ -34,7 +34,7 @@ for n in range(4):
     else:
         s.append(automata.State(str(n)))
 
-clusters = 5
+clusters = 2
 
 # Robots Plants
 
@@ -159,7 +159,7 @@ for i in range(n_automata):
     err.insert(i, automata.Automaton(err_transitions[i], err_initial_state[i]))
 
 
-tic = time.clock()
+tic = time.process_time()
 
 g = operations.sync(robot[0], robot[1])
 
@@ -169,16 +169,16 @@ for automaton in robot[2:]:
 for automaton in chamber:
     g = operations.sync(g, automaton)
 
-toc = time.clock()
+toc = time.process_time()
 
-print("Tempo sync G: %s" % (toc - tic))
+print("Time of computation of sync, global plant G: %s" % (toc - tic))
 
 # print("Sync 1", g.transitions)
 
 
-print("G states number:", len(g.states_set()))
-print("G events number:", len(g.events_set()))
-print("G transitions number:", g.transitions_number())
+print("Global plant G states number:", len(g.states_set()))
+print("Global plant G events number:", len(g.events_set()))
+print("Global plant G transitions number:", g.transitions_number())
 
 
 e = operations.sync(erc[0], erc[1])
@@ -190,9 +190,9 @@ for automaton in err:
     e = operations.sync(e, automaton)
 
 
-print("E states number:", len(e.states_set()))
-print("E events number:", len(e.events_set()))
-print("E transitions number:", e.transitions_number())
+print("Global Specification E states number:", len(e.states_set()))
+print("Global Specification E events number:", len(e.events_set()))
+print("Global Specification E transitions number:", e.transitions_number())
 
 
 ########################################################################################################################
@@ -201,11 +201,11 @@ print("E transitions number:", e.transitions_number())
 
 # print("starting K3")
 #
-# tic = time.clock()
+# tic = time.process_time()
 #
 # k = operations.sync(e, g)
 #
-# toc = time.clock()
+# toc = time.process_time()
 #
 # print("Tempo: %s" % (toc - tic))
 # # print("K3:", k.transitions)
@@ -216,11 +216,11 @@ print("E transitions number:", e.transitions_number())
 #
 # print("starting S")
 #
-# tic = time.clock()
+# tic = time.process_time()
 #
 # s = operations.supc(k, g)
 #
-# toc = time.clock()
+# toc = time.process_time()
 #
 # print("Tempo: %s" % (toc - tic))
 #
@@ -232,17 +232,18 @@ print("E transitions number:", e.transitions_number())
 # Using SupC 2
 ########################################################################################################################
 
-print("starting supc 2")
+print("Starting calculation of supc 2")
 
-tic = time.clock()
+tic = time.process_time()
 
 s2 = operations.supc2(e, g)
 
-toc = time.clock()
+toc = time.process_time()
 
-print("Time of computation: %s" % (toc - tic))
-print("S2 states number:", len(s2.states_set()))
-print("S2 transitions number:", s2.transitions_number())
+print("Time of computation of Supervisor2: %s" % (toc - tic))
+print("Supervisor2 states number:", len(s2.states_set()))
+print("Supervisor2 events number:", len(s2.events_set()))
+print("Supervisor2 transitions number:", s2.transitions_number())
 
 
 ########################################################################################################################
@@ -264,11 +265,11 @@ print("S2 transitions number:", s2.transitions_number())
 #     E_list.append(e_i)
 #
 #
-# tic = time.clock()
+# tic = time.process_time()
 #
 # s3 = operations.supc3(E_list, G_list)
 #
-# toc = time.clock()
+# toc = time.process_time()
 #
 # print("Size of S:", sys.getsizeof(s3))
 #

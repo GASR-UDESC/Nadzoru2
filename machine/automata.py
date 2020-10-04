@@ -1,7 +1,7 @@
 #######################################
 # CLASSES
-# Where shall we store the transition curvature? From a state q1 to state q2 there may be n transitions, but it will be represented by a single arc.
 #######################################
+
 
 class Base:
     def __init__(self, *args, **kwargs):
@@ -28,9 +28,8 @@ class Event(Base):
 
     def __str__(self):
         return self.name
-        
-    # ---------------------------------------------
-    
+
+
     @property
     def name(self):
         return self._name
@@ -89,10 +88,18 @@ class State(Base):
         super().__init__(*args, **kwargs)
 
     def __str__(self):
+
         return self.name
 
-    # ---------------------------------------------
-    
+
+class Automaton:
+    def __init__(self, transitions, initial_state):
+        """
+        Create a structure for Automata.
+        """
+        self.transitions = transitions
+        self.initial_state = initial_state
+        # self.marked_states = marked_states
     @property
     def name(self):
         return self._name
@@ -114,7 +121,7 @@ class State(Base):
     @tex.deleter
     def tex(self):
         self._tex = self._name
-
+        # deletes state, its output transitions and all transitions to it
     @property
     def marked(self):
         return self._marked
@@ -123,16 +130,16 @@ class State(Base):
     def marked(self, value):
         if isinstance(value, bool):
             self._marked = value
-            
+
     @property
     def x(self):
         return self._x
-
+        # deletes transitions which have state as destiny:
     @x.setter
     def x(self, value):
         if isinstance(value, int):
             self._x = value
-            
+
     @property
     def y(self):
         return self._x
@@ -141,7 +148,7 @@ class State(Base):
     def y(self, value):
         if isinstance(value, int):
             self._y = value
-
+        # deletes a set of state, its output transitions and all transitions to them
     @property
     def position(self):
         return (self._x, self._y)
@@ -182,7 +189,7 @@ class Automaton(Base):
     def __init__(self, *args, **kwargs):
         self.events = set()
         self.states = set()
-        self.initial_state = None
+            self.initial_state = None
         super().__init__(*args, **kwargs)
 
     def __str__(self):
@@ -194,7 +201,7 @@ class Automaton(Base):
             states = ", ".join(map(str, self.states)),
             transitions = "\n    ".join(map(str, transitions)),
         )
-
+        # deletes transitions which have state as destiny:
     def event_add(self, *args, **kwargs):
         e = self.event_class(*args, **kwargs)
         self.events.add(e)
@@ -341,10 +348,3 @@ class Automaton(Base):
     def isomorphic_check(G1, G2):
         pass
 
-
-
-
-
-
-
-    
