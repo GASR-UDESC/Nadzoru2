@@ -171,14 +171,14 @@ for automaton in chamber:
 
 toc = time.process_time()
 
-print("Tempo sync G: %s" % (toc - tic))
+print("Time of computation of sync, global plant G: %s" % (toc - tic))
 
 # print("Sync 1", g.transitions)
 
 
-print("G states number:", len(g.states_set()))
-print("G events number:", len(g.events_set()))
-print("G transitions number:", g.transitions_number())
+print("Global plant G states number:", len(g.states_set()))
+print("Global plant G events number:", len(g.events_set()))
+print("Global plant G transitions number:", g.transitions_number())
 
 
 e = operations.sync(erc[0], erc[1])
@@ -190,9 +190,9 @@ for automaton in err:
     e = operations.sync(e, automaton)
 
 
-print("E states number:", len(e.states_set()))
-print("E events number:", len(e.events_set()))
-print("E transitions number:", e.transitions_number())
+print("Global Specification E states number:", len(e.states_set()))
+print("Global Specification E events number:", len(e.events_set()))
+print("Global Specification E transitions number:", e.transitions_number())
 
 
 ########################################################################################################################
@@ -232,7 +232,7 @@ print("E transitions number:", e.transitions_number())
 # Using SupC 2
 ########################################################################################################################
 
-print("starting supc 2")
+print("Starting calculation of supc 2")
 
 tic = time.process_time()
 
@@ -240,9 +240,10 @@ s2 = operations.supc2(e, g)
 
 toc = time.process_time()
 
-print("Time of computation: %s" % (toc - tic))
-print("S2 states number:", len(s2.states_set()))
-print("S2 transitions number:", s2.transitions_number())
+print("Time of computation of Supervisor2: %s" % (toc - tic))
+print("Supervisor2 states number:", len(s2.states_set()))
+print("Supervisor2 events number:", len(s2.events_set()))
+print("Supervisor2 transitions number:", s2.transitions_number())
 
 
 ########################################################################################################################
