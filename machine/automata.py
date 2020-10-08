@@ -5,7 +5,13 @@
 
 class Base:
     def __init__(self, *args, **kwargs):
-        pass
+        for key, value in kwargs.items():
+            print("Warning: key '{key}' @ '{class_}' was not consumed by any pluggin, value: '{value}'.".format(
+                    key=key,
+                    value=value,
+                    class_=self.__class__
+                ))
+         # self.__dict__.update(kwargs)
     
     @classmethod
     def plugin_append(cls, plugin):
@@ -22,7 +28,6 @@ class Event(Base):
         self.tex = tex if tex is not None else name
         self.controllable = controllable
         self.observable = observable
-        self.__dict__.update(kwargs)
         self.transitions = set()
         super().__init__(*args, **kwargs)
 
@@ -47,7 +52,7 @@ class Event(Base):
     def tex(self, value):
         if isinstance(value, str):
             self._tex = value
-
+    
     @tex.deleter
     def tex(self):
         self._tex = self._name
@@ -82,7 +87,6 @@ class State(Base):
         self.marked = marked
         self.x = x
         self.y = y
-        self.__dict__.update(kwargs)
         self.in_transitions = set()
         self.out_transitions = set()
         super().__init__(*args, **kwargs)
@@ -97,16 +101,7 @@ class State(Base):
         
     def transition_out_add(self, transition):
         self.out_transitions.add(transition)
-
-
-class Automaton:
-    def __init__(self, transitions, initial_state):
-        """
-        Create a structure for Automata.
-        """
-        self.transitions = transitions
-        self.initial_state = initial_state
-        # self.marked_states = marked_states
+    
     @property
     def name(self):
         return self._name
@@ -142,6 +137,7 @@ class Automaton:
     def x(self):
         return self._x
         # deletes transitions which have state as destiny:
+
     @x.setter
     def x(self, value):
         if isinstance(value, int):
@@ -155,16 +151,16 @@ class Automaton:
     def y(self, value):
         if isinstance(value, int):
             self._y = value
-        # deletes a set of state, its output transitions and all transitions to them
+    
     @property
     def position(self):
-        return (self._x, self._y)
+        return (self.x, self.y)
 
     @position.setter
     def position(self, value):
         if isinstance(value, tuple):
-            self._x = value[0]
-            self._y = value[1]
+            self.x = value[0]
+            self.y = value[1]
 
 
 class Transition(Base):
@@ -172,8 +168,17 @@ class Transition(Base):
         self.from_state = from_state
         self.to_state = to_state
         self.event = event
-        self.__dict__.update(kwargs)
         super().__init__(*args, **kwargs)
+    
+    @property
+    def from_state(self):
+        return self._from_state
+
+    @from_state.setter
+    def from_state(self, value):
+        if isinstance(value, State):
+            self._from_state = value
+    
 
     def __str__(self):
         return "{from_state}, {event} --> {to_state}".format(from_state=self.from_state, to_state=self.to_state, event=self.event)
