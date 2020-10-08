@@ -7,7 +7,8 @@ from machine.automata import Automaton
 a = Automaton()
 
 e1 = a.event_add('a', False, True)
-e2 = a.event_add('b', False, True)
+e2 = a.event_add('b', True, True)
+e3 = a.event_add('c', True, True)
 s1 = a.state_add('q1', market=True, initial=True)
 s2 = a.state_add('q2', market=True)
 
