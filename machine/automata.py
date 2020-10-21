@@ -178,8 +178,9 @@ class Transition(Base):
     def from_state(self, value):
         if isinstance(value, State):
             self._from_state = value
-    
 
+    # TODO to_state & event properties
+    
     def __str__(self):
         return "{from_state}, {event} --> {to_state}".format(from_state=self.from_state, to_state=self.to_state, event=self.event)
 
@@ -206,13 +207,22 @@ class Automaton(Base):
             transitions = "\n    ".join(map(str, transitions)),
         )
         # deletes transitions which have state as destiny:
+
     def event_add(self, *args, **kwargs):
         e = self.event_class(*args, **kwargs)
         self.events.add(e)
         return e
 
+    # TODO: test
     def event_remove(self, event):
-        pass
+        try:
+            self.events.remove(event)
+        except KeyErorr:
+            return False
+        else:
+            for t in event.transitions:
+                self.transition_remove(t, rmRefEvent=True)
+            return True
         
     def state_add(self, *args, initial=False, **kwargs):
         s = self.state_class(*args, **kwargs)
@@ -221,8 +231,18 @@ class Automaton(Base):
             self.initial_state = s
         return s
 
+    # TODO: test
     def state_remove(self, state):
-        pass
+        try:
+            self.states.remove(state)
+        except KeyErorr:
+            return False
+        else:
+            for t in state.in_transitions:
+                self.transition_remove(t, rmRefToState=True)
+            for t in state.out_transitions:
+                self.transition_remove(t, rmRefFromState=True)
+            return True
         
     @property
     def initial_state(self):
@@ -239,8 +259,14 @@ class Automaton(Base):
         to_state.transition_in_add(t)
         return t
 
-    def transition_remove(self, transition):
-        pass
+    # TODO: test
+    def transition_remove(self, transition, rmRefEvent=True, rmRefFromState=True, rmRefToState=True):
+        if rmRefEvent:
+            transition.event.transitions.discard(transition)
+        if rmRefFromState:
+            transition.from_state.out_transitions.discard(transition)
+        if rmRefToState:
+            transition.to_state.in_transitions.discard(transition)
 
     # Editor specific methods
 
