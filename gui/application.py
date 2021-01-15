@@ -8,7 +8,6 @@ class MainWindow(Gtk.ApplicationWindow):
         super().__init__(*args, **kwargs)
 
         # self.tab = letk.List.new()
-        self.window     = Gtk.Window(Gtk.WindowType.TOPLEVEL, title="Nadzoru")
         self.vbox       = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         self.menubar    = Gtk.MenuBar()
         self.note       = Gtk.Notebook()
@@ -30,11 +29,11 @@ class MainWindow(Gtk.ApplicationWindow):
 
         self.vbox.pack_start(self.menubar, False, False, 0)
         self.vbox.pack_start(self.note   , True, True, 0)
-        self.window.add(self.vbox)
+        self.add(self.vbox)
 
-        self.window.set_default_size(1000, 800)
-        self.window.set_position(Gtk.WindowPosition.CENTER)
-        self.window.connect("delete-event", Gtk.main_quit)
+        self.set_default_size(1000, 800)
+        self.set_position(Gtk.WindowPosition.CENTER)
+        self.connect("delete-event", Gtk.main_quit)
         
         self.note.popup_enable()
         self.note.set_scrollable(True)
@@ -45,11 +44,7 @@ class MainWindow(Gtk.ApplicationWindow):
         self.page1.add(Gtk.Label(label="Default Page!"))
         self.note.append_page(self.page1, Gtk.Label(label="Current tab"))
 
-        self.window.show_all()
-
-
-    def gui(self):
-         self.window.show_all()
+        self.show_all()
 
 
     def append_menu(self, name, caption):
@@ -57,7 +52,6 @@ class MainWindow(Gtk.ApplicationWindow):
         menu_item = Gtk.MenuItem.new_with_mnemonic( caption )
         menu_item.set_submenu( self.menu[name] )
         self.menubar.append( menu_item )
-        self.window.show_all()
 
         self.menu_item[name] = {}
 
@@ -69,7 +63,6 @@ class MainWindow(Gtk.ApplicationWindow):
         menu_item = Gtk.MenuItem.new_with_mnemonic( caption )
         menu_item.set_submenu( self.menu[name] )
         self.menubar.prepend( menu_item )
-        self.window.show_all()
 
         self.menu_item[name] = {}
 
@@ -81,7 +74,6 @@ class MainWindow(Gtk.ApplicationWindow):
         menu_item = Gtk.MenuItem.new_with_mnemonic( caption )
         menu_item.set_submenu( self.menu[name] )
         self.menu[parent].append( menu_item )
-        self.window.show_all()
 
         self.menu_item[name] = {}
 
@@ -93,7 +85,6 @@ class MainWindow(Gtk.ApplicationWindow):
         menu_item = Gtk.MenuItem.new_with_mnemonic( caption )
         menu_item.set_submenu( self.menu[name] )
         self.menu[parent].prepend( menu_item )
-        self.window.show_all()
 
         self.menu_item[name] = {}
 
@@ -139,12 +130,9 @@ class MainWindow(Gtk.ApplicationWindow):
             menu_item = Gtk.MenuItem.new_with_mnemonic( caption )
             menu_item.connect('activate', callback, param )
 
-        self.window.show_all()
-
         if self.menu[menu_name]:
             self.menu[menu_name].append( menu_item )
             self.menu_item[menu_name][ len(self.menu_item[menu_name]) + 1] = menu_item
-            self.window.show_all()
         
         # Variadic, *args or **kwargs
         # if args:
@@ -173,7 +161,6 @@ class MainWindow(Gtk.ApplicationWindow):
         if self.menu[menu_name]:
             self.menu[menu_name].prepend( menu_item )
             self.menu_item[menu_name][ len(self.menu_item[menu_name]) + 1] = menu_item
-            self.window.show_all()
         
         # Variadic
         # if args:
@@ -198,7 +185,7 @@ class MainWindow(Gtk.ApplicationWindow):
     def add_tab( self, widget, title, destroy_callback, param ):
         note =  self.note.insert_page( widget, Gtk.Label.new(title), -1)
         # self.tab.add({ destroy_callback = destroy_callback, param = param, widget = widget }, note + 1)
-        self.window.show_all()
+        self.show_all()
         self.note.set_current_page(note)
 
         return note
@@ -216,14 +203,14 @@ class MainWindow(Gtk.ApplicationWindow):
             if destroy and destroy.destroy_callback:
                 destroy.destroy_callback( destroy.param )
         
-        self.window.show_all()    
+        self.show_all()    
 
 
     def set_tab_page_title( self, widget, title ):
         page_label = self.note.get_tab_label( widget )
         page_label.set_text( title )
 
-        self.window.show_all()
+        self.show_all()
 
         # This will be in the windows group and have the "win" prefix
         max_action = Gio.SimpleAction.new_stateful("maximize", None, GLib.Variant.new_boolean(False))
