@@ -12,15 +12,15 @@ class Base:
                     class_=self.__class__
                 ))
          # self.__dict__.update(kwargs)
-    
+
     @classmethod
     def plugin_append(cls, plugin):
         cls.__bases__ = cls.__bases__ + (plugin, )
-    
+
     @classmethod
     def plugin_prepend(cls, plugin):
         cls.__bases__ = (plugin, ) + cls.__bases__
-    
+
 
 class Event(Base):
     def __init__(self, name='', controllable=False, observable=True, tex=None, *args, **kwargs):
@@ -52,7 +52,7 @@ class Event(Base):
     def tex(self, value):
         if isinstance(value, str):
             self._tex = value
-    
+
     @tex.deleter
     def tex(self):
         self._tex = self._name
@@ -95,13 +95,13 @@ class State(Base):
         return self.name
 
     # ---------------------------------------------
-    
+
     def transition_in_add(self, transition):
         self.in_transitions.add(transition)
-        
+
     def transition_out_add(self, transition):
         self.out_transitions.add(transition)
-    
+
     @property
     def name(self):
         return self._name
@@ -145,13 +145,13 @@ class State(Base):
 
     @property
     def y(self):
-        return self._x
+        return self._y
 
     @y.setter
     def y(self, value):
         if isinstance(value, int):
             self._y = value
-    
+
     @property
     def position(self):
         return (self.x, self.y)
@@ -169,7 +169,7 @@ class Transition(Base):
         self.to_state = to_state
         self.event = event
         super().__init__(*args, **kwargs)
-    
+
     @property
     def from_state(self):
         return self._from_state
@@ -180,7 +180,7 @@ class Transition(Base):
             self._from_state = value
 
     # TODO to_state & event properties
-    
+
     def __str__(self):
         return "{from_state}, {event} --> {to_state}".format(from_state=self.from_state, to_state=self.to_state, event=self.event)
 
@@ -190,7 +190,7 @@ class Automaton(Base):
     state_class = State
     transition_class = Transition
     type_str = 'FSA'
-    
+
     def __init__(self, *args, **kwargs):
         self.events = set()
         self.states = set()
@@ -223,7 +223,7 @@ class Automaton(Base):
             for t in event.transitions:
                 self.transition_remove(t, rmRefEvent=True)
             return True
-        
+
     def state_add(self, *args, initial=False, **kwargs):
         s = self.state_class(*args, **kwargs)
         self.states.add(s)
@@ -243,7 +243,7 @@ class Automaton(Base):
             for t in state.out_transitions:
                 self.transition_remove(t, rmRefFromState=True)
             return True
-        
+
     @property
     def initial_state(self):
         return self._initial_state
@@ -252,7 +252,7 @@ class Automaton(Base):
     def initial_state(self, value):
         if isinstance(value, self.state_class) or (value is None):
             self._initial_state = value
-        
+
     def transition_add(self, from_state, to_state, *args, **kwargs):
         t = self.transition_class(from_state, to_state, *args, **kwargs)
         from_state.transition_out_add(t)
@@ -287,13 +287,13 @@ class Automaton(Base):
 
     def ides_import(self, file_name, load_layout=True):
         pass
-        
+
     def ides_export(self, file_name):
         pass
 
     def tct_import(self, file_name):
         pass
-        
+
     def tct_export(self, file_name):
         pass
 
@@ -301,20 +301,20 @@ class Automaton(Base):
 
     def clone(self):
         pass
-        
+
     def is_accessible(self):
         pass
-        
+
     def accessible(self, copy=False):
         self = self if not copy else self.clone()
 
         # TODO ...
 
         return self
-        
+
     def is_coaccessible(self):
         pass
-        
+
     def coaccessible(self, copy=False):
         pass
 
@@ -329,16 +329,16 @@ class Automaton(Base):
 
     def synchronization(self, *args):
         pass
-        
+
     def product(self, *args):
         pass
-        
+
     def projection(self, *args):
         pass
-        
+
     def univocal(self, *args):
         pass
-        
+
     def supC(G, K):
         pass
 
@@ -353,25 +353,25 @@ class Automaton(Base):
 
     def simultaneity_check(self):
         pass
-        
+
     def empty_closure(self):
         pass
-        
+
     def determinize(self, copy=False):
         pass
-        
+
     def complement(self, copy=False):
         pass
-        
+
     def total(self, copy=False):
         pass
-        
+
     def minimize(self, copy=False):
         pass
-        
+
     def mask(self, masks, copy=False):
         pass
-        
+
     def distinguish(self, refinements, copy=False):
         pass
 

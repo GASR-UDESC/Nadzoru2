@@ -1,5 +1,11 @@
 #!/usr/bin/python
 
+import os
+import sys
+cur_path = os.path.realpath(__file__)
+base_path = os.path.dirname(os.path.dirname(cur_path))
+sys.path.insert(1, base_path)
+
 import pluggins
 
 from machine.automata import Automaton
