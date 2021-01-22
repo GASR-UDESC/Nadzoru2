@@ -108,8 +108,7 @@ class State(Base):
 
     @name.setter
     def name(self, value):
-        if isinstance(value, str):
-            self._name = value
+        self._name = str(value)
 
     @property
     def tex(self):
@@ -117,8 +116,7 @@ class State(Base):
 
     @tex.setter
     def tex(self, value):
-        if isinstance(value, str):
-            self._tex = value
+        self._tex = str(value)
 
     @tex.deleter
     def tex(self):
@@ -130,8 +128,7 @@ class State(Base):
 
     @marked.setter
     def marked(self, value):
-        if isinstance(value, bool):
-            self._marked = value
+        self._marked = bool(value)
 
     @property
     def x(self):
@@ -140,8 +137,7 @@ class State(Base):
 
     @x.setter
     def x(self, value):
-        if isinstance(value, int):
-            self._x = value
+        self._x = int(value)
 
     @property
     def y(self):
@@ -149,8 +145,7 @@ class State(Base):
 
     @y.setter
     def y(self, value):
-        if isinstance(value, int):
-            self._y = value
+        self._y = int(value)
 
     @property
     def position(self):
@@ -158,9 +153,11 @@ class State(Base):
 
     @position.setter
     def position(self, value):
-        if isinstance(value, tuple):
+        if isinstance(value, tuple) or isinstance(value, list):
             self.x = value[0]
             self.y = value[1]
+        else:
+            print("State.position tuple or list expected")
 
 
 class Transition(Base):
@@ -179,9 +176,16 @@ class Transition(Base):
         if isinstance(value, State):
             self._from_state = value
 
-    # TODO to_state & event properties
+    @property
+    def to_state(self):
+        return self._to_state
 
-    def __str__(self):
+    @to_state.setter
+    def to_state(self, value):
+        if isinstance(value, State):
+            self._to_state = value
+
+def __str__(self):
         return "{from_state}, {event} --> {to_state}".format(from_state=self.from_state, to_state=self.to_state, event=self.event)
 
 

@@ -41,6 +41,7 @@ class Example(Gtk.Window):
         super(Example, self).__init__()
         self.init_ui()
         self.automaton = automaton
+        self.lst_state = list(automaton.states)
         self.ar = AutomatonRender()
 
     def init_ui(self):
@@ -62,9 +63,14 @@ class Example(Gtk.Window):
 
     def on_button_press(self, w, e):
         if e.type == Gdk.EventType.BUTTON_PRESS and e.button == MouseButtons.LEFT_BUTTON:
-            pass
-        if e.type == Gdk.EventType.BUTTON_PRESS and e.button == MouseButtons.RIGHT_BUTTON:
-            pass
+            s = self.lst_state[0]
+        elif e.type == Gdk.EventType.BUTTON_PRESS and e.button == MouseButtons.RIGHT_BUTTON:
+            s = self.lst_state[1]
+        else:
+            return
+        s.x = e.x
+        s.y = e.y
+        self.darea.queue_draw()
 
 
 app = Example(create_automaton_01())
