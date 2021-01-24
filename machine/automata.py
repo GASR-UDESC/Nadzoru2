@@ -165,6 +165,8 @@ class Transition(Base):
         self.from_state = from_state
         self.to_state = to_state
         self.event = event
+        self.render_angle = 0.0
+        self.render_factor = 1.0
         super().__init__(*args, **kwargs)
 
     @property
@@ -184,6 +186,25 @@ class Transition(Base):
     def to_state(self, value):
         if isinstance(value, State):
             self._to_state = value
+
+    @property
+    def render_angle(self):
+        """The default angle to render the self-loop arc or when start and end states
+        are really close to each other"""
+        return self._render_angle
+
+    @render_angle.setter
+    def render_angle(self, value):
+        self._render_angle = int(value)
+
+    @property
+    def render_factor(self):
+        return self._render_factor
+
+    @render_factor.setter
+    def render_factor(self, value):
+        self._render_factor = int(value)
+
 
 def __str__(self):
         return "{from_state}, {event} --> {to_state}".format(from_state=self.from_state, to_state=self.to_state, event=self.event)

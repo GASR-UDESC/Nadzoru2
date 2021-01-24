@@ -9,6 +9,11 @@ class Point2D:
         self.x = x
         self.y = y
 
+    @classmethod
+    def from_angle(cls, deg_angle):
+        angle = math.pi * deg_angle / 180.0
+        return cls(math.cos(angle), math.sin(angle))
+
     def __str__(self):
         return "({:.1f},{:.1f})".format(self.x, self.y)
 
@@ -80,6 +85,9 @@ class Point2D:
         """if value is too large it will also swap direction. Take care in case length and value are close."""
         return self.set_length(self.length() - value)
 
+    def add_length(self, value):
+        return self.set_length(self.length() + value)
+
     def angle(self, origin, r=None):
         """Get the angle self is based on the origin 'origin'.
         Cairo angles increase cw (as positive y is downwards.
@@ -122,6 +130,7 @@ class AutomatonRender:
         return min_radius + self.DOUBLE_RADIUS_GAP + self.TEXT_RADIUS_GAP
 
     def draw_transition_self(self, cr, transition, states_radius, factor=1.0, ccw=True):
+        """It's 'mathmagically :)' unnecessary to treat it differently"""
         pass
 
 
@@ -129,34 +138,48 @@ class AutomatonRender:
         # radius of each state: 's'tart and 'e'nd states
         rs = states_radius[transition.from_state]
         re = states_radius[transition.to_state]
+
         # centre of each state
         Vs = Point2D(transition.from_state.x, transition.from_state.y) # start state
         Ve = Point2D(transition.to_state.x, transition.to_state.y)     # end state
+        Vm = Ve.mid_point(Vs)  # middle point between states
+
         dist = Vs.distance(Ve)
-
-        near = False
-        if dist <= 4:
-            return # TODO call the selfloop version
-        elif dist < (rs + re):
-            near = True
-
-        Vm = Ve.mid_point(Vs)               # middle point between states
-        V1 = Vm - Vs                        # vector
-        # if (near is False and ccw is True) or (near is True and ccw is False):
-        #    """When 'near' is set the start/end angle values swap which one is greater, so we can just swap the side
-        #    of the arc's centre without changing the order of start/end angles arguments entered into cr.arc call."""
-            # V2 = V1.orthogonal_ccw() * factor # - V1.orthogonal_ccw() # vector between Vm and Vc
-        if ccw is True:
-            V2 = V1.orthogonal_ccw() * factor
+        if dist < 1.0:
+            """
+            Avoid zero length when two states are on top of each other.
+            It's also used for self loops.
+            It's a unit vector based on the transition render_angle
+            """
+            a = transition.render_angle + 180  # we need the vetor pointing to the opposite direction we want as the rm_length will invert for small lengths
+            while a > 360:
+                a = a - 360
+            V2 = Point2D.from_angle(a)
+            V2.y = -V2.y # cairo works with Y axis pointing down
         else:
-            V2 = V1.orthogonal_cw() * factor  # - V1.orthogonal_cw() # vector between Vm and Vc
-        V2 = V2.rm_length((rs+re)/2)
+            V1 = Vm - Vs  # vector from start state centre to middle point
+            if ccw is True:
+                V2 = V1.orthogonal_ccw() # vector between Vm and Vc
+            else:
+                V2 = V1.orthogonal_cw()
+
+        f = (factor * transition.render_factor)
+        # TODO improve the impact of factor (f) in the rm_length
+        if f >= 1.0:
+            V2 = V2.rm_length((rs+re)/2)
+            V2 = V2 * f
+        else:
+            V2 = V2 * f
+            V2 = V2.rm_length((rs+re)/2)
         Vc = Vm + V2                        # Vc: centre of the transition arc
+
+        # draw the middle point (red) and the centre of the transition's arc for debug
+        # self._draw_point(cr, Vm, r=1)
+        # self._draw_point(cr, Vc, b=1)
+
         r = Vs.distance(Vc)                 # radius of the transition arc
 
-        self._draw_point(cr, Vm, r=1)
-        self._draw_point(cr, Vc, b=1)
-
+        # start and end angles of the transition's arc. Initially from centre of start state to centre of end state
         Acs = Vs.angle(Vc, r) # angle from (1, 0) to the point Vs using Vc as the origin
         Ace = Ve.angle(Vc, r) # angle from (1, 0) to the point Ve using Vc as the origin
         Ads = 2 * math.asin(rs/(2*r))  # angle to add/subtract from Acs. Considering the radious of the state's circle as the chord of the transition arc ...
@@ -170,9 +193,19 @@ class AutomatonRender:
             cr.arc(Vc.x, Vc.y, r, Ace + Ade, Acs - Ads)
         cr.stroke()
 
-        if r < 1:
-            """Too close to draw"""
-            return
+        # TODO: draw arrow point
+
+        # TODO: draw event text
+
+        # TODO: how to deal with multiple transitions from state pair of states?
+        #       we must draw the transition once and concatenate the texto
+        #       and we want different colours for different type (e.g. controllable, observable)
+        #       ... some sort of configurable colour theme to apply
+        #       We also want to set whether draw different transitions for different
+        #       ... types of events (e.g. with a cross stroke for controlabble events
+        #       ... or group them all together.
+        #       Shall remove transition config render_angle and render_factor as we may want to join them all
+        #       ... in a single arrow and concatenate the text
 
         event = transition.event
         if event.controllable:
@@ -182,7 +215,7 @@ class AutomatonRender:
 
     def draw_transition(self, cr, transition, *args, **kwargs):
         if transition.from_state is transition.to_state:
-            self.draw_transition_self(cr, transition, *args, **kwargs)
+            self.draw_transition_arc(cr, transition, *args, **kwargs)
         else:
             self.draw_transition_arc(cr, transition, *args, **kwargs)
 
@@ -203,8 +236,7 @@ class AutomatonRender:
         # draw transitions
         for state in automaton.states:
             for transition in state.out_transitions:
-                self.draw_transition(cr, transition, state_radius, ccw=True)
-                break
+                self.draw_transition(cr, transition, state_radius, ccw=True, factor=1.5)
 
 
 
