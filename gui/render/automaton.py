@@ -67,11 +67,18 @@ class Point2D:
     def distance(self, other):
         return math.sqrt((self.x - other.x)**2 + (self.y - other.y)**2)
 
-    def lenght(self): # vector norm
+    def length(self): # vector norm or magnitude
         return math.sqrt(self.x**2 + self.y**2)
 
     def normalize(self):
         return self / self.lenght()
+
+    def set_length(self, value):
+        return (self * value) / self.length()
+
+    def rm_length(self, value):
+        """if value is too large it will also swap direction. Take care in case length and value are close."""
+        return self.set_length(self.length() - value)
 
     def angle(self, origin, r=None):
         """Get the angle self is based on the origin 'origin'.
@@ -127,15 +134,23 @@ class AutomatonRender:
         Ve = Point2D(transition.to_state.x, transition.to_state.y)     # end state
         dist = Vs.distance(Ve)
 
+        near = False
         if dist <= 4:
             return # TODO call the selfloop version
+        elif dist < (rs + re):
+            near = True
 
         Vm = Ve.mid_point(Vs)               # middle point between states
         V1 = Vm - Vs                        # vector
+        # if (near is False and ccw is True) or (near is True and ccw is False):
+        #    """When 'near' is set the start/end angle values swap which one is greater, so we can just swap the side
+        #    of the arc's centre without changing the order of start/end angles arguments entered into cr.arc call."""
+            # V2 = V1.orthogonal_ccw() * factor # - V1.orthogonal_ccw() # vector between Vm and Vc
         if ccw is True:
-            V2 = V1.orthogonal_ccw() * factor + V1.orthogonal_ccw().normalize() * 16   # vector between Vm and Vc
+            V2 = V1.orthogonal_ccw() * factor
         else:
-            V2 = V1.orthogonal_cw() * factor    # vector between Vm and Vc
+            V2 = V1.orthogonal_cw() * factor  # - V1.orthogonal_cw() # vector between Vm and Vc
+        V2 = V2.rm_length((rs+re)/2)
         Vc = Vm + V2                        # Vc: centre of the transition arc
         r = Vs.distance(Vc)                 # radius of the transition arc
 
@@ -144,8 +159,9 @@ class AutomatonRender:
 
         Acs = Vs.angle(Vc, r) # angle from (1, 0) to the point Vs using Vc as the origin
         Ace = Ve.angle(Vc, r) # angle from (1, 0) to the point Ve using Vc as the origin
-        Ads = 2 * math.asin(rs/(2*r))  # angle to subtract that, considering the state circle as the chord of the transition arc
-        Ade = 2 * math.asin(re/(2*r))
+        Ads = 2 * math.asin(rs/(2*r))  # angle to add/subtract from Acs. Considering the radious of the state's circle as the chord of the transition arc ...
+        Ade = 2 * math.asin(re/(2*r))  # angle to add/subtract from Ace. ... this gives the [small] piece of arc that needs to be removed, from center of the state to its border.
+        # print(180*Acs/math.pi, 180*Ace/math.pi, "-/+", 180*Ads/math.pi, 180*Ade/math.pi, "=", 180*(Acs+Ads)/math.pi, 180*(Ace - Ade)/math.pi)
 
         cr.set_source_rgb(0,0,1)
         if ccw is True:
@@ -188,6 +204,7 @@ class AutomatonRender:
         for state in automaton.states:
             for transition in state.out_transitions:
                 self.draw_transition(cr, transition, state_radius, ccw=True)
+                break
 
 
 

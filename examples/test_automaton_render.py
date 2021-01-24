@@ -47,9 +47,12 @@ class Example(Gtk.Window):
     def init_ui(self):
         self.darea = Gtk.DrawingArea()
         self.darea.connect("draw", self.on_draw)
-        self.darea.set_events(Gdk.EventMask.BUTTON_PRESS_MASK)
+        self.darea.set_events(Gdk.EventMask.BUTTON_MOTION_MASK |
+                              Gdk.EventMask.BUTTON_PRESS_MASK
+        )
         self.add(self.darea)
 
+        self.darea.connect("motion-notify-event", self.on_motion_notify)
         self.darea.connect("button-press-event", self.on_button_press)
 
         self.set_title("Render Automaton test")
@@ -60,6 +63,17 @@ class Example(Gtk.Window):
 
     def on_draw(self, wid, cr):
         self.ar.draw(cr, self.automaton)
+
+    def on_motion_notify(self, w, e):
+        if e.type == Gdk.EventType.MOTION_NOTIFY and (e.state & Gdk.ModifierType.BUTTON1_MASK):
+            s = self.lst_state[0]
+        elif e.type == Gdk.EventType.MOTION_NOTIFY and (e.state & Gdk.ModifierType.BUTTON3_MASK):
+            s = self.lst_state[1]
+        else:
+            return
+        s.x = e.x
+        s.y = e.y
+        self.darea.queue_draw()
 
     def on_button_press(self, w, e):
         if e.type == Gdk.EventType.BUTTON_PRESS and e.button == MouseButtons.LEFT_BUTTON:
