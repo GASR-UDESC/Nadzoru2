@@ -114,6 +114,8 @@ class AutomatonRender:
     TEXT_RADIUS_GAP = 4
     FONT_SIZE = 24
     TRANSITION_TEXT_SPACE = 12
+    ARROW_LENGTH = 20
+    ARROW_MID_HEIGHT = 5
 
     def __init__(self):
         pass
@@ -133,6 +135,19 @@ class AutomatonRender:
         cr.stroke()
         min_radius = math.sqrt((width/2)**2 + (height/2)**2)
         return min_radius + self.DOUBLE_RADIUS_GAP + self.TEXT_RADIUS_GAP
+
+    def draw_arrow(self, cr, Vs, Ve):
+        Vbase = (Vs - Ve).normalize()
+        V1 = Ve + Vbase.orthogonal_cw() * self.ARROW_MID_HEIGHT
+        V2 = Ve + Vbase.orthogonal_ccw() * self.ARROW_MID_HEIGHT
+        cr.set_source_rgb(0, 0, 0)
+
+        cr.move_to(Vs.x, Vs.y)
+        cr.line_to(V1.x, V1.y)
+        cr.line_to(V2.x, V2.y)
+        cr.line_to(Vs.x, Vs.y)
+        # cr.stroke()
+        cr.fill()
 
     def get_transition_layout(self, transition):
         # TODO a more complex way of getting different layouts (controllable vs uncontrollable, ...)
@@ -187,6 +202,7 @@ class AutomatonRender:
         # self._draw_point(cr, Vc, b=1)
 
         r = Vs.distance(Vc)                 # radius of the transition arc
+
         Vtext = Vc + V3.set_length(r + self.TRANSITION_TEXT_SPACE)
         self.write_text(cr, Vtext.x, Vtext.y, transition.event.name)
 
@@ -195,23 +211,23 @@ class AutomatonRender:
         Ace = Ve.angle(Vc, r) # angle from (1, 0) to the point Ve using Vc as the origin
         Ads = 2 * math.asin(rs/(2*r))  # angle to add/subtract from Acs. Considering the radious of the state's circle as the chord of the transition arc ...
         Ade = 2 * math.asin(re/(2*r))  # angle to add/subtract from Ace. ... this gives the [small] piece of arc that needs to be removed, from center of the state to its border.
-        # print(180*Acs/math.pi, 180*Ace/math.pi, "-/+", 180*Ads/math.pi, 180*Ade/math.pi, "=", 180*(Acs+Ads)/math.pi, 180*(Ace - Ade)/math.pi)
+        Aae = 2 * math.asin(self.ARROW_LENGTH/(2*r)) # angle to add/subtract for the arrow end point
 
         cr.set_source_rgb(0,0,1)
         if ccw is True:
-            cr.arc(Vc.x, Vc.y, r, Acs + Ads, Ace - Ade)
+            cr.arc(Vc.x, Vc.y, r, Acs + Ads, Ace - Ade - Aae)
             Varrow = Vc + Point2D.from_rad_angle(Ace - Ade).set_length(r)
+            Varrowend = Vc + Point2D.from_rad_angle(Ace - Ade - Aae).set_length(r)
         else:
-            cr.arc(Vc.x, Vc.y, r, Ace + Ade, Acs - Ads)
+            cr.arc(Vc.x, Vc.y, r, Ace + Ade + Aae, Acs - Ads)
             Varrow = Vc + Point2D.from_rad_angle(Ace + Ade).set_length(r)
+            Varrowend = Vc + Point2D.from_rad_angle(Ace + Ade + Aae).set_length(r)
         cr.stroke()
 
-        # TODO: draw arrow point
-        self._draw_point(cr, Varrow, r=1)
-
+        self.draw_arrow(cr, Varrow, Varrowend)
 
         # TODO: how to deal with multiple transitions from state pair of states?
-        #       we must draw the transition once and concatenate the texto
+        #       we must draw the transition once and concatenate the text
         #       and we want different colours for different type (e.g. controllable, observable)
         #       ... some sort of configurable colour theme to apply
         #       We also want to set whether draw different transitions for different
