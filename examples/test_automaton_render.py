@@ -25,10 +25,8 @@ def create_automaton_01():
 
     a.transition_add(s1, s2, e1)
     a.transition_add(s2, s1, e2)
-    t_sl_1 = a.transition_add(s1, s1, e2)
-    t_sl_2 = a.transition_add(s2, s2, e1)
-
-    t_sl_1.render_angle = 45
+    a.transition_add(s1, s1, e2)
+    a.transition_add(s2, s2, e1)
 
     return a
 

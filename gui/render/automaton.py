@@ -14,6 +14,10 @@ class Point2D:
         angle = math.pi * deg_angle / 180.0
         return cls(math.cos(angle), math.sin(angle))
 
+    @classmethod
+    def from_rad_angle(cls, angle):
+        return cls(math.cos(angle), math.sin(angle))
+
     def __str__(self):
         return "({:.1f},{:.1f})".format(self.x, self.y)
 
@@ -76,7 +80,7 @@ class Point2D:
         return math.sqrt(self.x**2 + self.y**2)
 
     def normalize(self):
-        return self / self.lenght()
+        return self / self.length()
 
     def set_length(self, value):
         return (self * value) / self.length()
@@ -109,6 +113,7 @@ class AutomatonRender:
     DOUBLE_RADIUS_GAP = 4
     TEXT_RADIUS_GAP = 4
     FONT_SIZE = 24
+    TRANSITION_TEXT_SPACE = 12
 
     def __init__(self):
         pass
@@ -129,15 +134,16 @@ class AutomatonRender:
         min_radius = math.sqrt((width/2)**2 + (height/2)**2)
         return min_radius + self.DOUBLE_RADIUS_GAP + self.TEXT_RADIUS_GAP
 
-    def draw_transition_self(self, cr, transition, states_radius, factor=1.0, ccw=True):
-        """It's 'mathmagically :)' unnecessary to treat it differently"""
-        pass
+    def get_transition_layout(self, transition):
+        # TODO a more complex way of getting different layouts (controllable vs uncontrollable, ...)
+        # but it is at least one layout for each pair of states
+        return transition.from_state.transition_layouts[transition.to_state]
 
-
-    def draw_transition_arc(self, cr, transition, states_radius, factor=1.0, ccw=True):
+    def draw_transition(self, cr, transition, states_radius, factor=1.0, ccw=True):
         # radius of each state: 's'tart and 'e'nd states
         rs = states_radius[transition.from_state]
         re = states_radius[transition.to_state]
+        layout = self.get_transition_layout(transition)
 
         # centre of each state
         Vs = Point2D(transition.from_state.x, transition.from_state.y) # start state
@@ -151,19 +157,22 @@ class AutomatonRender:
             It's also used for self loops.
             It's a unit vector based on the transition render_angle
             """
-            a = transition.render_angle + 180  # we need the vetor pointing to the opposite direction we want as the rm_length will invert for small lengths
+            a = layout.render_angle + 180  # we need the vetor pointing to the opposite direction we want as the rm_length will invert for small lengths
             while a > 360:
                 a = a - 360
             V2 = Point2D.from_angle(a)
             V2.y = -V2.y # cairo works with Y axis pointing down
+            V3 = Point2D(-V2.x, -V2.y)
         else:
             V1 = Vm - Vs  # vector from start state centre to middle point
             if ccw is True:
                 V2 = V1.orthogonal_ccw() # vector between Vm and Vc
+                V3 = V1.orthogonal_cw().normalize() # vector to the text direction
             else:
                 V2 = V1.orthogonal_cw()
+                V3 = V1.orthogonal_ccw().normalize()
 
-        f = (factor * transition.render_factor)
+        f = (factor * layout.render_factor)
         # TODO improve the impact of factor (f) in the rm_length
         if f >= 1.0:
             V2 = V2.rm_length((rs+re)/2)
@@ -178,6 +187,8 @@ class AutomatonRender:
         # self._draw_point(cr, Vc, b=1)
 
         r = Vs.distance(Vc)                 # radius of the transition arc
+        Vtext = Vc + V3.set_length(r + self.TRANSITION_TEXT_SPACE)
+        self.write_text(cr, Vtext.x, Vtext.y, transition.event.name)
 
         # start and end angles of the transition's arc. Initially from centre of start state to centre of end state
         Acs = Vs.angle(Vc, r) # angle from (1, 0) to the point Vs using Vc as the origin
@@ -189,13 +200,15 @@ class AutomatonRender:
         cr.set_source_rgb(0,0,1)
         if ccw is True:
             cr.arc(Vc.x, Vc.y, r, Acs + Ads, Ace - Ade)
+            Varrow = Vc + Point2D.from_rad_angle(Ace - Ade).set_length(r)
         else:
             cr.arc(Vc.x, Vc.y, r, Ace + Ade, Acs - Ads)
+            Varrow = Vc + Point2D.from_rad_angle(Ace + Ade).set_length(r)
         cr.stroke()
 
         # TODO: draw arrow point
+        self._draw_point(cr, Varrow, r=1)
 
-        # TODO: draw event text
 
         # TODO: how to deal with multiple transitions from state pair of states?
         #       we must draw the transition once and concatenate the texto
@@ -212,12 +225,6 @@ class AutomatonRender:
             cr.set_source_rgb(0, 0, 0)
         else:
             cr.set_source_rgb(1, 0, 0)
-
-    def draw_transition(self, cr, transition, *args, **kwargs):
-        if transition.from_state is transition.to_state:
-            self.draw_transition_arc(cr, transition, *args, **kwargs)
-        else:
-            self.draw_transition_arc(cr, transition, *args, **kwargs)
 
     def draw(self, cr, automaton):
         # draw states

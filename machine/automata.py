@@ -80,6 +80,38 @@ class EventSet(Base):  # TODO
     pass
 
 
+class TransitionLayout:
+    def __init__(self):
+        self.render_angle = 0.0
+        self.render_factor = 1.0
+        self.ref_count = 0
+
+    def inc_ref(self):
+        """Use to control when to remove the Transition Layout"""
+        self. ref_count = self.ref_count + 1
+
+    def dec_ref(self):
+        self. ref_count = self.ref_count - 1
+
+    @property
+    def render_angle(self):
+        # The default angle to render the self-loop arc or when start and end states
+        # are really close to each other
+        return self._render_angle
+
+    @render_angle.setter
+    def render_angle(self, value):
+        self._render_angle = int(value)
+
+    @property
+    def render_factor(self):
+        return self._render_factor
+
+    @render_factor.setter
+    def render_factor(self, value):
+        self._render_factor = int(value)
+
+
 class State(Base):
     def __init__(self, name=None, marked=False, x=0, y=0, tex=None, *args, **kwargs):
         self.name = name
@@ -89,6 +121,7 @@ class State(Base):
         self.y = y
         self.in_transitions = set()
         self.out_transitions = set()
+        self.transition_layouts = dict()  # maps a destination state, with the layout for all transitions in this ordened pair
         super().__init__(*args, **kwargs)
 
     def __str__(self):
@@ -101,6 +134,11 @@ class State(Base):
 
     def transition_out_add(self, transition):
         self.out_transitions.add(transition)
+        if transition.to_state not in self.transition_layouts:
+            self.transition_layouts[transition.to_state] = TransitionLayout()
+        self.transition_layouts[transition.to_state].inc_ref()
+
+    # TODO remove transition in/out, when remove transition_out decrease ref counter
 
     @property
     def name(self):
@@ -122,6 +160,7 @@ class State(Base):
     def tex(self):
         self._tex = self._name
         # deletes state, its output transitions and all transitions to it
+
     @property
     def marked(self):
         return self._marked
@@ -165,8 +204,6 @@ class Transition(Base):
         self.from_state = from_state
         self.to_state = to_state
         self.event = event
-        self.render_angle = 0.0
-        self.render_factor = 1.0
         super().__init__(*args, **kwargs)
 
     @property
@@ -186,24 +223,6 @@ class Transition(Base):
     def to_state(self, value):
         if isinstance(value, State):
             self._to_state = value
-
-    @property
-    def render_angle(self):
-        """The default angle to render the self-loop arc or when start and end states
-        are really close to each other"""
-        return self._render_angle
-
-    @render_angle.setter
-    def render_angle(self, value):
-        self._render_angle = int(value)
-
-    @property
-    def render_factor(self):
-        return self._render_factor
-
-    @render_factor.setter
-    def render_factor(self, value):
-        self._render_factor = int(value)
 
 
 def __str__(self):
