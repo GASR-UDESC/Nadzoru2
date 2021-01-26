@@ -9,6 +9,9 @@ class Point2D:
         self.x = x
         self.y = y
 
+    def copy(self):
+        return Point2D(self.x, self.y)
+
     @classmethod
     def from_angle(cls, deg_angle):
         angle = math.pi * deg_angle / 180.0
@@ -21,57 +24,85 @@ class Point2D:
     def __str__(self):
         return "({:.1f},{:.1f})".format(self.x, self.y)
 
-    def __add__(self, other):
-        return Point2D(self.x + other.x, self.y +  other.y)
+    # Operators: V = W + X creates a new object V, V += 2 updates V
 
-    def __radd__(self, value):  # when this object is on the right side
-        return self.__add__(value)
-
-    def __iadd__(self, other):
+    # -- ADD -- #
+    def add(self, other):
         self.x += other.x
         self.y += other.y
+        return self
 
-    def __sub__(self, other):
-        return Point2D(self.x - other.x, self.y - other.y)
+    def __add__(self, other):
+        return self.copy().add(other)
 
-    def __rsub__(self, value):
-        return self.__sub__(value)
+    def __radd__(self, value):  # when this object is on the right side
+        return self.copy().add(other)
 
-    def __isub__(self, other):
+    def __iadd__(self, other):
+        return self.add(other)
+
+    # -- SUB -- #
+    def sub(self, other):
         self.x -= other.x
         self.y -= other.y
         return self
 
-    def __mul__(self, value):
-        return Point2D(self.x * value, self.y * value)
+    def __sub__(self, other):
+        return self.copy().sub(other)
 
-    def __rmul__(self, value):
-        return self.__mul__(value)
+    def __rsub__(self, value):
+        return self.copy().sub(other)
 
-    def __imul__(self, value):
+    def __isub__(self, other):
+        return self.sub(other)
+
+    # -- MUL -- #
+    def mul(self, value):
         self.x *= value
         self.y *= value
         return self
 
-    def __truediv__(self, value):
-        return Point2D(self.x / value, self.y / value)
+    def __mul__(self, value):
+        return self.copy().mul(value)
 
-    def __rtruediv__(self, value):
-        return self.__truediv__(value)
+    def __rmul__(self, value):
+        return self.copy().mul(value)
 
-    def __itruediv__(self, value):
+    def __imul__(self, value):
+        return self.mul(value)
+
+    # -- TRUE DIV (i.e. float) -- #
+    def truediv(self, value):
         self.x /= value
         self.y /= value
         return self
 
+    def __truediv__(self, value):
+        return self.copy().truediv(value)
+
+    def __rtruediv__(self, value):
+        return self.copy().truediv(value)
+
+    def __itruediv__(self, value):
+        return self.truediv(value)
+
+    # ---- #
+
     def mid_point(self, other):
-        return (self - other)/2 + other
+        """This is one of the few methods that actually generates a new Point2D object."""
+        # return (self - other)/2 + other
+        new_point = self - other
+        new_point /= 2
+        new_point += other
+        return new_point
 
     def orthogonal_cw(self):
-        return Point2D(self.y, -self.x)
+        self.x, self.y = self.y, -self.x
+        return self
 
-    def orthogonal_ccw(self):
-        return Point2D(-self.y, self.x)
+    def orthogonal_ccw(self, new=True):
+        self.x, self.y = -self.y, self.x
+        return self
 
     def distance(self, other):
         return math.sqrt((self.x - other.x)**2 + (self.y - other.y)**2)
@@ -80,10 +111,14 @@ class Point2D:
         return math.sqrt(self.x**2 + self.y**2)
 
     def normalize(self):
-        return self / self.length()
+        self /= self.length()
+        return self
 
     def set_length(self, value):
-        return (self * value) / self.length()
+        l = self.length()
+        self *= value
+        self /= l
+        return self
 
     def rm_length(self, value):
         """if value is too large it will also swap direction. Take care in case length and value are close."""
@@ -138,8 +173,8 @@ class AutomatonRender:
 
     def draw_arrow(self, cr, Vs, Ve):
         Vbase = (Vs - Ve).normalize()
-        V1 = Ve + Vbase.orthogonal_cw() * self.ARROW_MID_HEIGHT
-        V2 = Ve + Vbase.orthogonal_ccw() * self.ARROW_MID_HEIGHT
+        V1 = Vbase.copy().orthogonal_cw().mul(self.ARROW_MID_HEIGHT).add(Ve)
+        V2 = Vbase.copy().orthogonal_ccw().mul(self.ARROW_MID_HEIGHT).add(Ve)
         cr.set_source_rgb(0, 0, 0)
 
         cr.move_to(Vs.x, Vs.y)
@@ -181,21 +216,19 @@ class AutomatonRender:
         else:
             V1 = Vm - Vs  # vector from start state centre to middle point
             if ccw is True:
-                V2 = V1.orthogonal_ccw() # vector between Vm and Vc
-                V3 = V1.orthogonal_cw().normalize() # vector to the text direction
+                V2 = V1.copy().orthogonal_ccw() # vector between Vm and Vc
+                V3 = V1.copy().orthogonal_cw().normalize() # vector to the text direction
             else:
-                V2 = V1.orthogonal_cw()
-                V3 = V1.orthogonal_ccw().normalize()
+                V2 = V1.copy().orthogonal_cw()
+                V3 = V1.copy().orthogonal_ccw().normalize()
 
-        f = (factor * layout.render_factor)
         # TODO improve the impact of factor (f) in the rm_length
+        f = (factor * layout.render_factor)
         if f >= 1.0:
-            V2 = V2.rm_length((rs+re)/2)
-            V2 = V2 * f
+            V2.rm_length((rs+re)/2).mul(f)
         else:
-            V2 = V2 * f
-            V2 = V2.rm_length((rs+re)/2)
-        Vc = Vm + V2                        # Vc: centre of the transition arc
+            V2.mul(f).rm_length((rs+re)/2)
+        Vc = Vm + V2  # Vc: centre of the transition arc
 
         # draw the middle point (red) and the centre of the transition's arc for debug
         # self._draw_point(cr, Vm, r=1)
@@ -203,7 +236,8 @@ class AutomatonRender:
 
         r = Vs.distance(Vc)                 # radius of the transition arc
 
-        Vtext = Vc + V3.set_length(r + self.TRANSITION_TEXT_SPACE)
+        # Vtext = Vc + V3.set_length(r + self.TRANSITION_TEXT_SPACE)
+        Vtext = V3.copy().set_length(r + self.TRANSITION_TEXT_SPACE).add(Vc)
         self.write_text(cr, Vtext.x, Vtext.y, transition.event.name)
 
         # start and end angles of the transition's arc. Initially from centre of start state to centre of end state
@@ -216,12 +250,12 @@ class AutomatonRender:
         cr.set_source_rgb(0,0,1)
         if ccw is True:
             cr.arc(Vc.x, Vc.y, r, Acs + Ads, Ace - Ade - Aae)
-            Varrow = Vc + Point2D.from_rad_angle(Ace - Ade).set_length(r)
-            Varrowend = Vc + Point2D.from_rad_angle(Ace - Ade - Aae).set_length(r)
+            Varrow = Point2D.from_rad_angle(Ace - Ade).set_length(r).add(Vc)
+            Varrowend = Point2D.from_rad_angle(Ace - Ade - Aae).set_length(r).add(Vc)
         else:
             cr.arc(Vc.x, Vc.y, r, Ace + Ade + Aae, Acs - Ads)
-            Varrow = Vc + Point2D.from_rad_angle(Ace + Ade).set_length(r)
-            Varrowend = Vc + Point2D.from_rad_angle(Ace + Ade + Aae).set_length(r)
+            Varrow = Point2D.from_rad_angle(Ace + Ade).set_length(r).add(Vc)
+            Varrowend = Point2D.from_rad_angle(Ace + Ade + Aae).set_length(r).add(Vc)
         cr.stroke()
 
         self.draw_arrow(cr, Varrow, Varrowend)
