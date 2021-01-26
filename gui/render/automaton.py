@@ -35,8 +35,8 @@ class Point2D:
     def __add__(self, other):
         return self.copy().add(other)
 
-    def __radd__(self, value):  # when this object is on the right side
-        return self.copy().add(other)
+    # def __radd__(self, value):  # when this object is on the right side
+    #    return self.copy().add_length(value)
 
     def __iadd__(self, other):
         return self.add(other)
@@ -50,8 +50,8 @@ class Point2D:
     def __sub__(self, other):
         return self.copy().sub(other)
 
-    def __rsub__(self, value):
-        return self.copy().sub(other)
+    #def __rsub__(self, value):
+    #    return self.copy().rm_length(value)
 
     def __isub__(self, other):
         return self.sub(other)
