@@ -138,7 +138,15 @@ class State(Base):
             self.transition_layouts[transition.to_state] = TransitionLayout()
         self.transition_layouts[transition.to_state].inc_ref()
 
-    # TODO remove transition in/out, when remove transition_out decrease ref counter
+    def transition_in_remove(self, transition):
+        self.in_transitions.discard(transition)
+
+    def transition_out_remove(self, transition):
+        self.out_transitions.discard(transition)
+        self.transition_layouts[transition.to_state].dec_ref()
+        if self.transition_layouts[transition.to_state].ref_count == 0:
+            del self.transition_layouts[transition.to_state]
+
 
     @property
     def name(self):
@@ -308,12 +316,16 @@ class Automaton(Base):
         if rmRefEvent:
             transition.event.transitions.discard(transition)
         if rmRefFromState:
-            transition.from_state.out_transitions.discard(transition)
+            # transition.from_state.out_transitions.discard(transition)
+            transition.from_state.transition_out_remove(transition)
         if rmRefToState:
-            transition.to_state.in_transitions.discard(transition)
+            # transition.to_state.in_transitions.discard(transition)
+            transition.to_state.transition_in_remove(transition)
 
     # Editor specific methods
 
+    # These should be calculated by the renderer
+    """
     def state_get_at(self, x, y):
         pass
 
@@ -322,6 +334,7 @@ class Automaton(Base):
 
     def state_auto_position(self):  # OLD: position_states
         pass
+    """
 
     def save(self, file_name):
         pass

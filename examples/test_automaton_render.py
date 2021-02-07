@@ -20,13 +20,23 @@ def create_automaton_01():
     e1 = a.event_add('a', False, True)
     e2 = a.event_add('b', True, True)
     e3 = a.event_add('c', True, True)
-    s1 = a.state_add('q1', x=100, y=100, marked=True, initial=True)
-    s2 = a.state_add('q2', x=250, y=100, marked=True)
+    e4 = a.event_add('d', True, True)
+    s1 = a.state_add('q1', x=100, y=150, marked=True, initial=True)
+    s2 = a.state_add('q2', x=400, y=150, marked=True)
+    s3 = a.state_add('q3', x=250, y=400, marked=True)
 
     a.transition_add(s1, s2, e1)
     a.transition_add(s2, s1, e2)
     a.transition_add(s1, s1, e2)
     a.transition_add(s2, s2, e1)
+    a.transition_add(s1, s3, e3)
+    a.transition_add(s2, s3, e3)
+    a.transition_add(s3, s1, e1)
+    a.transition_add(s3, s2, e2)
+    t = a.transition_add(s3, s3, e3)
+    # a.transition_remove(t)
+    a.transition_add(s1, s2, e4)
+    a.transition_add(s2, s1, e4)
 
     return a
 
