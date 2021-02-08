@@ -17,10 +17,10 @@ from gi.repository import Gtk, Gdk
 def create_automaton_01():
     a = Automaton()
 
-    e1 = a.event_add('a', False, True)
-    e2 = a.event_add('b', True, True)
-    e3 = a.event_add('c', True, True)
-    e4 = a.event_add('d', True, True)
+    e1 = a.event_add('a', True, True)
+    e2 = a.event_add('b', False, True)
+    e3 = a.event_add('c', True, False)
+    e4 = a.event_add('d', False, False)
     s1 = a.state_add('q1', x=100, y=150, marked=True, initial=True)
     s2 = a.state_add('q2', x=400, y=150, marked=True)
     s3 = a.state_add('q3', x=250, y=400, marked=True)
