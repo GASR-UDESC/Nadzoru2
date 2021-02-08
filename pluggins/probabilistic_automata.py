@@ -1,4 +1,4 @@
-from machine.automata import Event, State, Transition, Automaton
+from machine.automaton import Event, State, Transition, Automaton
 
 
 class ProbabilisticTransition:

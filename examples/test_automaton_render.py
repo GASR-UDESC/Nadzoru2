@@ -7,9 +7,10 @@ base_path = os.path.dirname(os.path.dirname(cur_path))
 sys.path.insert(1, base_path)
 
 import pluggins
+from machine.automaton import Automaton
 
-from machine.automata import Automaton
-from gui import AutomatonRender
+import gui
+from render import AutomatonRender
 
 import gi
 from gi.repository import Gtk, Gdk

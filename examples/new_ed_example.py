@@ -8,7 +8,7 @@ sys.path.insert(1, base_path)
 
 import pluggins
 
-from machine.automata import Automaton
+from machine.automaton import Automaton
 
 a = Automaton()
 

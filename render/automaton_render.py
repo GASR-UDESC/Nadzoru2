@@ -1,7 +1,7 @@
 import cairo
 import math
 
-from machine.automata import Automaton
+from machine.automaton import Automaton
 
 
 class Point2D:

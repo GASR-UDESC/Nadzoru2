@@ -3,7 +3,7 @@
 import sys
 
 import pluggins
-from machine.automata import Automaton
+from machine.automaton import Automaton
 from gui import Application
 
 if __name__ == '__main__':
