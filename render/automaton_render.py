@@ -1,7 +1,7 @@
 import cairo
 import math
 
-from machine.automaton import Automaton
+# from machine.automaton import Automaton
 
 
 class Point2D:
@@ -50,7 +50,7 @@ class Point2D:
     def __sub__(self, other):
         return self.copy().sub(other)
 
-    #def __rsub__(self, value):
+    # def __rsub__(self, value):
     #    return self.copy().rm_length(value)
 
     def __isub__(self, other):
@@ -89,7 +89,10 @@ class Point2D:
     # ---- #
 
     def mid_point(self, other):
-        """This is one of the few methods that actually generates a new Point2D object."""
+        """
+            This is one of the few methods that actually generates a new
+            Point2D object.
+        """
         # return (self - other)/2 + other
         new_point = self - other
         new_point /= 2
@@ -107,7 +110,7 @@ class Point2D:
     def distance(self, other):
         return math.sqrt((self.x - other.x)**2 + (self.y - other.y)**2)
 
-    def length(self): # vector norm or magnitude
+    def length(self):  # vector norm or magnitude
         return math.sqrt(self.x**2 + self.y**2)
 
     def normalize(self):
@@ -115,13 +118,16 @@ class Point2D:
         return self
 
     def set_length(self, value):
-        l = self.length()
+        length = self.length()
         self *= value
-        self /= l
+        self /= length
         return self
 
     def rm_length(self, value):
-        """if value is too large it will also swap direction. Take care in case length and value are close."""
+        """
+            if value is too large it will also swap direction.
+            Take care in case length and value are close.
+        """
         return self.set_length(self.length() - value)
 
     def add_length(self, value):
@@ -130,10 +136,12 @@ class Point2D:
     def angle(self, origin, r=None):
         """Get the angle self is based on the origin 'origin'.
         Cairo angles increase cw (as positive y is downwards.
-        a = arccos((x0*x1 + y0*y1) / (sqrt(x0**2 + y0**2) * sqrt(x1**2 + y1**2)))
+        a = arccos((x0*x1 + y0*y1) / (sqrt(x0**2 + y0**2) *
+            sqrt(x1**2 + y1**2)))
         Note that we want the angle to the vector (x1, y1) =  (1,0), so
         a = acos(x0 / (sqrt(x0**2 + y0**2) * sqrt(1**2 + 0)
-        a = acos(x0 / sqrt(x0**2 + y0**2) = acos(x0 / r) where r is the distance
+        a = acos(x0 / sqrt(x0**2 + y0**2) = acos(x0 / r) where r
+        is the distance
         """
         if r is None:
             r = self.distance(origin)
@@ -142,6 +150,7 @@ class Point2D:
             return math.acos(x0 / r)
         else:
             return 2*math.pi - math.acos(x0 / r)
+
 
 class AutomatonRender:
     MIN_RADIUS = 32
@@ -196,15 +205,14 @@ class AutomatonRender:
         elif (not event.controllable) and (not event.observable):
             cfg['color'] = 'r'
 
-
         return cfg
 
-    def write_text(self, cr, x, y, *texts, align=CENTER,
-                   font_size=FONT_SIZE,
-                   font_slant=cairo.FONT_SLANT_OBLIQUE,
-                   font_weight=cairo.FONT_WEIGHT_NORMAL,
-                   colors=None, **kwargs
-        ):
+    def write_text(
+        self, cr, x, y, *texts, align=CENTER, font_size=FONT_SIZE,
+        font_slant=cairo.FONT_SLANT_OBLIQUE,
+        font_weight=cairo.FONT_WEIGHT_NORMAL,
+        colors=None, **kwargs
+    ):
         cr.select_font_face("sans", font_slant, font_weight)
         cr.set_font_size(font_size)
         alltext = ''.join(texts)
@@ -235,7 +243,8 @@ class AutomatonRender:
         # cr.stroke()
         cr.fill()
 
-    def draw_state_transitions(self, cr, from_state, states_radius, factor=1.0, ccw=True):
+    def draw_state_transitions(self, cr, from_state, states_radius, factor=1.0,
+                               ccw=True):
         transitions = dict()
         for trans in from_state.out_transitions:
             if trans.to_state not in transitions:
@@ -248,8 +257,8 @@ class AutomatonRender:
             re = states_radius[to_state]
 
             # centre of each state
-            Vs = Point2D(from_state.x, from_state.y) # start state
-            Ve = Point2D(to_state.x, to_state.y)     # end state
+            Vs = Point2D(from_state.x, from_state.y)  # start state
+            Ve = Point2D(to_state.x, to_state.y)  # end state
             Vm = Ve.mid_point(Vs)  # middle point between states
 
             dist = Vs.distance(Ve)
@@ -263,13 +272,13 @@ class AutomatonRender:
                 while a > 360:
                     a = a - 360
                 V2 = Point2D.from_angle(a)
-                V2.y = -V2.y # cairo works with Y axis pointing down
+                V2.y = -V2.y  # cairo works with Y axis pointing down
                 V3 = Point2D(-V2.x, -V2.y)
             else:
                 V1 = Vm - Vs  # vector from start state centre to middle point
                 if ccw is True:
-                    V2 = V1.copy().orthogonal_ccw() # vector between Vm and Vc
-                    V3 = V1.copy().orthogonal_cw().normalize() # vector to the text direction
+                    V2 = V1.copy().orthogonal_ccw()  # vector between Vm and Vc
+                    V3 = V1.copy().orthogonal_cw().normalize()  # vector to the text direction
                 else:
                     V2 = V1.copy().orthogonal_cw()
                     V3 = V1.copy().orthogonal_ccw().normalize()
@@ -295,7 +304,8 @@ class AutomatonRender:
                 texts.append(event.name)
                 event_cfg = self.get_event_display_cfg(event)
                 colors.append(event_cfg['color'])
-            self.write_text(cr, Vtext.x, Vtext.y, *texts, colors=colors, font_weight=cairo.FONT_WEIGHT_BOLD)
+            self.write_text(cr, Vtext.x, Vtext.y, *texts, colors=colors,
+                            font_weight=cairo.FONT_WEIGHT_BOLD)
 
             # start and end angles of the transition's arc. Initially from centre of start state to centre of end state
             Acs = Vs.angle(Vc, r)  # angle from (1, 0) to the point Vs using Vc as the origin
@@ -305,7 +315,7 @@ class AutomatonRender:
             Aae = 2 * math.asin(self.ARROW_LENGTH/(2*r))  # angle to add/subtract for the arrow end point
 
             # Draw arc and arrow
-            cr.set_source_rgb(0,0,0)
+            cr.set_source_rgb(0, 0, 0)
             if ccw is True:
                 cr.arc(Vc.x, Vc.y, r, Acs + Ads, Ace - Ade - Aae)
                 Varrow = Point2D.from_rad_angle(Ace - Ade).set_length(r).add(Vc)
