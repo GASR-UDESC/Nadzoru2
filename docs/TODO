@@ -1,0 +1,22 @@
+- Main interface [Yuri, André Ruiz]
+    - main.py instanciate a MainGUI class
+    - MainGUI has a GtkNotebook
+    - How to manage the open automata (create, save, load, open in editor)
+
+- Automata Editor [Yuri, Giovanna]
+    - is a class
+    - return a GtkBox that contains ToolBar/ToolPalette, GtkDrawArea with Scroll
+    - Uses the AutomataRender
+
+- Automata core operations [Herbert, Renan, Simone]
+    - Some operations MUST support inplace (default False)
+    - AC/CO
+    - Sync
+    - SupC
+    - save/load file (our own xml format)
+    - import/export: IDES3, TCT
+
+- Automata operation GUI [Vinícius, André Ruiz]
+    - how to instrospect Automata operations?
+
+- Operation script module
