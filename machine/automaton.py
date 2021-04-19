@@ -394,8 +394,6 @@ class Automaton(Base):
         aux = list()
         intersectionEventsSet = list()
 
-        # todo: validate this intersection logic
-        # todo: compare properties and throw error if diffrent?
         for i in range(0, len(args)):
             dictionary.append((args[i].events))
         for i in range(0, len(dictionary)):
