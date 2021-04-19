@@ -2,7 +2,6 @@
 # CLASSES
 #######################################
 
-#testing git commit.
 class Base:
     def __init__(self, *args, **kwargs):
         for key, value in kwargs.items():
@@ -384,7 +383,116 @@ class Automaton(Base):
     def selfloop(self, event_set):
         pass
 
-    def synchronization(self, *args):
+    def synchronization(*args):
+        """ This function returns the accessible part of the synchronous composition. Instead of calculating all composed
+            states and then calculate the accessible part, we only add accessible states to the output."""
+
+        if len(args) < 2:
+            return
+
+        dictionary = list()
+        aux = list()
+        intersectionEventsSet = list()
+
+        # todo: validate this intersection logic
+        # todo: compare properties and throw error if diffrent?
+        for i in range(0, len(args)):
+            dictionary.append((args[i].events))
+        for i in range(0, len(dictionary)):
+            aux.clear()
+            for each in dictionary[i]:
+                aux.append(each.name)
+            intersectionEventsSet.append(aux.copy())
+        while len(intersectionEventsSet) > 1:
+            x = len(intersectionEventsSet)
+            for i in range(1, len(intersectionEventsSet)):
+                intersectionEventsSet.append(set(intersectionEventsSet[0]).intersection(set(intersectionEventsSet[i])))
+            for i in range(1, x):
+                intersectionEventsSet.pop(i)
+            if len(intersectionEventsSet) == 2:
+                intersectionEventsSet.pop(0)
+                break
+
+        G = Automaton()  # function output
+
+        stateTupleStack = list()
+        stateVisitedStack = list()
+        stateMap = dict()
+
+        initialStateTuple = tuple(state.initial_state for state in args)
+        initialStateName = ",".join(state.name for state in initialStateTuple)
+        initialState = G.state_add(initialStateName, initial=True)
+
+        stateTupleStack.append(initialStateTuple)
+        stateMap[initialStateTuple] = initialState
+
+        eventslist = list()
+        eventlist2 = list()
+        nameList = list()
+        while len(stateTupleStack) != 0:
+            eventslist.clear()
+            for each in stateTupleStack[0]:
+                for transition in each.out_transitions:
+                    if eventslist.__contains__(transition.event[0]) == False:
+                        eventslist.append(transition.event[0])
+            for j in range(0, len(eventslist)):
+                if (intersectionEventsSet.__str__().__contains__(eventslist[j]) == False):
+                    nameList.clear()
+                    for state in stateTupleStack[0]:
+                        transitioned = False
+                        for t in state.out_transitions:
+                            if (t.event[0] == eventslist[j]):
+                                transitioned = True
+                                ev = G.event_add(t.event[0], t.event[1], t.event[2])
+                                nameList.append(t.to_state)
+                        if transitioned == False:
+                            nameList.append(state)
+                    stateTuple = tuple(s for s in nameList)
+                    stateName = ",".join(state.name for state in stateTuple)
+                    stateVisited = False
+                    for visited in stateVisitedStack:
+                        if visited == stateTuple:
+                            stateVisited = True
+                            break
+                    if stateVisited == False:
+                        s = G.state_add(stateName)
+                        stateTupleStack.append(stateTuple)
+                else:
+                    # if event is common, it has to be enabled in all states of the tuple
+                    eventIsEnabled = True
+                    for state in stateTupleStack[0]:
+                        # for each state map all the out transitions
+                        eventlist2.clear()
+                        for t in state.out_transitions:
+                            eventlist2.append(t.event[0])
+                        if eventlist2.__str__().__contains__(eventslist[j]) == False:
+                            # if event is not enabled in one state, it should not happen.
+                            eventIsEnabled = False
+                    if eventIsEnabled == True:
+                        # if event is enabled, execute state transition
+                        nameList.clear()
+                        for state in stateTupleStack[0]:
+                            transitioned = False
+                            for t in state.out_transitions:
+                                if (t.event[0] == eventslist[j]):
+                                    transitioned = True
+                                    ev = G.event_add(t.event[0], t.event[1], t.event[2])
+                                    nameList.append(t.to_state)
+                            if transitioned == False:
+                                nameList.append(state)
+                        stateTuple = tuple(s for s in nameList)
+                        stateName = ",".join(state.name for state in stateTuple)
+                        stateVisited = False
+                        for visited in stateVisitedStack:
+                            if visited == stateTuple:
+                                stateVisited = True
+                                break
+                        if stateVisited == False:
+                            s = G.state_add(stateName)
+                            stateTupleStack.append(stateTuple)
+            stateVisitedStack.append(stateTupleStack[0])
+            stateTupleStack.pop(0)
+        return G
         pass
 
     def product(self, *args):
