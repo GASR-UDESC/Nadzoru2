@@ -359,12 +359,31 @@ class Automaton(Base):
         pass
 
     def is_accessible(self):
-        pass
+        isAccessible = True
+        for state in self.states:
+            if ((state != self.initial_state) and not(len(state.in_transitions))):
+                isAccessible = False
+                break
+        return isAccessible
 
     def accessible(self, copy=False):
         self = self if not copy else self.clone()
 
-        # TODO ...
+        transitionsToRemove = list()
+        statesToRemove = list()
+
+        for state in self.states:
+            if ((state != self.initial_state) and not (len(state.in_transitions))):
+                statesToRemove.append(state)
+                for transition in state.out_transitions:
+                    transitionsToRemove.append(transition)
+
+        for transition in transitionsToRemove:
+            if transition != None:
+                self.transition_remove(transition)
+        for state in statesToRemove:
+            if state != None:
+                self.state_remove(state)
 
         return self
 
