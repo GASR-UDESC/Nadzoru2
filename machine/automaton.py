@@ -369,12 +369,25 @@ class Automaton(Base):
     def accessible(self, copy=False):
         self = self if not copy else self.clone()
 
-        transitionsToRemove = list()
+        stateStack = list()
+        visitedStack = list()
+        stateStack.append(self.initial_state)
+
+        while len(stateStack) != 0:
+            for transition in stateStack[0].out_transitions:
+                if transition.to_state != None:
+                    stateStack.append(transition.to_state)
+            visitedStack.append(stateStack[0])
+            stateStack.pop(0)
+
         statesToRemove = list()
+        transitionsToRemove = list()
 
         for state in self.states:
-            if ((state != self.initial_state) and not (len(state.in_transitions))):
+            if not(visitedStack.__contains__(state)):
                 statesToRemove.append(state)
+                for transition in state.in_transitions:
+                    transitionsToRemove.append(transition)
                 for transition in state.out_transitions:
                     transitionsToRemove.append(transition)
 
