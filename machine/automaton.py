@@ -510,7 +510,6 @@ class Automaton(Base):
                     stateTupleStack.append(stateTuple)
                 # TODO how to add only transitions that werent already added
                 t = G.transition_add(G.get_state(currStateName), G.get_state(stateName), transition.event)
-                transitionsadded.append(t)
             stateVisitedStack.append(stateTupleStack[0])
             stateTupleStack.pop(0)
         return G
