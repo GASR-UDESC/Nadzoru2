@@ -2,6 +2,8 @@
 # CLASSES
 #######################################
 
+import copy
+
 class Base:
     def __init__(self, *args, **kwargs):
         for key, value in kwargs.items():
@@ -11,6 +13,9 @@ class Base:
                     class_=self.__class__
                 ))
          # self.__dict__.update(kwargs)
+
+    def copy(self):
+        return copy.deepcopy(self)
 
     @classmethod
     def plugin_append(cls, plugin):
@@ -32,7 +37,6 @@ class Event(Base):
 
     def __str__(self):
         return self.name
-
 
     @property
     def name(self):
@@ -124,7 +128,7 @@ class State(Base):
         super().__init__(*args, **kwargs)
 
     def __str__(self):
-        return self.name
+        return "(" + self.name + ")"
 
     # ---------------------------------------------
 
@@ -146,6 +150,11 @@ class State(Base):
         if self.transition_layouts[transition.to_state].ref_count == 0:
             del self.transition_layouts[transition.to_state]
 
+    def get_target_from_event_name(self, event_name):
+        for ot in self.out_transitions:
+            if ot.event.name == event_name:
+                return ot.to_state
+        return None
 
     @property
     def name(self):
@@ -213,6 +222,9 @@ class Transition(Base):
         self.event = event
         super().__init__(*args, **kwargs)
 
+    def __str__(self):
+        return "{from_state:<8}, {event:<8} --> {to_state}".format(from_state=str(self.from_state), event=str(self.event), to_state=str(self.to_state))
+
     @property
     def from_state(self):
         return self._from_state
@@ -252,9 +264,10 @@ class Automaton(Base):
         transitions = list()
         for s in self.states:
             transitions = transitions + list(s.out_transitions)
-        return "Events: {events} \nStates: {states}\nTransitions:\n    {transitions}".format(
+        return "Events: {events} \nStates: {states}\nInitial: {initial}\nTransitions:\n    {transitions}".format(
             events = ", ".join(map(str, self.events)),
-            states = ", ".join(map(str, self.states)),
+            states = "; ".join(map(str, self.states)),
+            initial = str(self.initial_state),
             transitions = "\n    ".join(map(str, transitions)),
         )
         # deletes transitions which have state as destiny:
@@ -275,15 +288,11 @@ class Automaton(Base):
                 self.transition_remove(t, rmRefEvent=True)
             return True
 
-    def has_event(self, event):
-        hasEvent = False
-
+    def has_event(self, event_name):
         for ev in self.events:
-            if ev.name == event.name:
-                hasEvent = True
-                break
-
-        return hasEvent
+            if ev.name == event_name:
+                return True
+        return False
 
     def state_add(self, *args, initial=False, **kwargs):
         s = self.state_class(*args, **kwargs)
@@ -292,24 +301,17 @@ class Automaton(Base):
             self.initial_state = s
         return s
 
-    def has_state(self, statename):
-        hasState = False
-
+    def has_state(self, state_name):
         for s in self.states:
-            if s.name == statename:
-                hasState = True
-                break
+            if s.name == state_name:
+                return True
+        return False
 
-        return hasState
-
-    def get_state(self, statename):
-
-        s = None
+    def get_state(self, state_name):
         for state in self.states:
-            if state.name == statename:
-                s = state
-                break
-        return state
+            if state.name == state_name:
+                return state
+        return None
 
     # TODO: test
     def state_remove(self, state):
@@ -482,7 +484,7 @@ class Automaton(Base):
                     for transition in state.out_transitions:
                         if transition.event.name == t.event.name:
                             transitioned = True
-                            if(G.has_event(transition.event) == False):
+                            if(G.has_event(transition.event.name) == False):
                                 G.event_add(transition.event.name, transition.event.controllable, transition.event.observable)
                             nameList.append(transition.to_state)
                     if transitioned == False:
@@ -497,7 +499,71 @@ class Automaton(Base):
             stateVisitedStack.append(stateTupleStack[0])
             stateTupleStack.pop(0)
         return G
-        pass
+
+
+    def merge_events(self, *args):
+        "Add events from *args into self"
+        event_names = {event.name for event in self.events}  # set
+        added_events = list()  # so we can undo in case of error
+        for g in args:
+            for ev in g.events:
+                if ev.name not in event_names:
+                    new_event = ev.copy()
+                    self.events.add(new_event)
+                    added_events.append(new_event)
+                    event_names.add(ev.name)
+                else:
+                    pass  # TODO (1) check if ev and self.get_event(ev.name) are equivallent (method in event)
+                          #      (2) if not undo previously added events (from added_events)
+                          #      (3) raise Error ErrorMultiplePropetiesForEventName
+
+    def synchronization2(*args):
+        """ This function returns the accessible part of the synchronous composition. Instead of calculating all composed
+            states and then calculate the accessible part, we only add accessible states to the output."""
+
+        if len(args) < 2:
+            return
+
+        G = args[0].__class__()  # function output
+
+        G.merge_events(*args)
+
+        state_stack = list()
+        state_map = dict()  # maps tuple of states (from args) to respective state in G
+
+        def G_state_add(state_tuple, initial=False):
+            state_name = ",".join(state.name for state in state_tuple)
+            s = G.state_add(state_name, initial=initial)
+            state_map[state_tuple] = s
+            state_stack.append(state_tuple)
+            return s
+
+        init_state_tuple = tuple(state.initial_state for state in args)
+        G_state_add(init_state_tuple, True)
+
+        while len(state_stack) != 0:
+            state_tuple = state_stack.pop()
+            source_state = state_map[state_tuple]
+            for event in G.events:
+                enabled = True
+                target_state_tuple = list()
+                for g, s in zip(args, state_tuple):
+                    if g.has_event(event.name):
+                        target = s.get_target_from_event_name(event.name)
+                        if target is None:  # forbidden, so no transition with 'event'
+                            enabled = False
+                            break
+                        target_state_tuple.append(target)
+                    else:  # 'event' not in 'g', stay in s
+                        target_state_tuple.append(s)
+                if enabled:
+                    target_state_tuple = tuple(target_state_tuple)
+                    if target_state_tuple not in state_map:
+                        target_state = G_state_add(target_state_tuple, False)
+                    else:
+                        target_state = state_map[target_state_tuple]
+                    G.transition_add(source_state, target_state, event)
+        return G
 
     def product(self, *args):
         pass
