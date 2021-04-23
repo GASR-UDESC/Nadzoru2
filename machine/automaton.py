@@ -451,36 +451,20 @@ class Automaton(Base):
         if len(args) < 2:
             return
 
-        aux = list()
-        intersectionEventsSet = list()
-
-        #finds intersection events
-        for i in range(0, len(args)):
-            for each in args[i].events:
-                aux.append(each.name)
-        for i in range(0,len(aux)):
-            for j in range(0,len(aux)):
-                if (aux[i] == aux[j]) and (i != j):
-                    if not(intersectionEventsSet.__contains__(aux[i])):
-                        intersectionEventsSet.append(aux[i])
-
         G = Automaton()  # function output
 
         stateTupleStack = list()
         stateVisitedStack = list()
-        stateMap = dict()
 
         initialStateTuple = tuple(state.initial_state for state in args)
         initialStateName = ",".join(state.name for state in initialStateTuple)
-        initialState = G.state_add(initialStateName, initial=True)
+        G.state_add(initialStateName, initial=True)
 
         stateTupleStack.append(initialStateTuple)
-        stateMap[initialStateTuple] = initialState
         stateVisitedStack.append(initialStateTuple)
 
         transitionlist = list()
         nameList = list()
-        transitionsadded = list()
 
         while len(stateTupleStack) != 0:
             transitionlist.clear()
