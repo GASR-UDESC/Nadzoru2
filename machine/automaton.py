@@ -3,6 +3,7 @@
 #######################################
 
 import copy
+import functools
 
 class Base:
     def __init__(self, *args, **kwargs):
@@ -128,7 +129,10 @@ class State(Base):
         super().__init__(*args, **kwargs)
 
     def __str__(self):
-        return "(" + self.name + ")"
+        if self.marked:
+            return "(" + self.name + ")"
+        else:
+            return "[" + self.name + "]"
 
     # ---------------------------------------------
 
@@ -532,8 +536,9 @@ class Automaton(Base):
         state_map = dict()  # maps tuple of states (from args) to respective state in G
 
         def G_state_add(state_tuple, initial=False):
+            marked = functools.reduce(lambda val, s: val and s.marked, state_tuple, True)
             state_name = ",".join(state.name for state in state_tuple)
-            s = G.state_add(state_name, initial=initial)
+            s = G.state_add(state_name, initial=initial, marked=marked)
             state_map[state_tuple] = s
             state_stack.append(state_tuple)
             return s
