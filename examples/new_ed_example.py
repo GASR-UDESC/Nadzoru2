@@ -9,6 +9,46 @@ sys.path.insert(1, base_path)
 import pluggins
 
 from machine.automaton import Automaton
+g = Automaton()
+
+a = g.event_add('a', True, True)
+e = g.event_add('e', True, True)
+c = g.event_add('c', True, True)
+x = g.event_add('g', True, True)
+h = g.event_add('h', True, True)
+d = g.event_add('d', True, True)
+
+s1 = g.state_add('1', marked=True, initial=True)
+s2 = g.state_add('2', marked=True)
+s3 = g.state_add('3', marked=True)
+s4 = g.state_add('4', marked=True)
+s5 = g.state_add('5', marked=False)
+s6 = g.state_add('6', marked=False)
+s7 = g.state_add('7', marked=False)
+s8 = g.state_add('8', marked=True)
+s9 = g.state_add('9', marked=False)
+s10 = g.state_add('10', marked=True)
+s11 = g.state_add('11', marked=True)
+
+t1 = g.transition_add(s1, s2, a)
+t2 = g.transition_add(s1, s8, d)
+t3 = g.transition_add(s2, s3, e)
+t4 = g.transition_add(s2, s4, x)
+t5 = g.transition_add(s3, s5, c)
+t6 = g.transition_add(s4, s7, h)
+t7 = g.transition_add(s5, s6, x)
+t8 = g.transition_add(s6, s6, x)
+t9 = g.transition_add(s7, s7, h)
+t10 = g.transition_add(s8, s9, c)
+t11 = g.transition_add(s8, s11, a)
+t12 = g.transition_add(s11, s11, a)
+t13 = g.transition_add(s9, s10, x)
+t14 = g.transition_add(s10, s10, x)
+
+print(g)
+print('----------------')
+y = g.coaccessible()
+print(y)
 
 '''
 g1 = Automaton()
@@ -34,9 +74,9 @@ s5 = g2.state_add('1', marked=False)
 t4 = g2.transition_add(s4, s5, ev3)
 t5 = g2.transition_add(s5, s4, ev4)
 
-print(g1.synchronization(g2))
-'''
+print(g1.accessible())
 
+#
 sensor = Automaton()
 chave = Automaton()
 espec = Automaton()
@@ -84,4 +124,4 @@ print("-------------")
 # print(sensor.synchronization(chave, espec))
 print(sensor.synchronization2(chave, espec))
 
-
+'''

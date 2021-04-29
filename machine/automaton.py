@@ -393,34 +393,42 @@ class Automaton(Base):
         isAccessible = True
         for state in self.states:
             if ((state != self.initial_state) and not(len(state.in_transitions))):
-                isAccessible = False
-                break
+                return isAccessible
         return isAccessible
 
     def accessible(self, copy=False):
-        self = self if not copy else self.clone()
 
+        stateDict = dict()
         stateStack = list()
-        visitedStack = list()
-        stateStack.append(self.initial_state)
+
+        stateNumber = 0
+        statesVisited = 0
+
+        for state in self.states:
+            stateDict[state] = False
+            stateNumber += 1
+
+        stateStack.append(self._initial_state)
+        stateDict[self._initial_state] = True
 
         while len(stateStack) != 0:
-            for transition in stateStack[0].out_transitions:
-                if transition.to_state != None:
+            statesVisited += 1
+            state = stateStack.pop()
+            for transition in state.out_transitions:
+                if stateDict[transition.to_state] == False:
+                    stateDict[transition.to_state] = True
                     stateStack.append(transition.to_state)
-            visitedStack.append(stateStack[0])
-            stateStack.pop(0)
+
+        if(statesVisited == stateNumber):
+            return self
 
         statesToRemove = list()
         transitionsToRemove = list()
-
-        for state in self.states:
-            if not(visitedStack.__contains__(state)):
-                statesToRemove.append(state)
+        for state in stateDict:
+            if stateDict[state] == False:
                 for transition in state.in_transitions:
                     transitionsToRemove.append(transition)
-                for transition in state.out_transitions:
-                    transitionsToRemove.append(transition)
+                statesToRemove.append(state)
 
         for transition in transitionsToRemove:
             if transition != None:
@@ -435,7 +443,50 @@ class Automaton(Base):
         pass
 
     def coaccessible(self, copy=False):
-        pass
+
+        stateDict = dict()
+        stateMarkedStack = list()
+
+        nStates = 0
+        nMarkedStates = 0
+        nCoaccessibleStates = 0
+        for state in self.states:
+            stateDict[state] = state.marked
+            if(state.marked):
+                stateMarkedStack.append(state)
+                nMarkedStates += 1
+            nStates +=1
+
+        if(nMarkedStates == nStates):
+            return self
+
+        while len(stateMarkedStack) != 0:
+            nCoaccessibleStates += 1
+            state = stateMarkedStack.pop()
+            for transition in state.in_transitions:
+                if stateDict[transition.from_state] == False:
+                    stateDict[transition.from_state] = True
+                    stateMarkedStack.append(transition.from_state)
+
+        if (nStates == nCoaccessibleStates):
+            return self
+
+        statesToRemove = list()
+        transitionsToRemove = list()
+        for state in stateDict:
+            if stateDict[state] == False:
+                for transition in state.in_transitions:
+                    transitionsToRemove.append(transition)
+                statesToRemove.append(state)
+
+        for transition in transitionsToRemove:
+            if transition != None:
+                self.transition_remove(transition)
+        for state in statesToRemove:
+            if state != None:
+                self.state_remove(state)
+
+        return self
 
     def trim(self, copy=False):
         return self.coaccessible(copy).accessible()
