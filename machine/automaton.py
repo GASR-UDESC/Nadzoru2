@@ -556,7 +556,6 @@ class Automaton(Base):
             stateTupleStack.pop(0)
         return G
 
-
     def merge_events(self, *args):
         "Add events from *args into self"
         event_names = {event.name for event in self.events}  # set
@@ -573,7 +572,7 @@ class Automaton(Base):
                           #      (2) if not undo previously added events (from added_events)
                           #      (3) raise Error ErrorMultiplePropetiesForEventName
 
-    def synchronization2(*args):
+    def synchronization2(*args, output_univocal=False):
         """ This function returns the accessible part of the synchronous composition. Instead of calculating all composed
             states and then calculate the accessible part, we only add accessible states to the output."""
 
@@ -631,7 +630,13 @@ class Automaton(Base):
     def univocal(self, *args):
         pass
 
-    def supC(G, K):
+    def bad_states(G, R):
+        bad_states = set()
+        # TODO ...
+        return bad_states
+
+
+    def sup_c(G, R, univocal_map=None):
         pass
 
     def choice_problem_check(self):
