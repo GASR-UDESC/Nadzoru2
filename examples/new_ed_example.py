@@ -40,15 +40,19 @@ t7 = g.transition_add(s5, s6, x)
 t8 = g.transition_add(s6, s6, x)
 t9 = g.transition_add(s7, s7, h)
 t10 = g.transition_add(s8, s9, c)
-t11 = g.transition_add(s8, s11, a)
-t12 = g.transition_add(s11, s11, a)
+#t11 = g.transition_add(s8, s11, a)
+#t12 = g.transition_add(s11, s11, a)
 t13 = g.transition_add(s9, s10, x)
 t14 = g.transition_add(s10, s10, x)
 
+y = g.accessible()
+
 print(g)
 print('----------------')
-y = g.coaccessible()
 print(y)
+print('----------------')
+print('g', g.is_accessible())
+print('y', y.is_accessible())
 
 '''
 g1 = Automaton()

@@ -325,9 +325,9 @@ class Automaton(Base):
             return False
         else:
             for t in state.in_transitions:
-                self.transition_remove(t, rmRefToState=True)
+                self.transition_remove(t)
             for t in state.out_transitions:
-                self.transition_remove(t, rmRefFromState=True)
+                self.transition_remove(t)
             return True
 
     @property
@@ -391,63 +391,64 @@ class Automaton(Base):
     # Basic operations (e.g., sync, supC)
 
     def clone(self):
-        pass
+        return self.copy()
+
+
+    def detect_accessible_state(self):
+        states_dict = dict()
+        states_stack = list()
+
+        states_number = 0
+        accessible_states = 0
+
+        for state in self.states:
+            states_dict[state] = False
+            states_number += 1
+
+        if self.initial_state is not None:
+            states_stack.append(self.initial_state)
+            states_dict[self.initial_state] = True
+
+        """Detect non-accessible states"""
+        while len(states_stack) != 0:
+            accessible_states += 1
+            state = states_stack.pop()
+            for transition in state.out_transitions:
+                if states_dict[transition.to_state] == False:
+                    states_dict[transition.to_state] = True
+                    states_stack.append(transition.to_state)
+
+        return states_dict, states_number, accessible_states
+
 
     def is_accessible(self):
-        isAccessible = True
-        for state in self.states:
-            if ((state != self.initial_state) and not(len(state.in_transitions))):
-                return isAccessible
-        return isAccessible
+        states_dict, states_number, accessible_states = self.detect_accessible_state()
+        return states_number == accessible_states
 
-    def accessible(self, copy=False):
+    def accessible(self, inplace=False):
+        if not inplace:
+            pass
+            """
+            TODO: create non-inplace version (adding states rather than
+            copy everythin and then removing
+            """
+        self = self.copy()
 
-        stateDict = dict()
-        stateStack = list()
+        states_dict, states_number, accessible_states = self.detect_accessible_state()
 
-        stateNumber = 0
-        statesVisited = 0
-
-        for state in self.states:
-            stateDict[state] = False
-            stateNumber += 1
-
-        stateStack.append(self._initial_state)
-        stateDict[self._initial_state] = True
-
-        while len(stateStack) != 0:
-            statesVisited += 1
-            state = stateStack.pop()
-            for transition in state.out_transitions:
-                if stateDict[transition.to_state] == False:
-                    stateDict[transition.to_state] = True
-                    stateStack.append(transition.to_state)
-
-        if(statesVisited == stateNumber):
+        if(accessible_states == states_number):
             return self
 
-        statesToRemove = list()
-        transitionsToRemove = list()
-        for state in stateDict:
-            if stateDict[state] == False:
-                for transition in state.in_transitions:
-                    transitionsToRemove.append(transition)
-                statesToRemove.append(state)
-
-        for transition in transitionsToRemove:
-            if transition != None:
-                self.transition_remove(transition)
-        for state in statesToRemove:
-            if state != None:
+        """Remove non-acessible states"""
+        for state, is_accessible in states_dict.items():
+            if is_accessible == False:
                 self.state_remove(state)
-
         return self
 
     def is_coaccessible(self):
         pass
 
     def coaccessible(self, copy=False):
-
         stateDict = dict()
         stateMarkedStack = list()
 
@@ -456,7 +457,7 @@ class Automaton(Base):
         nCoaccessibleStates = 0
         for state in self.states:
             stateDict[state] = state.marked
-            if(state.marked):
+            if state.marked:
                 stateMarkedStack.append(state)
                 nMarkedStates += 1
             nStates +=1
