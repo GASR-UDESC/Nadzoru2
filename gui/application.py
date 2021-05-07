@@ -174,7 +174,6 @@ class MainWindow(Gtk.ApplicationWindow):
 
     def add_tab(self, widget, title, destroy_callback, param):
         note = self.note.insert_page(widget, Gtk.Label.new(title), -1)
-        # self.tab.add({ destroy_callback = destroy_callback, param = param, widget = widget }, note + 1)
         self.show_all()
         self.note.set_current_page(note)
 
@@ -227,8 +226,6 @@ class Application(Gtk.Application):
         options = command_line.get_options_dict()
         options = options.end().unpack()
 
-        # if "test" in options:
-        #    print("Test argument recieved: %s" % options["test"])
         self.activate()
         return
 
@@ -245,5 +242,4 @@ class Application(Gtk.Application):
         print("You saved the automata")
 
     def on_quit(self, action, param):
-        pass
-        # self.quit()
+        self.quit()
