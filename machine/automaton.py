@@ -290,6 +290,7 @@ class Automaton(Base):
             event = self.events[event_name]
             del self.events[event_name]
         except KeyError:
+            print("event_remove_by_name")
             return False
         else:
             for t in event.transitions:
@@ -315,6 +316,7 @@ class Automaton(Base):
         try:
             self.states.remove(state)
         except KeyError:
+            print("state_remove")
             return False
         else:
             if self.initial_state == state:

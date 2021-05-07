@@ -28,7 +28,6 @@ class MainWindow(Gtk.ApplicationWindow):
         # self.append_menu_item('file', "_Close Tab", "Close The Active Tab", 'gtk-delete', self.remove_current_tab, self )
         # self.append_menu_separator('menubar')
         # self.append_menu_item('file', "_Quit nadzoru", "Quit nadzoru", 'gtk-quit', Gtk.main_quit, self )
-
         self.dialogCurrentFolder = None
 
         self.vbox.pack_start(self.menubar, False, False, 0)
@@ -37,7 +36,7 @@ class MainWindow(Gtk.ApplicationWindow):
 
         self.set_default_size(1000, 800)
         self.set_position(Gtk.WindowPosition.CENTER)
-        self.connect("delete-event", Gtk.main_quit)
+        #self.connect("delete-event", Gtk.main_quit)
 
         self.note.popup_enable()
         self.note.set_scrollable(True)
@@ -207,16 +206,13 @@ class Application(Gtk.Application):
         super().__init__(
             *args,
             application_id="org.nadzoru2.application",
-            flags=Gio.ApplicationFlags.HANDLES_COMMAND_LINE,
             **kwargs
         )
         self.window = None
-        self.add_main_option("test", ord(
-            "t"), GLib.OptionFlags.NONE, GLib.OptionArg.NONE, "Command line test", None,)
+        # self.add_main_option("test", ord("t"), GLib.OptionFlags.NONE, GLib.OptionArg.NONE, "Command line test", None,)
 
     def do_startup(self):
         Gtk.Application.do_startup(self)
-        
         builder = Gtk.Builder()
         self.menubar = builder.get_object("gui/ui/menubar.ui")
         self.set_app_menu(self.menubar)
@@ -225,16 +221,14 @@ class Application(Gtk.Application):
     def do_activate(self):
         if not self.window:
             self.window = MainWindow(application=self, title="Nadzoru 2")
-
         self.window.present()
 
     def do_command_line(self, command_line):
         options = command_line.get_options_dict()
         options = options.end().unpack()
 
-        if "test" in options:
-            print("Test argument recieved: %s" % options["test"])
-
+        # if "test" in options:
+        #    print("Test argument recieved: %s" % options["test"])
         self.activate()
         return
 
@@ -251,4 +245,5 @@ class Application(Gtk.Application):
         print("You saved the automata")
 
     def on_quit(self, action, param):
-        self.quit()
+        pass
+        # self.quit()
