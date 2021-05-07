@@ -230,7 +230,8 @@ class Application(Gtk.Application):
         builder = Gtk.Builder()
         builder.add_from_file("gui/ui/menubar.ui")
         self.menubar = builder.get_object("menubar")
-        self.set_app_menu(self.menubar)
+        # self.set_app_menu(self.menubar)
+        self.set_menubar(self.menubar)
         print(self.menubar)
 
     def do_activate(self):
@@ -241,7 +242,7 @@ class Application(Gtk.Application):
 
     def do_command_line(self, command_line):
         options = command_line.get_options_dict()
-        options = options.end().unpack())
+        options = options.end().unpack()
 
         self.activate()
         return
