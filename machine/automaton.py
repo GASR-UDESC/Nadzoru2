@@ -248,7 +248,7 @@ class Transition(Base):
             self._to_state = value
 
 
-def __str__(self):
+    def __str__(self):
         return "{from_state}, {event} --> {to_state}".format(from_state=self.from_state, to_state=self.to_state, event=self.event)
 
 
@@ -259,7 +259,8 @@ class Automaton(Base):
     type_str = 'FSA'
 
     def __init__(self, *args, **kwargs):
-        self.events = set()
+        #  self.events = set()
+        self.events = dict()  # map event_name to event class, names must be unique!
         self.states = set()
         self.initial_state = None
         super().__init__(*args, **kwargs)
@@ -278,25 +279,29 @@ class Automaton(Base):
 
     def event_add(self, *args, **kwargs):
         e = self.event_class(*args, **kwargs)
-        self.events.add(e)
+        if e.name in self.events:
+            return None
+        self.events[e.name] = e
         return e
 
     # TODO: test
-    def event_remove(self, event):
+    def event_remove_by_name(self, event_name):
         try:
-            self.events.remove(event)
-        except KeyErorr:
+            event = self.events[event_name]
+            del self.events[event_name]
+        except KeyError:
             return False
         else:
             for t in event.transitions:
-                self.transition_remove(t, rmRefEvent=True)
+                self.transition_remove(t)
             return True
 
-    def has_event(self, event_name):
-        for ev in self.events:
-            if ev.name == event_name:
-                return True
-        return False
+    def event_remove(self, event):
+        """event's name are unique"""
+        return self.event_remove_by_name(event.name)
+
+    def has_event_name(self, event_name):
+        return event_name in self.events  # check if the event_name key exists in self.events
 
     def state_add(self, *args, initial=False, **kwargs):
         s = self.state_class(*args, **kwargs)
@@ -305,25 +310,15 @@ class Automaton(Base):
             self.initial_state = s
         return s
 
-    def has_state(self, state_name):
-        for s in self.states:
-            if s.name == state_name:
-                return True
-        return False
-
-    def get_state(self, state_name):
-        for state in self.states:
-            if state.name == state_name:
-                return state
-        return None
-
     # TODO: test
     def state_remove(self, state):
         try:
             self.states.remove(state)
-        except KeyErorr:
+        except KeyError:
             return False
         else:
+            if self.initial_state == state:
+                self.initial_state = None
             for t in state.in_transitions:
                 self.transition_remove(t)
             for t in state.out_transitions:
@@ -346,15 +341,10 @@ class Automaton(Base):
         return t
 
     # TODO: test
-    def transition_remove(self, transition, rmRefEvent=True, rmRefFromState=True, rmRefToState=True):
-        if rmRefEvent:
-            transition.event.transitions.discard(transition)
-        if rmRefFromState:
-            # transition.from_state.out_transitions.discard(transition)
-            transition.from_state.transition_out_remove(transition)
-        if rmRefToState:
-            # transition.to_state.in_transitions.discard(transition)
-            transition.to_state.transition_in_remove(transition)
+    def transition_remove(self, transition):
+        transition.event.transitions.discard(transition)
+        transition.from_state.transition_out_remove(transition)
+        transition.to_state.transition_in_remove(transition)
 
     # Editor specific methods
 
@@ -496,69 +486,15 @@ class Automaton(Base):
     def trim(self, copy=False):
         return self.coaccessible(copy).accessible()
 
-    def incoaccessible_states_join(self):
+    def non_coaccessible_states_join(self):
         pass
 
     def selfloop(self, event_set):
         pass
 
-    def synchronization(*args):
-        """ This function returns the accessible part of the synchronous composition. Instead of calculating all composed
-            states and then calculate the accessible part, we only add accessible states to the output."""
-
-        if len(args) < 2:
-            return
-
-        G = Automaton()  # function output
-
-        stateTupleStack = list()
-        stateVisitedStack = list()
-
-        initialStateTuple = tuple(state.initial_state for state in args)
-        initialStateName = ",".join(state.name for state in initialStateTuple)
-        G.state_add(initialStateName, initial=True)
-
-        stateTupleStack.append(initialStateTuple)
-        stateVisitedStack.append(initialStateTuple)
-
-        transitionlist = list()
-        nameList = list()
-
-        while len(stateTupleStack) != 0:
-            transitionlist.clear()
-            for each in stateTupleStack[0]:
-                for transition in each.out_transitions:
-                    #this is not working
-                    if transitionlist.__contains__(transition) == False:
-                        transitionlist.append(transition)  # transitionlist holds the available transitions in the state of the tuple
-            for t in transitionlist:
-                nameList.clear()
-                # if event is common, it has to be enabled in all states of the tuple
-                for state in stateTupleStack[0]:
-                    currStateName = ",".join(state.name for state in stateTupleStack[0])
-                    transitioned = False
-                    for transition in state.out_transitions:
-                        if transition.event.name == t.event.name:
-                            transitioned = True
-                            if(G.has_event(transition.event.name) == False):
-                                G.event_add(transition.event.name, transition.event.controllable, transition.event.observable)
-                            nameList.append(transition.to_state)
-                    if transitioned == False:
-                        nameList.append(state)
-                stateTuple = tuple(s for s in nameList)
-                stateName = ",".join(state.name for state in stateTuple)
-                if G.has_state(stateName) == False:
-                    G.state_add(stateName)
-                    stateTupleStack.append(stateTuple)
-                # TODO how to add only transitions that werent already added
-                t = G.transition_add(G.get_state(currStateName), G.get_state(stateName), transition.event)
-            stateVisitedStack.append(stateTupleStack[0])
-            stateTupleStack.pop(0)
-        return G
-
-    def merge_events(self, *args):
-        "Add events from *args into self"
-        event_names = {event.name for event in self.events}  # set
+    def _merge_events(self, *args):
+        "Add events from *args into self, self may already have events"
+        event_names = {event.name for event in self.events}  # set, initiate with events' names already in self
         added_events = list()  # so we can undo in case of error
         for g in args:
             for ev in g.events:
@@ -572,7 +508,7 @@ class Automaton(Base):
                           #      (2) if not undo previously added events (from added_events)
                           #      (3) raise Error ErrorMultiplePropetiesForEventName
 
-    def synchronization2(*args, output_univocal=False):
+    def synchronization(*args, output_univocal=False):
         """ This function returns the accessible part of the synchronous composition. Instead of calculating all composed
             states and then calculate the accessible part, we only add accessible states to the output."""
 
@@ -581,7 +517,7 @@ class Automaton(Base):
 
         G = args[0].__class__()  # function output
 
-        G.merge_events(*args)
+        G._merge_events(*args)
 
         state_stack = list()
         state_map = dict()  # maps tuple of states (from args) to respective state in G
@@ -604,7 +540,7 @@ class Automaton(Base):
                 enabled = True
                 target_state_tuple = list()
                 for g, s in zip(args, state_tuple):
-                    if g.has_event(event.name):
+                    if g.has_event_name(event.name):
                         target = s.get_target_from_event_name(event.name)
                         if target is None:  # forbidden, so no transition with 'event'
                             enabled = False
@@ -627,12 +563,39 @@ class Automaton(Base):
     def projection(self, *args):
         pass
 
-    def univocal(self, *args):
-        pass
+    def check_equal_event_set(self, other):
+        for event_name in self.events:
+            if not other.has_event_name(event_name):
+                return False
+        for event_name in other.events:
+            if not self.has_event_name(event_name):
+                return False
+        return True
+
+    def univocal(G, R):
+        if G.check_equal_event_set(R) is False:
+            raise Exception   # TODO: custom error that can be catch by application
+
+        univocal_map = {R.initial_state: G.initial_state} # [state in R] to [state in G]
+        state_stack = [(G.initial_state, R.initial_state)]
+
+        while len(state_stack) > 0:
+            s_g, s_r = state_stack.pop()
+            for trans_r in s_r:
+                if trans_r.to_state not in univocal_map:
+                    event_name = trans_r.event.name
+                    t_r = trans_r.to_state
+                    t_g = s_g.get_target_from_event_name(event_name)
+                    univocal_map[t_r] = t_g
+                    state_stack.append((t_g, t_r))
+        return univocal_map
 
     def bad_states(G, R):
+        univocal_map = G.univocal(R)
         bad_states = set()
+
         # TODO ...
+
         return bad_states
 
 
