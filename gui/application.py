@@ -3,6 +3,9 @@ import gi
 from gi.repository import GLib, Gio, Gtk
 import os
 
+MENU_XML = """
+
+"""
 class MainWindow(Gtk.ApplicationWindow):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -21,8 +24,8 @@ class MainWindow(Gtk.ApplicationWindow):
         self.actions = {}
 
         # Menu
-        self.menu = {}
-        self.menu_item = {}
+        # self.menu = {}
+        # self.menu_item = {}
 
         # self.append_menu('file', "_File")
         # self.append_menu_item('file', "_Close Tab", "Close The Active Tab", 'gtk-delete', self.remove_current_tab, self )
@@ -37,7 +40,7 @@ class MainWindow(Gtk.ApplicationWindow):
 
         self.set_default_size(1000, 800)
         self.set_position(Gtk.WindowPosition.CENTER)
-        self.connect("delete-event", Gtk.main_quit)
+        # self.connect("delete-event", Gtk.main_quit)
 
         self.note.popup_enable()
         self.note.set_scrollable(True)
@@ -216,9 +219,21 @@ class Application(Gtk.Application):
 
     def do_startup(self):
         Gtk.Application.do_startup(self)
-        
+
+        def create_action(action_name, callback):
+            action = Gio.SimpleAction.new(action_name, None)
+            action.connect("activate", callback)
+            self.add_action(action)
+
+        create_action("new", self.on_new_automata)
+        create_action("load", self.on_load_automata)
+        create_action("save", self.on_save_automata)
+        create_action("edit", self.on_op_editor_automata)
+        create_action("quit", self.on_quit)
+
         builder = Gtk.Builder()
-        self.menubar = builder.get_object("gui/ui/menubar.ui")
+        builder.add_from_file("gui/ui/menubar.ui")
+        self.menubar = builder.get_object("menubar")
         self.set_app_menu(self.menubar)
         print(self.menubar)
 
