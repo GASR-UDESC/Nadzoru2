@@ -436,49 +436,51 @@ class Automaton(Base):
         return self
 
     def is_coaccessible(self):
-        pass
+        states_dict, states_number, coaccessible_states = self.detect_coaccessible_state()
+        return states_number == coaccessible_states
 
-    def coaccessible(self, copy=False):
-        stateDict = dict()
-        stateMarkedStack = list()
+    def detect_coaccessible_state(self):
+        states_dict = dict()
+        states_marked_stack = list()
 
-        nStates = 0
-        nMarkedStates = 0
-        nCoaccessibleStates = 0
+        states_number = 0
+        coaccessible_states = 0
+        marked_states = 0
+
         for state in self.states:
-            stateDict[state] = state.marked
+            states_dict[state] = state.marked
             if state.marked:
-                stateMarkedStack.append(state)
-                nMarkedStates += 1
-            nStates +=1
+                states_marked_stack.append(state)
+                marked_states += 1
+            states_number += 1
 
-        if(nMarkedStates == nStates):
-            return self
-
-        while len(stateMarkedStack) != 0:
-            nCoaccessibleStates += 1
-            state = stateMarkedStack.pop()
+        while len(states_marked_stack) != 0:
+            coaccessible_states += 1
+            state = states_marked_stack.pop()
             for transition in state.in_transitions:
-                if stateDict[transition.from_state] == False:
-                    stateDict[transition.from_state] = True
-                    stateMarkedStack.append(transition.from_state)
+                if states_dict[transition.from_state] == False:
+                    states_dict[transition.from_state] = True
+                    states_marked_stack.append(transition.from_state)
 
-        if (nStates == nCoaccessibleStates):
+        return states_dict, states_number, coaccessible_states
+
+    def coaccessible(self, inplace=False):
+        if not inplace:
+            pass
+            """
+            TODO: create non-inplace version (adding states rather than
+            copy everythin and then removing
+            """
+        self = self.copy()
+
+        states_dict, states_number, coaccessible_states = self.detect_coaccessible_state()
+
+        if (coaccessible_states == states_number):
             return self
 
-        statesToRemove = list()
-        transitionsToRemove = list()
-        for state in stateDict:
-            if stateDict[state] == False:
-                for transition in state.in_transitions:
-                    transitionsToRemove.append(transition)
-                statesToRemove.append(state)
-
-        for transition in transitionsToRemove:
-            if transition != None:
-                self.transition_remove(transition)
-        for state in statesToRemove:
-            if state != None:
+        """Remove non-coacessible states"""
+        for state, is_coaccessible in states_dict.items():
+            if is_coaccessible == False:
                 self.state_remove(state)
 
         return self
