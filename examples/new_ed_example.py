@@ -46,15 +46,68 @@ t12 = g.transition_add(s11, s11, a)
 t14 = g.transition_add(s10, s10, x)
 
 y = g.accessible()
-
+w = g.coaccessible()
 #print(g)
 #print('----------------')
 print(y)
+print(w)
 #print('----------------')
 #print('g', g.is_accessible())
 #print('y', y.is_accessible())
-
 '''
+g1 = Automaton()
+E = Automaton()
+
+ev1 = g1.event_add('a1', True, True)
+ev2 = g1.event_add('b1', False, True)
+ev3 = g1.event_add('a2', True, True)
+ev4 = g1.event_add('b2', False, True)
+
+s0 = g1.state_add('0', marked=True, initial=True)
+s1 = g1.state_add('1', marked=False)
+s2 = g1.state_add('2', marked=False)
+s3 = g1.state_add('3', marked=False)
+s4 = g1.state_add('4', marked=False)
+s5 = g1.state_add('5', marked=False)
+s6 = g1.state_add('6', marked=False)
+s7 = g1.state_add('7', marked=False)
+
+t1 = g1.transition_add(s0, s1, ev1)
+t2 = g1.transition_add(s1, s2, ev2)
+t3 = g1.transition_add(s2, s3, ev3)
+t4 = g1.transition_add(s2, s7, ev1)
+t5 = g1.transition_add(s3, s4, ev1)
+t6 = g1.transition_add(s3, s0, ev4)
+t7 = g1.transition_add(s4, s5, ev2)
+t8 = g1.transition_add(s4, s1, ev4)
+t9 = g1.transition_add(s5, s6, ev1)
+t10 = g1.transition_add(s5, s2, ev4)
+t11 = g1.transition_add(s6, s7, ev4)
+t12 = g1.transition_add(s7, s4, ev3)
+
+ev5 = E.event_add('a1', True, True)
+ev6 = E.event_add('b1', False, True)
+ev7 = E.event_add('a2', True, True)
+ev8 = E.event_add('b2', False, True)
+
+sg0 = E.state_add('0', marked=True, initial=True)
+sg1 = E.state_add('1', marked=False)
+sg2 = E.state_add('2', marked=False)
+sg3 = E.state_add('3', marked=False)
+
+tg1 = E.transition_add(sg0, sg1, ev5)
+tg2 = E.transition_add(sg0, sg2, ev7)
+tg3 = E.transition_add(sg1, sg0, ev6)
+tg4 = E.transition_add(sg1, sg3, ev7)
+tg5 = E.transition_add(sg2, sg1, ev8)
+tg6 = E.transition_add(sg2, sg3, ev5)
+tg7 = E.transition_add(sg3, sg2, ev6)
+tg8 = E.transition_add(sg3, sg1, ev8)
+
+
+R = E.sup_c(g1)
+print(R)
+##
 g1 = Automaton()
 g2 = Automaton()
 

@@ -583,7 +583,7 @@ class Automaton(Base):
 
         while len(state_stack) > 0:
             s_g, s_r = state_stack.pop()
-            for trans_r in s_r:
+            for trans_r in s_r.out_transitions:
                 if trans_r.to_state not in univocal_map:
                     event_name = trans_r.event.name
                     t_r = trans_r.to_state
@@ -602,7 +602,57 @@ class Automaton(Base):
 
 
     def sup_c(G, R, univocal_map=None):
-        pass
+        # Look for Bad States in R.
+        # If there aren t any, Sup = R
+        # If there are, remove bad states from R
+        # Calculate TRIM and back to step 1
+
+        sup = R.copy()
+        flag_bad_state = True
+        set_bad_state = set()
+        visited_states_set = set()
+        univ_map = G.univocal(sup)
+        states_to_be_visited_in_R = list()
+        states_to_be_visited_in_R.append(sup.initial_state)
+
+        while flag_bad_state:
+            flag_bad_state = False
+            flag_end = True
+            state_in_R = states_to_be_visited_in_R.pop()
+
+            ev_set = set()
+            for g_transition in univ_map[state_in_R].out_transitions:
+                ev_set.add(g_transition.event.name)
+
+            while flag_end:
+
+                for g_transition in univ_map[state_in_R].out_transitions:
+                    r_event_set = set()
+
+                    for r_transition in state_in_R.out_transitions:
+                        r_event_set.add(r_transition.event.name)
+
+                    if g_transition.event.name not in r_event_set:
+                        if not g_transition.event.controllable:
+                            set_bad_state.add(state_in_R)
+                            flag_bad_state = True
+                    else:
+                        next_state = r_transition.to_state
+                        if next_state not in visited_states_set:
+                            visited_states_set.add(next_state)
+                            states_to_be_visited_in_R.append(next_state)
+                try:
+                    state_in_R = states_to_be_visited_in_R.pop()
+                except IndexError:
+                    flag_end = False
+
+            if flag_bad_state:
+                for state in set_bad_state:
+                    sup.state_remove(state)
+                set_bad_state = set()
+                sup.trim()
+
+        return sup
 
     def choice_problem_check(self):
         pass
