@@ -11,6 +11,47 @@ import pluggins
 from machine.automaton import Automaton
 g = Automaton()
 
+S = g.state_add('S', marked = False, initial = True)
+A = g.state_add('A', marked = False)
+B = g.state_add('B', marked = True)
+
+a = g.event_add('a', True, True)
+b = g.event_add('b', True, True)
+
+t1 = g.transition_add(S, A, a)
+t2 = g.transition_add(A, A, a)
+t3 = g.transition_add(A, B, a)
+t4 = g.transition_add(B, A, b)
+t5 = g.transition_add(B, B, b)
+t6 = g.transition_add(S, B, b)
+
+
+print(g)
+y = g.determinize()
+print(y)
+
+'''
+s1 = g.state_add('1', marked = False, initial = True)
+s2 = g.state_add('2', marked = True)
+s3 = g.state_add('3', marked = False)
+s4 = g.state_add('4', marked = False)
+
+a = g.event_add('a', True, True)
+b = g.event_add('b', True, True)
+c = g.event_add('c', True, True)
+
+t1 = g.transition_add(s1, s2, a)
+t2 = g.transition_add(s1, s3, b)
+t3 = g.transition_add(s3, s3, c)
+t4 = g.transition_add(s3, s2, b)
+t5 = g.transition_add(s2, s4, b)
+t6 = g.transition_add(s4, s4, b)
+
+print(g)
+y = g.determinize()
+print(y)
+
+########
 a = g.event_add('a', True, True)
 e = g.event_add('e', True, True)
 c = g.event_add('c', True, True)
@@ -54,7 +95,8 @@ print(w)
 #print('----------------')
 #print('g', g.is_accessible())
 #print('y', y.is_accessible())
-'''
+
+####################
 g1 = Automaton()
 E = Automaton()
 

@@ -499,7 +499,7 @@ class Automaton(Base):
         event_names = {event.name for event in self.events}  # set, initiate with events' names already in self
         added_events = list()  # so we can undo in case of error
         for g in args:
-            for ev in g.events:
+            for ev_name, ev in g.events.items():
                 if ev.name not in event_names:
                     new_event = ev.copy()
                     self.events.add(new_event)
@@ -670,7 +670,71 @@ class Automaton(Base):
         pass
 
     def determinize(self, copy=False):
-        pass
+
+        det_automaton = Automaton()
+        det_automaton.state_add(self.initial_state.name, initial=True, marked=self.initial_state.marked)
+
+        created_states_dict = dict()
+        created_states_dict[det_automaton.initial_state.name] = det_automaton.initial_state
+
+        state_stack = list()
+        state_stack.append(det_automaton.initial_state.name)
+
+        events_set = set()
+
+        original_automaton_dict = dict()
+        for state in self.states:
+            original_automaton_dict[state.name] = state
+
+        def determinize_state(state):
+            transition_function = dict()
+            for transition in original_automaton_dict[state.name].out_transitions:
+                if transition.event in transition_function:
+                    if not isinstance(transition_function[transition.event], list):
+                        transition_function[transition.event] = [transition_function[transition.event]]
+                    transition_function[transition.event].append(transition.to_state)
+                else:
+                    transition_function[transition.event] = transition.to_state
+            for key in transition_function.keys():
+                if not isinstance(transition_function[key], list):
+                    try:
+                        next_state = created_states_dict[transition_function[key].name]
+                    except KeyError:
+                        next_state = det_automaton.state_add(transition_function[key].name, marked=transition_function[key].marked)
+                        created_states_dict[next_state.name] = next_state
+                        state_stack.append(next_state.name)
+                else:
+                    frozen_set = frozenset(each for each in transition_function[key])
+                    try:
+                        # state already exists
+                        next_state = created_states_dict[frozen_set]
+                    except KeyError:
+                        # create state
+                        state_tuple = tuple(each for each in transition_function[key])
+                        state_name = ",".join(each.name for each in state_tuple)
+                        next_state = det_automaton.state_add(state_name, marked=True)
+                        created_states_dict[frozen_set] = next_state
+                        state_stack.append(frozen_set)
+                if key not in events_set:
+                    events_set.add(det_automaton.event_add(key.name, key.controllable,key.observable))
+                det_automaton.transition_add(state, next_state, key)
+
+        while len(state_stack) != 0:
+            state = state_stack.pop(0)
+            if type(state) == frozenset:
+                for item in state:
+                    determinize_state(item)
+                selfloop = set()
+                for transition in created_states_dict[state].in_transitions:
+                    if transition not in selfloop:
+                        selfloop.add(transition.event)
+                for ev in selfloop:
+                    det_automaton.transition_add(created_states_dict[state], created_states_dict[state], ev)
+            else:
+                determinize_state(created_states_dict[state])
+
+
+        return det_automaton
 
     def complement(self, copy=False):
         pass
