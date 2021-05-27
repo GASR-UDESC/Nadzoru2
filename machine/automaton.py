@@ -686,15 +686,24 @@ class Automaton(Base):
         for state in self.states:
             original_automaton_dict[state.name] = state
 
-        def determinize_state(state):
-            transition_function = dict()
+        def get_transition_function(state, transition_function):
             for transition in original_automaton_dict[state.name].out_transitions:
                 if transition.event in transition_function:
                     if not isinstance(transition_function[transition.event], list):
-                        transition_function[transition.event] = [transition_function[transition.event]]
-                    transition_function[transition.event].append(transition.to_state)
+                        if transition_function[transition.event] != transition.to_state:
+                            transition_function[transition.event] = [transition_function[transition.event]]
+                            transition_function[transition.event].append(transition.to_state)
                 else:
                     transition_function[transition.event] = transition.to_state
+            return transition_function
+
+        def determinize_state(state, from_state):
+            transition_function = dict()
+            if type(state) == frozenset:
+                for each in state:
+                    transition_function = get_transition_function(each, transition_function)
+            else:
+                transition_function = get_transition_function(state, transition_function)
             for key in transition_function.keys():
                 if not isinstance(transition_function[key], list):
                     try:
@@ -717,22 +726,14 @@ class Automaton(Base):
                         state_stack.append(frozen_set)
                 if key not in events_set:
                     events_set.add(det_automaton.event_add(key.name, key.controllable,key.observable))
-                det_automaton.transition_add(state, next_state, key)
+                det_automaton.transition_add(from_state, next_state, key)
 
         while len(state_stack) != 0:
             state = state_stack.pop(0)
             if type(state) == frozenset:
-                for item in state:
-                    determinize_state(item)
-                selfloop = set()
-                for transition in created_states_dict[state].in_transitions:
-                    if transition not in selfloop:
-                        selfloop.add(transition.event)
-                for ev in selfloop:
-                    det_automaton.transition_add(created_states_dict[state], created_states_dict[state], ev)
+                determinize_state(state, created_states_dict[state])
             else:
-                determinize_state(created_states_dict[state])
-
+                determinize_state(created_states_dict[state], created_states_dict[state])
 
         return det_automaton
 

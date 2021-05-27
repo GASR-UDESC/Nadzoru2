@@ -10,7 +10,6 @@ import pluggins
 
 from machine.automaton import Automaton
 g = Automaton()
-
 S = g.state_add('S', marked = False, initial = True)
 A = g.state_add('A', marked = False)
 B = g.state_add('B', marked = True)
@@ -41,10 +40,10 @@ b = g.event_add('b', True, True)
 c = g.event_add('c', True, True)
 
 t1 = g.transition_add(s1, s2, a)
-t2 = g.transition_add(s1, s3, b)
+t2 = g.transition_add(s1, s3, a)
+t5 = g.transition_add(s2, s4, b)
 t3 = g.transition_add(s3, s3, c)
 t4 = g.transition_add(s3, s2, b)
-t5 = g.transition_add(s2, s4, b)
 t6 = g.transition_add(s4, s4, b)
 
 print(g)
