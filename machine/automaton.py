@@ -436,49 +436,51 @@ class Automaton(Base):
         return self
 
     def is_coaccessible(self):
-        pass
+        states_dict, states_number, coaccessible_states = self.detect_coaccessible_state()
+        return states_number == coaccessible_states
 
-    def coaccessible(self, copy=False):
-        stateDict = dict()
-        stateMarkedStack = list()
+    def detect_coaccessible_state(self):
+        states_dict = dict()
+        states_marked_stack = list()
 
-        nStates = 0
-        nMarkedStates = 0
-        nCoaccessibleStates = 0
+        states_number = 0
+        coaccessible_states = 0
+        marked_states = 0
+
         for state in self.states:
-            stateDict[state] = state.marked
+            states_dict[state] = state.marked
             if state.marked:
-                stateMarkedStack.append(state)
-                nMarkedStates += 1
-            nStates +=1
+                states_marked_stack.append(state)
+                marked_states += 1
+            states_number += 1
 
-        if(nMarkedStates == nStates):
-            return self
-
-        while len(stateMarkedStack) != 0:
-            nCoaccessibleStates += 1
-            state = stateMarkedStack.pop()
+        while len(states_marked_stack) != 0:
+            coaccessible_states += 1
+            state = states_marked_stack.pop()
             for transition in state.in_transitions:
-                if stateDict[transition.from_state] == False:
-                    stateDict[transition.from_state] = True
-                    stateMarkedStack.append(transition.from_state)
+                if states_dict[transition.from_state] == False:
+                    states_dict[transition.from_state] = True
+                    states_marked_stack.append(transition.from_state)
 
-        if (nStates == nCoaccessibleStates):
+        return states_dict, states_number, coaccessible_states
+
+    def coaccessible(self, inplace=False):
+        if not inplace:
+            pass
+            """
+            TODO: create non-inplace version (adding states rather than
+            copy everythin and then removing
+            """
+        self = self.copy()
+
+        states_dict, states_number, coaccessible_states = self.detect_coaccessible_state()
+
+        if (coaccessible_states == states_number):
             return self
 
-        statesToRemove = list()
-        transitionsToRemove = list()
-        for state in stateDict:
-            if stateDict[state] == False:
-                for transition in state.in_transitions:
-                    transitionsToRemove.append(transition)
-                statesToRemove.append(state)
-
-        for transition in transitionsToRemove:
-            if transition != None:
-                self.transition_remove(transition)
-        for state in statesToRemove:
-            if state != None:
+        """Remove non-coacessible states"""
+        for state, is_coaccessible in states_dict.items():
+            if is_coaccessible == False:
                 self.state_remove(state)
 
         return self
@@ -497,7 +499,7 @@ class Automaton(Base):
         event_names = {event.name for event in self.events}  # set, initiate with events' names already in self
         added_events = list()  # so we can undo in case of error
         for g in args:
-            for ev in g.events:
+            for ev_name, ev in g.events.items():
                 if ev.name not in event_names:
                     new_event = ev.copy()
                     self.events.add(new_event)
@@ -581,7 +583,7 @@ class Automaton(Base):
 
         while len(state_stack) > 0:
             s_g, s_r = state_stack.pop()
-            for trans_r in s_r:
+            for trans_r in s_r.out_transitions:
                 if trans_r.to_state not in univocal_map:
                     event_name = trans_r.event.name
                     t_r = trans_r.to_state
@@ -600,7 +602,57 @@ class Automaton(Base):
 
 
     def sup_c(G, R, univocal_map=None):
-        pass
+        # Look for Bad States in R.
+        # If there aren t any, Sup = R
+        # If there are, remove bad states from R
+        # Calculate TRIM and back to step 1
+
+        sup = R.copy()
+        flag_bad_state = True
+        set_bad_state = set()
+        visited_states_set = set()
+        univ_map = G.univocal(sup)
+        states_to_be_visited_in_R = list()
+        states_to_be_visited_in_R.append(sup.initial_state)
+
+        while flag_bad_state:
+            flag_bad_state = False
+            flag_end = True
+            state_in_R = states_to_be_visited_in_R.pop()
+
+            ev_set = set()
+            for g_transition in univ_map[state_in_R].out_transitions:
+                ev_set.add(g_transition.event.name)
+
+            while flag_end:
+
+                for g_transition in univ_map[state_in_R].out_transitions:
+                    r_event_set = set()
+
+                    for r_transition in state_in_R.out_transitions:
+                        r_event_set.add(r_transition.event.name)
+
+                    if g_transition.event.name not in r_event_set:
+                        if not g_transition.event.controllable:
+                            set_bad_state.add(state_in_R)
+                            flag_bad_state = True
+                    else:
+                        next_state = r_transition.to_state
+                        if next_state not in visited_states_set:
+                            visited_states_set.add(next_state)
+                            states_to_be_visited_in_R.append(next_state)
+                try:
+                    state_in_R = states_to_be_visited_in_R.pop()
+                except IndexError:
+                    flag_end = False
+
+            if flag_bad_state:
+                for state in set_bad_state:
+                    sup.state_remove(state)
+                set_bad_state = set()
+                sup.trim()
+
+        return sup
 
     def choice_problem_check(self):
         pass
@@ -618,7 +670,72 @@ class Automaton(Base):
         pass
 
     def determinize(self, copy=False):
-        pass
+
+        det_automaton = Automaton()
+        det_automaton.state_add(self.initial_state.name, initial=True, marked=self.initial_state.marked)
+
+        created_states_dict = dict()
+        created_states_dict[det_automaton.initial_state.name] = det_automaton.initial_state
+
+        state_stack = list()
+        state_stack.append(det_automaton.initial_state.name)
+
+        events_set = set()
+
+        original_automaton_dict = dict()
+        for state in self.states:
+            original_automaton_dict[state.name] = state
+
+        def get_transition_function(state, transition_function):
+            for transition in original_automaton_dict[state.name].out_transitions:
+                if transition.event in transition_function:
+                    if not isinstance(transition_function[transition.event], list):
+                        if transition_function[transition.event] != transition.to_state:
+                            transition_function[transition.event] = [transition_function[transition.event]]
+                            transition_function[transition.event].append(transition.to_state)
+                else:
+                    transition_function[transition.event] = transition.to_state
+            return transition_function
+
+        def determinize_state(state, from_state):
+            transition_function = dict()
+            if type(state) == frozenset:
+                for each in state:
+                    transition_function = get_transition_function(each, transition_function)
+            else:
+                transition_function = get_transition_function(state, transition_function)
+            for key in transition_function.keys():
+                if not isinstance(transition_function[key], list):
+                    try:
+                        next_state = created_states_dict[transition_function[key].name]
+                    except KeyError:
+                        next_state = det_automaton.state_add(transition_function[key].name, marked=transition_function[key].marked)
+                        created_states_dict[next_state.name] = next_state
+                        state_stack.append(next_state.name)
+                else:
+                    frozen_set = frozenset(each for each in transition_function[key])
+                    try:
+                        # state already exists
+                        next_state = created_states_dict[frozen_set]
+                    except KeyError:
+                        # create state
+                        state_tuple = tuple(each for each in transition_function[key])
+                        state_name = ",".join(each.name for each in state_tuple)
+                        next_state = det_automaton.state_add(state_name, marked=True)
+                        created_states_dict[frozen_set] = next_state
+                        state_stack.append(frozen_set)
+                if key not in events_set:
+                    events_set.add(det_automaton.event_add(key.name, key.controllable,key.observable))
+                det_automaton.transition_add(from_state, next_state, key)
+
+        while len(state_stack) != 0:
+            state = state_stack.pop(0)
+            if type(state) == frozenset:
+                determinize_state(state, created_states_dict[state])
+            else:
+                determinize_state(created_states_dict[state], created_states_dict[state])
+
+        return det_automaton
 
     def complement(self, copy=False):
         pass

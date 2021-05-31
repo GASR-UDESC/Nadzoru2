@@ -22,7 +22,7 @@
                 <item>
                     <attribute name="action">app.load</attribute>
                     <attribute name="label" translatable="yes">_Load</attribute>
-                    <attribute name="accel">&lt;Primary&gt;l</attribute>
+                    <attribute name="accel">&lt;Primary&gt;o</attribute>
                 </item>
                 <item>
                     <attribute name="action">app.save</attribute>
@@ -32,7 +32,12 @@
                 <item>
                     <attribute name="action">app.edit</attribute>
                     <attribute name="label" translatable="yes">_Edit</attribute>
-                    <attribute name="accel">&lt;Primary&gt;l</attribute>
+                    <attribute name="accel">&lt;Primary&gt;e</attribute>
+                </item>
+                <item>
+                    <attribute name="action">app.close</attribute>
+                    <attribute name="label" translatable="yes">_Close</attribute>
+                    <attribute name="accel">&lt;Primary&gt;w</attribute>
                 </item>
             </section>
         </submenu>
