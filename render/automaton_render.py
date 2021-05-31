@@ -342,6 +342,26 @@ class AutomatonRender:
                 cr.stroke()
 
         for state in automaton.states:
+
+    def draw_partial(self, cr, automaton, base_state, previous_deep=1, forward_deep=2):
+        """
+        # base_state appears highlighted
+        state_radius = dict()
+        for state in automaton.states:
+            # min_radius = self.write_text(cr, state.x, state.y, state.name)
+            radius = self.write_text(cr, state.x, state.y, state.name)
+            state_radius[state] = radius
+            cr.set_source_rgb(0, 0, 0)
+            cr.arc(state.x, state.y, radius, 0, 2 * math.pi)
+            cr.stroke()
+            if state.marked:
+                cr.arc(state.x, state.y, radius - self.DOUBLE_RADIUS_GAP, 0, 2 * math.pi)
+                cr.stroke()
+
+        for state in automaton.states:
             self.draw_state_transitions(cr, state, state_radius, ccw=True, factor=2.0)
+
+       self.draw_state_transitions(cr, state, state_radius, ccw=True, factor=2.0)
+       """
 
 
