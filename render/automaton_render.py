@@ -342,8 +342,10 @@ class AutomatonRender:
                 cr.stroke()
 
         for state in automaton.states:
+            self.draw_state_transitions(cr, state, state_radius, ccw=True, factor=2.0)
 
     def draw_partial(self, cr, automaton, base_state, previous_deep=1, forward_deep=2):
+        pass
         """
         # base_state appears highlighted
         state_radius = dict()
