@@ -25,6 +25,8 @@ def create_automaton_01():
     s1 = a.state_add('q1', x=100, y=150, marked=True, initial=True)
     s2 = a.state_add('q2', x=400, y=150, marked=True)
     s3 = a.state_add('q3', x=250, y=400, marked=True)
+    s4 = a.state_add('q4', x=550, y=400, marked=True)
+    s5 = a.state_add('q5', x=700, y=400, marked=True)
 
     a.transition_add(s1, s2, e1)
     a.transition_add(s2, s1, e2)
@@ -38,6 +40,8 @@ def create_automaton_01():
     # a.transition_remove(t)
     a.transition_add(s1, s2, e4)
     a.transition_add(s2, s1, e4)
+    a.transition_add(s3, s4, e4)
+    a.transition_add(s4, s5, e4)
 
     return a
 
@@ -52,8 +56,10 @@ class Example(Gtk.Window):
         super(Example, self).__init__()
         self.init_ui()
         self.automaton = automaton
+        self.current_state = self.automaton.initial_state
         self.lst_state = list(automaton.states)
         self.ar = AutomatonRender()
+        self.id = 0
 
     def init_ui(self):
         self.darea = Gtk.DrawingArea()
@@ -73,28 +79,40 @@ class Example(Gtk.Window):
         self.show_all()
 
     def on_draw(self, wid, cr):
-        self.ar.draw(cr, self.automaton)
+        # self.ar.draw(cr, self.automaton)
+        self.ar.draw_partial(cr, self.automaton, self.current_state)
 
     def on_motion_notify(self, w, e):
         if e.type == Gdk.EventType.MOTION_NOTIFY and (e.state & Gdk.ModifierType.BUTTON1_MASK):
-            s = self.lst_state[0]
+            pass
+            # s = self.lst_state[0]
         elif e.type == Gdk.EventType.MOTION_NOTIFY and (e.state & Gdk.ModifierType.BUTTON3_MASK):
-            s = self.lst_state[1]
+            pass
+            # s = self.lst_state[1]
         else:
             return
+        s = self.lst_state[self.id]
         s.x = e.x
         s.y = e.y
         self.darea.queue_draw()
 
     def on_button_press(self, w, e):
         if e.type == Gdk.EventType.BUTTON_PRESS and e.button == MouseButtons.LEFT_BUTTON:
-            s = self.lst_state[0]
+            # s = self.lst_state[0]
+            self.id += 1
+            if self.id >= len(self.lst_state):
+                self.id = 0
         elif e.type == Gdk.EventType.BUTTON_PRESS and e.button == MouseButtons.RIGHT_BUTTON:
-            s = self.lst_state[1]
+            # s = self.lst_state[1]
+            self.id -= 1
+            if self.id < 0:
+                self.id = len(self.lst_state) - 1
         else:
             return
+        s = self.lst_state[self.id]
         s.x = e.x
         s.y = e.y
+        self.current_state = s
         self.darea.queue_draw()
 
 

@@ -252,6 +252,8 @@ class AutomatonRender:
             transitions[trans.to_state].append(trans)
 
         for to_state, layout in from_state.transition_layouts.items():
+            if to_state not in states_radius:
+                continue  # probably this state is not in draw_partial
             # radius of each state: 's'tart and 'e'nd states
             rs = states_radius[from_state]
             re = states_radius[to_state]
@@ -327,43 +329,75 @@ class AutomatonRender:
             cr.stroke()
             self.draw_arrow(cr, Varrow, Varrowend)
 
+    def draw_state(self, cr, state, txt_color=(0, 0, 0), arc_color=(0, 0, 0)):
+            cr.set_source_rgb(*txt_color)
+            radius = self.write_text(cr, state.x, state.y, state.name)
+            cr.set_source_rgb(*arc_color)
+            cr.arc(state.x, state.y, radius, 0, 2 * math.pi)
+            cr.stroke()
+            if state.marked:
+                cr.arc(state.x, state.y, radius - self.DOUBLE_RADIUS_GAP, 0, 2 * math.pi)
+                cr.stroke()
+            return radius
+
     def draw(self, cr, automaton):
         # draw states
         state_radius = dict()
+
         for state in automaton.states:
-            # min_radius = self.write_text(cr, state.x, state.y, state.name)
-            radius = self.write_text(cr, state.x, state.y, state.name)
-            state_radius[state] = radius
-            cr.set_source_rgb(0, 0, 0)
-            cr.arc(state.x, state.y, radius, 0, 2 * math.pi)
-            cr.stroke()
-            if state.marked:
-                cr.arc(state.x, state.y, radius - self.DOUBLE_RADIUS_GAP, 0, 2 * math.pi)
-                cr.stroke()
+            state_radius[state] = self.draw_state(cr, state, arc_color=(0, 0, 0))
 
         for state in automaton.states:
             self.draw_state_transitions(cr, state, state_radius, ccw=True, factor=2.0)
 
-    def draw_partial(self, cr, automaton, base_state, previous_deep=1, forward_deep=2):
-        pass
-        """
-        # base_state appears highlighted
+    def get_connected_states(self, state, forward_deep, backward_deep):
+        states = [state]
+
+        # forward
+        state_lvl_map = {state: 0}
+        stack = [state]
+        while stack:
+            src = stack.pop()
+            lvl = state_lvl_map[src]
+            if lvl < forward_deep:
+                for trans in src.out_transitions:
+                    trg = trans.to_state
+                    if trg not in state_lvl_map:
+                        state_lvl_map[trg] = lvl + 1
+                        states.append(trg)
+                        stack.append(trg)
+
+        # backward
+        state_lvl_map = {state: 0}
+        stack = [state]
+        while stack:
+            trg = stack.pop()
+            lvl = state_lvl_map[trg]
+            if lvl < backward_deep:
+                for trans in trg.in_transitions:
+                    src = trans.from_state
+                    if src not in state_lvl_map:
+                        state_lvl_map[src] = lvl + 1
+                        states.append(src)
+                        stack.append(src)
+
+        return states
+        
+
+    def draw_partial(self, cr, automaton, current_state, forward_deep=1, backward_deep=0):
         state_radius = dict()
-        for state in automaton.states:
-            # min_radius = self.write_text(cr, state.x, state.y, state.name)
-            radius = self.write_text(cr, state.x, state.y, state.name)
+        show_states = self.get_connected_states(current_state, forward_deep=forward_deep, backward_deep=backward_deep)
+        
+        for state in show_states:
+            c = (0, 0, 0)
+            if state == current_state:
+                radius = self.draw_state(cr, state, arc_color=(1, 0, 0))
+            else:
+                radius = self.draw_state(cr, state, arc_color=(0, 0, 0))
             state_radius[state] = radius
-            cr.set_source_rgb(0, 0, 0)
-            cr.arc(state.x, state.y, radius, 0, 2 * math.pi)
-            cr.stroke()
-            if state.marked:
-                cr.arc(state.x, state.y, radius - self.DOUBLE_RADIUS_GAP, 0, 2 * math.pi)
-                cr.stroke()
 
-        for state in automaton.states:
+        for state in show_states:
             self.draw_state_transitions(cr, state, state_radius, ccw=True, factor=2.0)
 
-       self.draw_state_transitions(cr, state, state_radius, ccw=True, factor=2.0)
-       """
 
 
