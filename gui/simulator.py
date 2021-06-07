@@ -18,30 +18,39 @@ builder = Gtk.Builder()
 builder.add_from_file('sim_builder.glade')
 
 def create_automaton_01():
-    a = Automaton()
+    g = Automaton()
 
-    e1 = a.event_add('a', True, True)
-    e2 = a.event_add('b', False, True)
-    e3 = a.event_add('c', True, False)
-    e4 = a.event_add('d', False, False)
-    s1 = a.state_add('q1', x=100, y=150, marked=True, initial=True)
-    s2 = a.state_add('q2', x=400, y=150, marked=True)
-    s3 = a.state_add('q3', x=250, y=400, marked=True)
+    q0 = g.state_add('q0', x=50, y=150, marked=True, initial=True)
+    q1 = g.state_add('q1', x=250, y=150, marked=True)
+    q12 = g.state_add('q12', x=450, y=150, marked=True)
+    q13 = g.state_add('q13', x=250, y=400, marked=True)
+    q2 = g.state_add('q2', x=450, y=400, marked=True)
+    q123 = g.state_add('q123', x=650, y=150, marked=True)
 
-    a.transition_add(s1, s2, e1)
-    a.transition_add(s2, s1, e2)
-    a.transition_add(s1, s1, e2)
-    a.transition_add(s2, s2, e1)
-    a.transition_add(s1, s3, e3)
-    a.transition_add(s2, s3, e3)
-    a.transition_add(s3, s1, e1)
-    a.transition_add(s3, s2, e2)
-    t = a.transition_add(s3, s3, e3)
-    # a.transition_remove(t)
-    a.transition_add(s1, s2, e4)
-    a.transition_add(s2, s1, e4)
+    a = g.event_add('a', True, True)
+    b = g.event_add('b', False, True)
+    c = g.event_add('c', True, False)
 
-    return a
+
+    g.transition_add(q0, q0, c)
+    g.transition_add(q0, q0, b)
+    g.transition_add(q0, q1, a)
+    g.transition_add(q1, q12, b)
+    g.transition_add(q1, q13, c)
+    g.transition_add(q1, q1, a)
+    g.transition_add(q12, q1, a)
+    g.transition_add(q12, q2, b)
+    g.transition_add(q12, q123, c)
+    g.transition_add(q123, q1, a)
+    g.transition_add(q123, q2, b)
+    g.transition_add(q13, q1, a)
+    g.transition_add(q13, q2, b)
+    g.transition_add(q13, q13, c)
+    g.transition_add(q2, q2, b)
+    g.transition_add(q2, q1, a)
+    g.transition_add(q2, q13, c)
+
+    return g
 
 class ListBoxRowWithData(Gtk.ListBoxRow):
     def __init__(self, transition):
@@ -56,18 +65,22 @@ class Simulator(Gtk.Window):
         self.current_state = automaton.initial_state
         self.darea = builder.get_object('simulator_draw')
         self.listbox = builder.get_object('event_listbox')
+        self.forward_depth_spin = builder.get_object('forward_depth_spin')
+        self.forward_depth = 1
+        self.backward_depth_spin = builder.get_object('backward_depth_spin')
+        self.backward_depth = 0
         self.ar = AutomatonRender()
         self.build()
 
     def build(self):
         self.darea.connect("draw", self.on_draw)
         self.listbox.connect("row-selected", self.on_row_selected)
+        self.forward_depth_spin.connect("value-changed", self.spin_event)
+        self.backward_depth_spin.connect("value-changed", self.spin_event)
         self.reset_list_box()
 
     def list_box_clear(self, row):
-        for r in self.listbox.get_children():
-            if r != row:
-                self.listbox.remove(r)
+        self.listbox = Gtk.ListBox()
 
     def reset_list_box(self):
         for transition in self.current_state.out_transitions:
@@ -81,8 +94,12 @@ class Simulator(Gtk.Window):
         self.reset_list_box()
 
     def on_draw(self, wid, cr):
-        print(self.current_state)
-        self.ar.draw_partial(cr, self.automaton, self.current_state)
+        self.ar.draw_partial(cr, self.automaton, self.current_state, forward_deep=self.forward_depth, backward_deep=self.backward_depth)
+
+    def spin_event(self, event):
+        self.forward_depth = self.forward_depth_spin.get_value_as_int()
+        self.backward_depth = self.backward_depth_spin.get_value_as_int()
+        self.darea.queue_draw()
 
     def on_window_destroy(self, window):
         Gtk.main_quit()
