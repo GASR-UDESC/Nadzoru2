@@ -744,7 +744,95 @@ class Automaton(Base):
         pass
 
     def minimize(self, copy=False):
-        pass
+
+        state_list = list(self.states)
+        event_set = set(self.events)
+        dict_x = dict()
+        dict_y = dict()
+        marked_matrix = list(list(False for index_y in range(index_x + 1, len(state_list))) for index_x in range(0, len(state_list) - 1))
+
+        for index_x in range(0, len(state_list) - 1):
+            dict_x[state_list[index_x]] = index_x
+            for index_y in range(index_x + 1, len(state_list)):
+                dict_y[state_list[index_y]] = index_y - 1
+
+        for state_x in dict_x.keys():
+            for state_y in dict_y.keys():
+                if dict_y[state_y] >= dict_x[state_x] and state_x.marked != state_y.marked:
+                    marked_matrix[dict_x[state_x]][dict_y[state_y] - dict_x[state_x]] = True
+
+        for state_x in dict_x.keys():
+            for state_y in dict_y.keys():
+                if dict_y[state_y] >= dict_x[state_x]:
+                    if state_x == state_y:
+                        marked_matrix[dict_x[state_x]][dict_y[state_y] - dict_x[state_x]] = True
+                    elif not marked_matrix[dict_x[state_x]][dict_y[state_y] - dict_x[state_x]]:
+                        to_state_x = state_x
+                        to_state_y = state_y
+                        for event in event_set:
+                            for transition in state_x.out_transitions:
+                                if transition.event.name == event:
+                                    to_state_x = transition.to_state
+                                    break
+                            for transition in state_y.out_transitions:
+                                if transition.event.name == event:
+                                    to_state_y = transition.to_state
+                                    break
+                            if to_state_y != to_state_x:
+                                try:
+                                    if dict_y[to_state_y] >= dict_x[to_state_x]:
+                                        if marked_matrix[dict_x[to_state_x]][dict_y[to_state_y] - dict_x[to_state_x]]:
+                                            marked_matrix[dict_x[state_x]][dict_y[state_y] - dict_x[state_x]] = True
+                                    elif dict_y[to_state_x] >= dict_x[to_state_y]:
+                                        if marked_matrix[dict_x[to_state_y]][dict_y[to_state_x] - dict_x[to_state_y]]:
+                                            marked_matrix[dict_x[state_x]][dict_y[state_y] - dict_x[state_x]] = True
+                                except KeyError:
+                                    if dict_y[to_state_x] >= dict_x[to_state_y]:
+                                        if marked_matrix[dict_x[to_state_y]][dict_y[to_state_x] - dict_x[to_state_y]]:
+                                            marked_matrix[dict_x[state_x]][dict_y[state_y] - dict_x[state_x]] = True
+                                    elif dict_y[to_state_y] >= dict_x[to_state_x]:
+                                        if marked_matrix[dict_x[to_state_x]][dict_y[to_state_y] - dict_x[to_state_x]]:
+                                            marked_matrix[dict_x[state_x]][dict_y[state_y] - dict_x[state_x]] = True
+
+        equivalences = set()
+        for row in range(0, len(marked_matrix)):
+            state_equivalent = set()
+            for column in range(0, len(marked_matrix[row])):
+                if not marked_matrix[row][column]:
+                    state_equivalent.add(state_list[row + column + 1])
+            if len(state_equivalent) > 0:
+                state_equivalent.add(state_list[row])
+                equivalences.add(frozenset(state_equivalent))
+
+        for eq in equivalences:
+            state_name = ",".join(each.name for each in eq)
+            is_initial = False
+            for each in eq:
+                if each == self.initial_state:
+                    is_initial = True
+                    break
+            is_marked = False
+            for each in eq:
+                if each.marked:
+                    is_marked = True
+                    break
+            equivalent_state = self.state_add(state_name, marked=is_marked, initial=is_initial)
+            for state in self.states:
+                if state in eq:
+                    for transition in state.in_transitions:
+                        if transition.from_state == transition.to_state:
+                            self.transition_add(equivalent_state, equivalent_state, transition.event)
+                        else:
+                            self.transition_add(transition.from_state, equivalent_state, transition.event)
+                    for transition in state.out_transitions:
+                        if transition.from_state == transition.to_state:
+                            self.transition_add(equivalent_state, equivalent_state, transition.event)
+                        else:
+                            self.transition_add(equivalent_state, transition.to_state, transition.event)
+                #ToDo: we need to remove the state so it will work properly
+                #self.state_remove(state)
+
+        return self
 
     def mask(self, masks, copy=False):
         pass

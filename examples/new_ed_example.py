@@ -10,6 +10,31 @@ import pluggins
 
 from machine.automaton import Automaton
 g = Automaton()
+
+Q0 = g.state_add('Q0', marked = False, initial=True)
+Q1 = g.state_add('Q1', marked = False, initial=False)
+Q2 = g.state_add('Q2', marked = True, initial=False)
+Q3 = g.state_add('Q3', marked = False, initial=False)
+Q4 = g.state_add('Q4', marked = True, initial=False)
+
+e0 = g.event_add('e0', True, True)
+e1 = g.event_add('e1', True, True)
+
+t1 = g.transition_add(Q0, Q1, e0)
+t2 = g.transition_add(Q0, Q3, e1)
+t3 = g.transition_add(Q1, Q1, e0)
+t4 = g.transition_add(Q1, Q2, e1)
+t5 = g.transition_add(Q3, Q3, e0)
+t6 = g.transition_add(Q3, Q4, e1)
+t7 = g.transition_add(Q4, Q2, e1)
+t8 = g.transition_add(Q4, Q1, e0)
+t9 = g.transition_add(Q2, Q4, e1)
+t10 = g.transition_add(Q2, Q3, e0)
+
+print(g)
+y = g.minimize()
+print(y)
+'''
 S = g.state_add('S', marked = False, initial = True)
 A = g.state_add('A', marked = False)
 B = g.state_add('B', marked = True)
@@ -26,10 +51,10 @@ t6 = g.transition_add(S, B, b)
 
 
 print(g)
-y = g.determinize()
+y = g.minimize()
 print(y)
 
-'''
+########
 s1 = g.state_add('1', marked = False, initial = True)
 s2 = g.state_add('2', marked = True)
 s3 = g.state_add('3', marked = False)
