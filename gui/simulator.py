@@ -54,12 +54,12 @@ class Simulator(Gtk.Window):
         super(Simulator, self).__init__()
         self.automaton = automaton
         self.current_state = automaton.initial_state
-        self.build()
-
-    def build(self):
         self.darea = builder.get_object('simulator_draw')
         self.listbox = builder.get_object('event_listbox')
         self.ar = AutomatonRender()
+        self.build()
+
+    def build(self):
         self.darea.connect("draw", self.on_draw)
         self.listbox.connect("row-selected", self.on_row_selected)
         self.reset_list_box()
@@ -73,15 +73,16 @@ class Simulator(Gtk.Window):
         for transition in self.current_state.out_transitions:
             self.listbox.add(ListBoxRowWithData(transition))
         self.listbox.show_all()
+        self.darea.queue_draw()
 
     def on_row_selected(self, listbox, row):
-        if row is not None:
-            self.current_state = row.transition.to_state
-            self.list_box_clear(row)
-            self.reset_list_box()
+        self.current_state = row.transition.to_state
+        self.list_box_clear(row)
+        self.reset_list_box()
 
     def on_draw(self, wid, cr):
-        self.ar.draw(cr, self.automaton)
+        print(self.current_state)
+        self.ar.draw_partial(cr, self.automaton, self.current_state)
 
     def on_window_destroy(self, window):
         Gtk.main_quit()
