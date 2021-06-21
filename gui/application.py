@@ -129,27 +129,8 @@ class Application(Gtk.Application):
             a = Automaton()
 
             # Test Renderer
-            #################################
-            e1 = a.event_add('a', True, True)
-            e2 = a.event_add('b', False, True)
-            e3 = a.event_add('c', True, False)
-            e4 = a.event_add('d', False, False)
-            s1 = a.state_add('q1', x=100, y=150, marked=True, initial=True)
-            s2 = a.state_add('q2', x=400, y=150, marked=True)
-            s3 = a.state_add('q3', x=250, y=400, marked=True)
-
-            a.transition_add(s1, s2, e1)
-            a.transition_add(s2, s1, e2)
-            a.transition_add(s1, s1, e2)
-            a.transition_add(s2, s2, e1)
-            a.transition_add(s1, s3, e3)
-            a.transition_add(s2, s3, e3)
-            a.transition_add(s3, s1, e1)
-            a.transition_add(s3, s2, e2)
-            a.transition_add(s3, s3, e3)
-            a.transition_add(s1, s2, e4)
-            a.transition_add(s2, s1, e4)
-            ##########################################
+            from test_automata import automata_01
+            automata_01(a)
 
             self.automaton = a
             self.lst_state = list(a.states)
@@ -166,8 +147,6 @@ class Application(Gtk.Application):
 
             self.page = self.window.add_tab(self.darea, "automata")
             # print("[*] Current Notebook Page ID: ", self.page)
-
-
 
     def on_draw(self, wid, cr):
         self.ar.draw(cr, self.automaton)
