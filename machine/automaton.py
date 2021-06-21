@@ -636,27 +636,23 @@ class Automaton(Base):
             flag_end = True
             state_in_R = states_to_be_visited_in_R.pop()
 
-            ev_set = set()
-            for g_transition in univ_map[state_in_R].out_transitions:
-                ev_set.add(g_transition.event.name)
-
             while flag_end:
-
                 for g_transition in univ_map[state_in_R].out_transitions:
                     r_event_set = set()
 
                     for r_transition in state_in_R.out_transitions:
                         r_event_set.add(r_transition.event.name)
 
-                    if g_transition.event.name not in r_event_set:
-                        if not g_transition.event.controllable:
-                            set_bad_state.add(state_in_R)
-                            flag_bad_state = True
-                    else:
-                        next_state = r_transition.to_state
-                        if next_state not in visited_states_set:
-                            visited_states_set.add(next_state)
-                            states_to_be_visited_in_R.append(next_state)
+                    for r_transition in state_in_R.out_transitions:
+                        if g_transition.event.name not in r_event_set:
+                            if not g_transition.event.controllable:
+                                set_bad_state.add(state_in_R)
+                                flag_bad_state = True
+                        else:
+                            next_state = r_transition.to_state
+                            if next_state not in visited_states_set:
+                                visited_states_set.add(state_in_R)
+                                states_to_be_visited_in_R.append(next_state)
                 try:
                     state_in_R = states_to_be_visited_in_R.pop()
                 except IndexError:
@@ -666,7 +662,9 @@ class Automaton(Base):
                 for state in set_bad_state:
                     sup.state_remove(state)
                 set_bad_state = set()
-                sup.trim()
+                flag_bad_state = False
+
+        sup.trim()
 
         return sup
 
@@ -824,6 +822,16 @@ class Automaton(Base):
             for column in range(0, len(marked_matrix[row])):
                 if not marked_matrix[row][column]:
                     state_equivalent.add(state_list[row + column + 1])
+            if len(state_equivalent) > 1:
+                for s1 in state_equivalent:
+                    for s2 in state_equivalent:
+                        if s1 != s2:
+                            try:
+                                if dict_y[s2] >= dict_x[s1]:
+                                    marked_matrix[dict_x[s1]][dict_y[s2] - dict_x[s1]] = True
+                            except KeyError:
+                                if dict_y[s1] >= dict_x[s2]:
+                                    marked_matrix[dict_x[s2]][dict_y[s1] - dict_x[s2]] = True
             if len(state_equivalent) > 0:
                 state_equivalent.add(state_list[row])
                 equivalences.add(frozenset(state_equivalent))
