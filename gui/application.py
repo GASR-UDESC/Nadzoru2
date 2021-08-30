@@ -3,7 +3,7 @@ import gi
 from gi.repository import Gdk, Gio, Gtk
 
 from machine.automaton import Automaton
-from render import AutomatonRender
+from gui.automaton_editor import AutomatonEditor
 
 MENU_XML = """"""
 
@@ -122,70 +122,61 @@ class Application(Gtk.Application):
 
     # TODO: open editor with 'a' and add in a new page (tab)
     def on_new_automata(self, action, param):
-        if(len(self.window.tab) > 5):
-            print("[*] You exceed the opended pages limit")
-        else: 
-            print("[*] You created a new automata")
-            a = Automaton()
+        automaton = Automaton()
+        self.elements.append(automaton)
+        editor = AutomatonEditor(automaton)
+        self.window.add_tab(editor.get_root_widget(), "[new] *")
 
-            # Test Renderer
-            from test_automata import automata_01
-            automata_01(a)
 
-            self.automaton = a
-            self.lst_state = list(a.states)
-            self.ar = AutomatonRender()
+        #~ self.automaton = a
+        #~ self.lst_state = list(a.states)
+        #~ self.ar = AutomatonRender()
 
-            # Creating Drawing Area
-            self.darea = Gtk.DrawingArea()
-            self.darea.connect("draw", self.on_draw)
-            self.darea.set_events(Gdk.EventMask.BUTTON_MOTION_MASK |
-                                Gdk.EventMask.BUTTON_PRESS_MASK
-            )
-            self.darea.connect("motion-notify-event", self.on_motion_notify)
-            self.darea.connect("button-press-event", self.on_button_press)
+        # Creating Drawing Area
+        #~ self.darea = Gtk.DrawingArea()
+        #~ self.darea.connect("draw", self.on_draw)
+        #~ self.darea.set_events(Gdk.EventMask.BUTTON_MOTION_MASK |
+                            #~ Gdk.EventMask.BUTTON_PRESS_MASK
+        #~ )
+        #~ self.darea.connect("motion-notify-event", self.on_motion_notify)
+        #~ self.darea.connect("button-press-event", self.on_button_press)
 
-            self.page = self.window.add_tab(self.darea, "automata")
-            # print("[*] Current Notebook Page ID: ", self.page)
+        #~ self.page = self.window.add_tab(self.darea, "automata")
+        # print("[*] Current Notebook Page ID: ", self.page)
 
-    def on_draw(self, wid, cr):
-        self.ar.draw(cr, self.automaton)
+    #~ def on_draw(self, wid, cr):
+        #~ self.ar.draw(cr, self.automaton)
 
-    def on_motion_notify(self, w, e):
-        if e.type == Gdk.EventType.MOTION_NOTIFY and (e.state & Gdk.ModifierType.BUTTON1_MASK):
-            s = self.lst_state[0]
-        elif e.type == Gdk.EventType.MOTION_NOTIFY and (e.state & Gdk.ModifierType.BUTTON3_MASK):
-            s = self.lst_state[1]
-        else:
-            return
-        s.x = e.x
-        s.y = e.y
-        self.darea.queue_draw()
+    #~ def on_motion_notify(self, w, e):
+        #~ if e.type == Gdk.EventType.MOTION_NOTIFY and (e.state & Gdk.ModifierType.BUTTON1_MASK):
+            #~ s = self.lst_state[0]
+        #~ elif e.type == Gdk.EventType.MOTION_NOTIFY and (e.state & Gdk.ModifierType.BUTTON3_MASK):
+            #~ s = self.lst_state[1]
+        #~ else:
+            #~ return
+        #~ s.x = e.x
+        #~ s.y = e.y
+        #~ self.darea.queue_draw()
 
-    def on_button_press(self, w, e):
-        if e.type == Gdk.EventType.BUTTON_PRESS and e.button == MouseButtons.LEFT_BUTTON:
-            s = self.lst_state[0]
-        elif e.type == Gdk.EventType.BUTTON_PRESS and e.button == MouseButtons.RIGHT_BUTTON:
-            s = self.lst_state[1]
-        else:
-            return
-        s.x = e.x
-        s.y = e.y
-        self.darea.queue_draw()
-
+    #~ def on_button_press(self, w, e):
+        #~ if e.type == Gdk.EventType.BUTTON_PRESS and e.button == MouseButtons.LEFT_BUTTON:
+            #~ s = self.lst_state[0]
+        #~ elif e.type == Gdk.EventType.BUTTON_PRESS and e.button == MouseButtons.RIGHT_BUTTON:
+            #~ s = self.lst_state[1]
+        #~ else:
+            #~ return
+        #~ s.x = e.x
+        #~ s.y = e.y
+        #~ self.darea.queue_draw()
 
     def on_load_automata(self, action, param):
         dialog = Gtk.FileChooserDialog("Choose file", self.window, Gtk.FileChooserAction.OPEN,
-                                       ("_Cancel", Gtk.ResponseType.CANCEL,
-                                        "_Open", Gtk.ResponseType.ACCEPT)
-                                       )
+            ("_Cancel", Gtk.ResponseType.CANCEL, "_Open", Gtk.ResponseType.ACCEPT))
         result = dialog.run()
         if result == Gtk.ResponseType.ACCEPT:
             a = Automaton()
+            a.load(dialog.get_filename())
             self.elements.append(a)
-            print("You loaded an automata:", dialog.get_filename())
-            # TODO: load and create editor tab with a
-            # a.load(dialog.get_filename())
         else:
             print("You CANCELED")
         dialog.destroy()
@@ -208,7 +199,7 @@ class Application(Gtk.Application):
             Gtk.ResponseType.YES
         )
         dialog.set_default_size(150, 100)
-        
+
         label = Gtk.Label()
         label.set_text("Do you really want to exit?")
         label.set_justify(Gtk.Justification.LEFT)
@@ -224,4 +215,4 @@ class Application(Gtk.Application):
         else:
             print("You CANCELED")
         dialog.destroy()
-        
+

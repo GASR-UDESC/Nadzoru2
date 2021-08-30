@@ -27,17 +27,17 @@ class Simulator:
     def __init__(self, automaton):
         self.automaton = automaton
         self.current_state = automaton.initial_state
-        self.forward_depth = 1        
+        self.forward_depth = 1
         self.backward_depth = 0
         self.ar = AutomatonRender()
         self.build()
 
     def build(self):
         self.builder = Gtk.Builder()
-        self.builder.add_from_file('ui/sim_builder.glade')
-        
+        self.builder.add_from_file('ui/simulator.glade')
+
         self.box = self.builder.get_object('toplevel_box')
-        self.darea = self.builder.get_object('simulator_draw')
+        self.darea = self.builder.get_object('draw')
         self.listbox = self.builder.get_object('event_listbox')
         self.backward_depth_spin = self.builder.get_object('backward_depth_spin')
         self.forward_depth_spin = self.builder.get_object('forward_depth_spin')
@@ -57,7 +57,7 @@ class Simulator:
     def list_box_clear(self):
         for row in self.listbox.get_children():
             self.listbox.remove(row)
-        
+
     def reset_list_box(self):
         for transition in self.current_state.out_transitions:
             self.listbox.add(ListBoxRowWithData(transition))
@@ -89,7 +89,7 @@ if __name__ == '__main__':
     main_window = Gtk.Window()
     main_window.connect("delete-event", Gtk.main_quit)
     main_window.add(simulator.get_root_widget())
-    
+
     main_window.show_all()
     Gtk.main()
 

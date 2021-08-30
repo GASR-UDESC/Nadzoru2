@@ -2,9 +2,30 @@ import sys
 import gi
 from gi.repository import GLib, Gio, Gtk
 
-class AutomatonEditor:
-    def __init__(self, automata):
-        self.vbox = Gtk.Box(Gtk.Orientation.VERTICAL, 2)
+from render import AutomatonRender
 
+class AutomatonEditor:
+    def __init__(self, automaton):
+        self.automaton = automaton
+        self.ar = AutomatonRender()
+        self.selected_state = None
+        self.build()
+
+    def build(self):
+        self.builder = Gtk.Builder()
+        self.builder.add_from_file('gui/ui/editor.glade')
+
+        self.box = self.builder.get_object('toplevel_box')
+        self.darea = self.builder.get_object('draw')
+        self.listbox = self.builder.get_object('event_listbox')
+
+        self.darea.connect("draw", self.on_draw)
+        self.builder.connect_signals(self)
+
+    def get_root_widget(self):
+        return self.box
+
+    def on_draw(self, wid, cr):
+        self.ar.draw(cr, self.automaton)
 
 
