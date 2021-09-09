@@ -2,14 +2,14 @@
 <automaton id="1" name="E1" version="1.0">
     <states>
         <state id="1" name="1" tex="$q_1$" marked="true" x="12" y="20" initial_state="true" />
-        <state id="2" name="2" tex="$q_2$" marked="true" x="25" y="20" />            
+        <state id="2" name="2" tex="$q_2$" marked="true" x="25" y="20" />
     </states>
     <events>
         <event id="1" name="a" tex="a" controllable="true" observable="true" />
         <event id="2" name="b" tex="b" controllable="false" observable="true" />
     </events>
     <transitions>
-        <transition from="1" to="2" event="1" probability="0.5">
+        <transition from="1" to="2" event="1" probability="0.5" />
         <transition from="2" to="1" event="2" />
         <transition from="2" to="2" event="1" />
     </transitions>
