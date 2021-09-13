@@ -12,7 +12,7 @@ class AutomatonEditor(Gtk.Box):
         super().__init__(*args, **kwargs)
 
         self.automaton = automaton
-        self.ar = AutomatonRender(self.automaton)
+        self.ar = AutomatonRenderer(self.automaton)
         self.selected_state = None
         self._build()
 
