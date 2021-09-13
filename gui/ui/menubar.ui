@@ -35,6 +35,11 @@
                     <attribute name="accel">&lt;Primary&gt;e</attribute>
                 </item>
                 <item>
+                    <attribute name="action">app.simulate-automaton</attribute>
+                    <attribute name="label" translatable="yes">Si_mulate</attribute>
+                    <attribute name="accel">&lt;Primary&gt;m</attribute>
+                </item>
+                <item>
                     <attribute name="action">app.close-tab</attribute>
                     <attribute name="label" translatable="yes">_Close</attribute>
                     <attribute name="accel">&lt;Primary&gt;w</attribute>

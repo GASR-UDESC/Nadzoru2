@@ -4,6 +4,7 @@ from gi.repository import Gdk, Gio, Gtk
 
 from machine.automaton import Automaton
 from gui.automaton_editor import AutomatonEditor
+from gui.automaton_simulator import AutomatonSimulator
 from gui.main_window import MainWindow
 
 class MouseButtons:
@@ -29,6 +30,7 @@ class Application(Gtk.Application):
         self.create_action("load-automaton", self.on_load_automaton)
         self.create_action("save-automaton", self.on_save_automaton)
         self.create_action("edit-automaton", self.on_edit_automaton)
+        self.create_action("simulate-automaton", self.on_simulate_automaton)
         self.create_action("close-tab", self.on_close_tab)
         self.create_action("quit", self.on_quit)
 
@@ -73,10 +75,12 @@ class Application(Gtk.Application):
 
     # TODO: open editor with 'a' and add in a new page (tab)
     def on_new_automaton(self, action, param):
+        from test_automata import automata_01  # For testing
         automaton = Automaton()
+        automata_01(automaton)  # For testing
         self.elements.append(automaton)
         editor = AutomatonEditor(automaton)
-        self.window.add_tab(editor.get_root_widget(), "[new] *")
+        self.window.add_tab(editor, "[new] *")
 
 
         #~ self.automaton = a
@@ -119,6 +123,14 @@ class Application(Gtk.Application):
         #~ s.x = e.x
         #~ s.y = e.y
         #~ self.darea.queue_draw()
+
+    def on_simulate_automaton(self, action, param):
+        from test_automata import automata_01  # For testing
+        automaton = Automaton()
+        automata_01(automaton)  # For testing
+        self.elements.append(automaton)
+        simulator = AutomatonSimulator(automaton)
+        self.window.add_tab(simulator, "Simulator")
 
     def on_load_automaton(self, action, param):
         dialog = Gtk.FileChooserDialog("Choose file", self.window, Gtk.FileChooserAction.OPEN,

@@ -1,37 +1,36 @@
+#~ import os
 import sys
 import gi
 from gi.repository import GLib, Gio, Gtk
 
-from render import AutomatonRender
+from renderer import AutomatonRenderer
 
-class AutomatonEditor:
-    def __init__(self, automaton):
+class AutomatonEditor(Gtk.Box):
+    def __init__(self, automaton, *args, **kwargs):
+        if 'spacing' not in kwargs:
+            kwargs['spacing'] = 2
+        super().__init__(*args, **kwargs)
+
         self.automaton = automaton
-        self.ar = AutomatonRender()
+        self.ar = AutomatonRender(self.automaton)
         self.selected_state = None
-        self.build()
+        self._build()
 
-    def build(self):
-        # self.builder = Gtk.Builder()
-        # self.builder.add_from_file('gui/ui/editor.glade')
-
-        # self.box = self.builder.get_object('toplevel_box')
-        # self.darea = self.builder.get_object('draw')
-        # self.listbox = self.builder.get_object('event_listbox')
-
-        # self.darea.connect("draw", self.on_draw)
-        # self.builder.connect_signals(self)
-
-        self.box = Gtk.Box(spacing=2)
+    def _build(self):
         self.paned = Gtk.Paned()
+        self.scrolled = Gtk.ScrolledWindow.new()
+        self.drawing_area = Gtk.DrawingArea.new()
+        # self.listbox = Gtk.
+
+        self.pack_start(self.paned, True, True, 0)
+        self.paned.pack1(self.scrolled, True, True)
+        self.scrolled.add(self.drawing_area)
 
 
-        #~ self.box.pack_start(self.xxxx, True, True, 0)
-
-    def get_root_widget(self):
-        return self.box
+        self.drawing_area.connect("draw", self.on_draw)
 
     def on_draw(self, wid, cr):
-        self.ar.draw(cr, self.automaton)
+        pass
+        # self.ar.draw(cr, self.automaton)
 
 
