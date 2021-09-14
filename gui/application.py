@@ -73,74 +73,35 @@ class Application(Gtk.Application):
         if result == Gtk.ResponseType.YES or result == Gtk.ResponseType.APPLY:
             self.quit()
 
-    # TODO: open editor with 'a' and add in a new page (tab)
     def on_new_automaton(self, action, param):
         from test_automata import automata_01  # For testing
         automaton = Automaton()
         automata_01(automaton)  # For testing
         self.elements.append(automaton)
-        editor = AutomatonEditor(automaton)
+        editor = AutomatonEditor(automaton, self)
         self.window.add_tab(editor, "[new] *")
 
-
-        #~ self.automaton = a
-        #~ self.lst_state = list(a.states)
-        #~ self.ar = AutomatonRender()
-
-        # Creating Drawing Area
-        #~ self.darea = Gtk.DrawingArea()
-        #~ self.darea.connect("draw", self.on_draw)
-        #~ self.darea.set_events(Gdk.EventMask.BUTTON_MOTION_MASK |
-                            #~ Gdk.EventMask.BUTTON_PRESS_MASK
-        #~ )
-        #~ self.darea.connect("motion-notify-event", self.on_motion_notify)
-        #~ self.darea.connect("button-press-event", self.on_button_press)
-
-        #~ self.page = self.window.add_tab(self.darea, "automata")
-        # print("[*] Current Notebook Page ID: ", self.page)
-
-    #~ def on_draw(self, wid, cr):
-        #~ self.ar.draw(cr, self.automaton)
-
-    #~ def on_motion_notify(self, w, e):
-        #~ if e.type == Gdk.EventType.MOTION_NOTIFY and (e.state & Gdk.ModifierType.BUTTON1_MASK):
-            #~ s = self.lst_state[0]
-        #~ elif e.type == Gdk.EventType.MOTION_NOTIFY and (e.state & Gdk.ModifierType.BUTTON3_MASK):
-            #~ s = self.lst_state[1]
-        #~ else:
-            #~ return
-        #~ s.x = e.x
-        #~ s.y = e.y
-        #~ self.darea.queue_draw()
-
-    #~ def on_button_press(self, w, e):
-        #~ if e.type == Gdk.EventType.BUTTON_PRESS and e.button == MouseButtons.LEFT_BUTTON:
-            #~ s = self.lst_state[0]
-        #~ elif e.type == Gdk.EventType.BUTTON_PRESS and e.button == MouseButtons.RIGHT_BUTTON:
-            #~ s = self.lst_state[1]
-        #~ else:
-            #~ return
-        #~ s.x = e.x
-        #~ s.y = e.y
-        #~ self.darea.queue_draw()
-
-    def on_simulate_automaton(self, action, param):
-        from test_automata import automata_01  # For testing
-        automaton = Automaton()
-        automata_01(automaton)  # For testing
-        self.elements.append(automaton)
-        simulator = AutomatonSimulator(automaton)
-        self.window.add_tab(simulator, "Simulator")
-
     def on_load_automaton(self, action, param):
+        # TODO: checkbox in dialog to choose if open in editor (maybe simulator as well) (or just load in self.elements)
         dialog = Gtk.FileChooserDialog("Choose file", self.window, Gtk.FileChooserAction.OPEN,
             ("_Cancel", Gtk.ResponseType.CANCEL, "_Open", Gtk.ResponseType.ACCEPT))
         result = dialog.run()
         if result == Gtk.ResponseType.ACCEPT:
-            a = Automaton()
-            a.load(dialog.get_filename())
-            self.elements.append(a)
+            automaton = Automaton()
+            automaton.load(dialog.get_filename())
+            self.elements.append(automaton)
+            if True:  # check if (to add) checkbox in dialog to open editor
+                editor = AutomatonEditor(automaton, self)
+                self.window.add_tab(editor, "[new] *")
         dialog.destroy()
+
+    def on_simulate_automaton(self, action, param):
+        # TODO: open dialog to select from self.elements
+        from test_automata import automata_01  # For testing
+        automaton = Automaton()
+        automata_01(automaton)  # For testing
+        simulator = AutomatonSimulator(automaton)
+        self.window.add_tab(simulator, "Simulator")
 
     def on_edit_automaton(self, action, param):
         print("You opened in editor automata")
@@ -149,7 +110,6 @@ class Application(Gtk.Application):
         print("You saved the automata")
 
     def on_close_tab(self, action, param):
-        print("[*] You closed the current tab")
         self.window.remove_tab(self.window.note.get_current_page())
 
     def on_quit(self, action, param):

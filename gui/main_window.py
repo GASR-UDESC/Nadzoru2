@@ -2,7 +2,7 @@ import sys
 import gi
 from gi.repository import Gdk, Gio, Gtk
 
-from gui.automaton_editor import AutomatonEditorToolPalette
+from gui.tool_palette import ToolPalette
 
 class MainWindow(Gtk.ApplicationWindow):
     def __init__(self, *args, **kwargs):
@@ -10,9 +10,8 @@ class MainWindow(Gtk.ApplicationWindow):
 
         self.vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
         self.hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
-        self.toolpallet = AutomatonEditorToolPalette(width_request=148)
+        self.toolpallet = ToolPalette(width_request=148)
         self.note = Gtk.Notebook()
-        self.tab = list()
         self.statusbar = Gtk.Statusbar()
 
         self.dialogCurrentFolder = None
@@ -31,13 +30,14 @@ class MainWindow(Gtk.ApplicationWindow):
         self.note.set_scrollable(True)
         self.note.set_show_border(True)
 
-        # Create page example
-        # self.page1 = Gtk.Box()
-        # self.page1.set_border_width(10)
-        # self.page1.add(Gtk.Label(label="Default Page!"))
-        # self.note.append_page(self.page1, Gtk.Label(label="Automata"))
+        # Test
+        self.toolpallet.add_button('file', label="Save", icon_name='gtk-floppy', callback=self.test)
 
         self.show_all()
+
+    def test(self, *args):
+        print(self.note.get_current_page())
+
 
     def do_delete_event(self, event):
         self.props.application.validade_quit()
@@ -52,20 +52,15 @@ class MainWindow(Gtk.ApplicationWindow):
 
     def add_tab(self, widget, title):
         note = self.note.insert_page(widget, Gtk.Label.new(title), -1)
-        self.tab.append(note)
         self.show_all()
         self.note.set_current_page(note)
 
         return note
 
     def remove_tab(self, id):
-        if id:
+        if id >= 0:
             self.note.remove_page(id)
-            destroy = self.tab.remove(id)
-            if destroy and destroy.destroy_callback:
-                destroy.destroy_callback(destroy.param)
-
-        self.show_all()
+            self.show_all()
 
     def remove_current_tab(self, *args):
         id = self.note.get_current_page()

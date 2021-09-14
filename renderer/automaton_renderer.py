@@ -2,9 +2,7 @@ import math
 
 import cairo
 import gi
-from gi.repository import GLib, Gio, Gtk
-
-# from machine.automaton import Automaton
+from gi.repository import GLib, Gio, Gtk, Gdk
 
 
 class Point2D:
@@ -192,6 +190,9 @@ class AutomatonRenderer(Gtk.DrawingArea):
     def __init__(self, automaton, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.automaton = automaton
+        self.set_events(Gdk.EventMask.BUTTON_MOTION_MASK |
+                        Gdk.EventMask.BUTTON_PRESS_MASK
+        )
 
     def _draw_point(self, cr, V, r=0, g=0, b=0):
         cr.set_source_rgb(r, g, b)
@@ -386,7 +387,6 @@ class AutomatonRenderer(Gtk.DrawingArea):
                         stack.append(src)
 
         return states
-
 
     def draw_partial(self, cr, current_state, forward_deep=1, backward_deep=0):
         state_radius = dict()

@@ -117,9 +117,13 @@ class TransitionLayout:
 
 
 class State(Base):
-    def __init__(self, name=None, marked=False, x=0, y=0, tex=None, *args, **kwargs):
+    def __init__(self, name=None, marked=False, x=0, y=0, quantity=None, *args, **kwargs):
+        if name is None:
+            if quantity is not None:
+                name = str(quantity + 1)
+            else:
+                name = '?'
         self.name = name
-        self.tex = tex
         self.marked = marked
         self.x = x
         self.y = y
@@ -303,7 +307,8 @@ class Automaton(Base):
         return event_name in self.events  # check if the event_name key exists in self.events
 
     def state_add(self, *args, initial=False, **kwargs):
-        s = self.state_class(*args, **kwargs)
+        quantity = len(self.states)
+        s = self.state_class(*args, quantity=quantity, **kwargs)
         self.states.add(s)
         if initial:
             self.initial_state = s
