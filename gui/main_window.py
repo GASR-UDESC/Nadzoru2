@@ -2,18 +2,24 @@ import sys
 import gi
 from gi.repository import Gdk, Gio, Gtk
 
+from gui.automaton_editor import AutomatonEditorToolPalette
+
 class MainWindow(Gtk.ApplicationWindow):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        self.vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        self.hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
+        self.toolpallet = AutomatonEditorToolPalette(width_request=148)
         self.note = Gtk.Notebook()
         self.tab = list()
         self.statusbar = Gtk.Statusbar()
 
         self.dialogCurrentFolder = None
 
-        self.vbox.pack_start(self.note, True, True, 0)
+        self.vbox.pack_start(self.hbox, True, True, 0)
+        self.hbox.pack_start(self.toolpallet, False, True, 0)
+        self.hbox.pack_start(self.note, True, True, 0)
         self.vbox.pack_start(self.statusbar, False, False, 0)
         self.add(self.vbox)
 
