@@ -9,7 +9,7 @@ from renderer import AutomatonRenderer
 class FileIconMixin:
     def __init__(self, *args, icon_file_name=None, **kwargs):
         super().__init__(*args, **kwargs)
-        if not icon_file_name is None:
+        if icon_file_name is not None:
             image_widget = Gtk.Image()
             image_widget.set_from_file(icon_file_name)
             self.set_icon_widget(image_widget)
@@ -30,26 +30,33 @@ class AutomatonEditorToolPalette(Gtk.ToolPalette):
         super().__init__(*args, **kwargs)
 
         self.tool = None
+        self.groups = {}
 
-        self.grp_file = Gtk.ToolItemGroup.new("File")
-        self.grp_build = Gtk.ToolItemGroup.new("Build")
+        self.add_group('file', "File")
+        self.add_group('edit', "Edit")
+        self.add_group('view', "view")
 
-        self.add(self.grp_file)
-        self.add(self.grp_build)
+        #~ self.add_button('file', label="Save", icon_name='gtk-floppy', callback=self.on_click_test)
+        self.add_toggle_button('edit', tool_id='state_add', label="Add State", icon_file_name='./res/icons/state_add.png')
+        self.add_toggle_button('edit', tool_id='state_initial', label="Make Initial State", icon_file_name='./res/icons/state_initial.png')
+        self.add_toggle_button('edit', tool_id='state_marked', label="Mark State", icon_file_name='./res/icons/state_marked.png')
+        self.add_toggle_button('edit', tool_id='transition_add', label="Add Transition", icon_file_name='./res/icons/transition_add.png')
 
-        self.btn_save = Gtk.ToolButton(label="Save", icon_name='gtk-floppy')
-        self.grp_file.insert(self.btn_save, -1)
+    def add_group(self, name, label):
+        assert name not in self.groups, "group '{}' already exists".format(name)
+        self.groups[name] = Gtk.ToolItemGroup.new(label)
+        self.add(self.groups[name])
 
-        self._new_toggle_button(self.grp_build, tool_id='state_add', label="Add State", icon_file_name='./res/icons/state_add.png')
-        self._new_toggle_button(self.grp_build, tool_id='state_initial', label="Make Initial State", icon_file_name='./res/icons/state_initial.png')
-        self._new_toggle_button(self.grp_build, tool_id='state_marked', label="Mark State", icon_file_name='./res/icons/state_marked.png')
-        self._new_toggle_button(self.grp_build, tool_id='transition_add', label="Add Transition", icon_file_name='./res/icons/transition_add.png')
+    def add_button(self, group_name, *args, position=-1, callback=None, **kwargs):
+        btn = FileIconToolButton(*args, **kwargs)
+        self.groups[group_name].insert(btn, position)
+        if callback is not None:
+            btn.connect('clicked', callback)
 
-    def _new_toggle_button(self, grp, *args, position=-1, **kwargs):
+    def add_toggle_button(self, group_name, *args, position=-1, **kwargs):
         btn = FileIconToggleToolButton(*args, **kwargs)
-        grp.insert(btn, position)
+        self.groups[group_name].insert(btn, position)
         btn.connect('toggled', self.on_toggled)
-
 
     def get_selected_tool(self):
         if self.tool is None:
@@ -62,10 +69,15 @@ class AutomatonEditorToolPalette(Gtk.ToolPalette):
             self.tool = None
 
     def on_toggled(self, btn):
-        if btn.get_active():
-            if self.tool != btn:
-                self.clear_selection()
+        if btn.get_active() and self.tool != btn:
+            if self.tool is not None:
+                self.tool.set_active(False)
             self.tool = btn
+        else:
+            self.tool = None
+
+    #~ def on_click_test(self, *args):
+        #~ print(self.get_selected_tool())
 
 class AutomatonEditor(Gtk.Box):
     def __init__(self, automaton, *args, **kwargs):
