@@ -37,6 +37,11 @@ class ToolPalette(Gtk.ToolPalette):
         self.add_toggle_button('edit', tool_id='state_initial', label="Make Initial State", icon_file_name='./res/icons/state_initial.png')
         self.add_toggle_button('edit', tool_id='state_marked', label="Mark State", icon_file_name='./res/icons/state_marked.png')
         self.add_toggle_button('edit', tool_id='transition_add', label="Add Transition", icon_file_name='./res/icons/transition_add.png')
+        self.add_toggle_button('edit', tool_id='edit', label="Edit", icon_file_name='./res/icons/edit.png')
+        self.add_toggle_button('edit', tool_id='move', label="Move", icon_file_name='./res/icons/move.png')
+
+        self.add_toggle_button('view', tool_id='zoon_in', label="Zoom In", icon_file_name='./res/icons/zoom_in.png')
+        self.add_toggle_button('view', tool_id='zoon_out', label="Zoom Out", icon_file_name='./res/icons/zoom_out.png')
 
     def add_group(self, name, label):
         assert name not in self.groups, "group '{}' already exists".format(name)

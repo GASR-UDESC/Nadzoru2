@@ -248,8 +248,7 @@ class AutomatonRenderer(Gtk.DrawingArea):
         # cr.stroke()
         cr.fill()
 
-    def draw_state_transitions(self, cr, from_state, states_radius, factor=1.0,
-                               ccw=True):
+    def draw_state_transitions(self, cr, from_state, states_radius, factor=1.0, ccw=True):
         transitions = dict()
         for trans in from_state.out_transitions:
             if trans.to_state not in transitions:
