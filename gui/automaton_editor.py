@@ -105,6 +105,8 @@ class AutomatonEditor(Gtk.Box):
 
         if tool_name == 'state_add':
             self.automaton.state_add(None, x=x, y=y)
+        elif tool_name == 'transition_add':
+            pass
 
         self.automaton_render.queue_draw()
 
