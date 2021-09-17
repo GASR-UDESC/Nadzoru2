@@ -60,7 +60,7 @@ class Application(Gtk.Application):
 
         label = Gtk.Label()
         #label.set_text("File {} not saved!")
-        label.set_text("Do you really want to exit?")
+        label.set_text("Do you really want to exit? All work will be lost")
         label.set_justify(Gtk.Justification.LEFT)
 
         box_dialog = dialog.get_content_area()
