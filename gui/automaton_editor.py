@@ -53,7 +53,7 @@ class AutomatonEditor(Gtk.Box):
         renderer_editabletext.connect("edited", self.text_edited)
 
         # It would be nice to create a class for Toggle Buttons. For now, it works 
-        
+
         # Toggle 1
         renderer_toggle_1 = Gtk.CellRendererToggle()
         renderer_toggle_1.connect("toggled", self.on_cell_toggled_1)
@@ -66,17 +66,25 @@ class AutomatonEditor(Gtk.Box):
         column_toggle_2 = Gtk.TreeViewColumn("C", renderer_toggle_2, active=2)
         treeview.append_column(column_toggle_2)
 
+        # For delete button
+        # Workings of button: selects row object. Only one. This one will be removed
+        # from the Liststore (liststore variable) once the delete button is clicked 
+
+        self.selected_row = treeview.get_selection()
+        self.selected_row.connect("changed", self.item_selected)
+
         self.add(treeview)
 
         self.grid = Gtk.Grid()
         self.add(self.grid)
-		#Add and Delete Cell buttons
-		
+        #Add and Delete Cell buttons
+
         self.add_button = Gtk.Button(label = 'Add Cell')
         self.add_button.connect("clicked", self.ativo)
         self.grid.attach(self.add_button, 0, 0, 2, 1)	
-        
+
         self.delete_button = Gtk.Button(label = 'Delete Cell')
+        self.delete_button.connect("clicked", self.delete_cell)
         self.grid.attach(self.delete_button, 0, 2, 2, 1)
 
     def text_edited(self, widget, path, text):
@@ -87,11 +95,12 @@ class AutomatonEditor(Gtk.Box):
         self.liststore[path][2] = not self.liststore[path][2]
     def ativo(self, widget):
         self.liststore.append(["A", False, False])
-        
-	# unfinished. Lacking a way to determine which cells are to be removed
-    
-    def delete_cell(self, widget, path):
-        pass
+    def item_selected(self, selection):
+        model, self.row_for_deletion = selection.get_selected()
+    def delete_cell(self, widget):
+        self.liststore.remove(self.row_for_deletion)
+
+
 
     def on_draw(self, automaton_render, cr):
         self.automaton_render.draw(cr)
