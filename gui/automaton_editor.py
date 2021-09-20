@@ -20,87 +20,102 @@ class AutomatonEditor(Gtk.Box):
         self.scrolled = Gtk.ScrolledWindow.new()
         self.automaton_render = AutomatonRenderer(self.automaton)
 
-
-
-
-
         self.pack_start(self.paned, True, True, 0)
         self.paned.pack1(self.scrolled, True, True)
         self.scrolled.add(self.automaton_render)
+
+        self.build_treeview()
 
         self.automaton_render.connect("draw", self.on_draw)
         self.automaton_render.connect("motion-notify-event", self.on_motion_notify)
         self.automaton_render.connect("button-press-event", self.on_button_press)
 
+    def build_treeview(self):
+        self.liststore = Gtk.ListStore(str, bool, bool, object)
 
-
-        # TreeView: checkboxes 
-
-        self.liststore = Gtk.ListStore(str, bool, bool)
-        self.liststore.append(["A", False, False])
-        self.liststore.append(["B", False, False])
-        self.liststore.append(["C", False, False])
-
-        treeview = Gtk.TreeView(model=self.liststore)
-
+        self.treeview = Gtk.TreeView(model=self.liststore)
 
         renderer_editabletext = Gtk.CellRendererText()
         renderer_editabletext.set_property("editable", True)
 
-        column_editabletext = Gtk.TreeViewColumn("A", renderer_editabletext, text=0)
-        treeview.append_column(column_editabletext)
+        column_editabletext = Gtk.TreeViewColumn("Event", renderer_editabletext, text=0)
+        self.treeview.append_column(column_editabletext)
 
         renderer_editabletext.connect("edited", self.text_edited)
 
-        # It would be nice to create a class for Toggle Buttons. For now, it works 
+        # It would be nice to create a class for Toggle Buttons. For now, it works
 
         # Toggle 1
         renderer_toggle_1 = Gtk.CellRendererToggle()
-        renderer_toggle_1.connect("toggled", self.on_cell_toggled_1)
-        column_toggle_1 = Gtk.TreeViewColumn("B", renderer_toggle_1, active=1)
-        treeview.append_column(column_toggle_1)
+        renderer_toggle_1.connect("toggled", self.renderer_toggle_controllable)
+        column_toggle_1 = Gtk.TreeViewColumn("Controllable", renderer_toggle_1, active=1)
+        self.treeview.append_column(column_toggle_1)
 
         # Toggle 2
         renderer_toggle_2 = Gtk.CellRendererToggle()
-        renderer_toggle_2.connect("toggled", self.on_cell_toggled_2)
-        column_toggle_2 = Gtk.TreeViewColumn("C", renderer_toggle_2, active=2)
-        treeview.append_column(column_toggle_2)
+        renderer_toggle_2.connect("toggled", self.renderer_toggle_observable)
+        column_toggle_2 = Gtk.TreeViewColumn("Observable", renderer_toggle_2, active=2)
+        self.treeview.append_column(column_toggle_2)
 
-        # For delete button
-        # Workings of button: selects row object. Only one. This one will be removed
-        # from the Liststore (liststore variable) once the delete button is clicked 
+        #~ self.selected_row = self.treeview.get_selection()
+        #~ self.selected_row.connect("changed", self.item_selected)
 
-        self.selected_row = treeview.get_selection()
-        self.selected_row.connect("changed", self.item_selected)
-
-        self.add(treeview)
+        self.add(self.treeview)
 
         self.grid = Gtk.Grid()
         self.add(self.grid)
         #Add and Delete Cell buttons
 
         self.add_button = Gtk.Button(label = 'Add Cell')
-        self.add_button.connect("clicked", self.ativo)
-        self.grid.attach(self.add_button, 0, 0, 2, 1)	
+        self.add_button.connect("clicked", self.event_add)
+        self.grid.attach(self.add_button, 0, 0, 2, 1)
 
         self.delete_button = Gtk.Button(label = 'Delete Cell')
         self.delete_button.connect("clicked", self.delete_cell)
         self.grid.attach(self.delete_button, 0, 2, 2, 1)
 
-    def text_edited(self, widget, path, text):
-        self.liststore[path][0] = text
-    def on_cell_toggled_1(self, widget, path):
-        self.liststore[path][1] = not self.liststore[path][1]
-    def on_cell_toggled_2(self, widget, path):
-        self.liststore[path][2] = not self.liststore[path][2]
-    def ativo(self, widget):
-        self.liststore.append(["A", False, False])
-    def item_selected(self, selection):
-        model, self.row_for_deletion = selection.get_selected()
+        self.update_treeview()
+
+    def update_treeview(self):
+        self.liststore.clear()
+        rows = list()
+
+        for event_name, event in self.automaton.events.items():
+            rows.append([event_name, event.controllable, event.observable, event])
+
+        rows.sort(key=lambda row: row[0])
+
+        for row in rows:
+            self.liststore.append(row)
+
+    def text_edited(self, widget, path, event_name):
+        event = self.liststore[path][3]
+        self.automaton.event_rename(event, event_name)
+        self.update_treeview()
+
+    def renderer_toggle_controllable(self, widget, path):
+        event = self.liststore[path][3]
+        event.controllable = not event.controllable
+        self.update_treeview()
+
+    def renderer_toggle_observable(self, widget, path):
+        event = self.liststore[path][3]
+        event.observable = not event.observable
+        self.update_treeview()
+
+    def event_add(self, widget):
+        self.automaton.event_add(name="new Event")
+        self.update_treeview()
+
     def delete_cell(self, widget):
-        self.liststore.remove(self.row_for_deletion)
+        _, tree_iter = self.treeview.get_selection().get_selected()
+        if tree_iter is None:
+            return
 
-
+        event = self.liststore.get(tree_iter, 3)[0]
+        self.automaton.event_remove(event)
+        self.update_treeview()
+        self.automaton_render.queue_draw()
 
     def on_draw(self, automaton_render, cr):
         self.automaton_render.draw(cr)
