@@ -33,6 +33,8 @@ class AutomatonEditor(Gtk.Box):
     def build_treeview(self):
         self.liststore = Gtk.ListStore(str, bool, bool, object)
 
+        self.treeview_box = Gtk.Box(orientation = Gtk.Orientation.VERTICAL)
+
         self.treeview = Gtk.TreeView(model=self.liststore)
 
         renderer_editabletext = Gtk.CellRendererText()
@@ -43,7 +45,7 @@ class AutomatonEditor(Gtk.Box):
 
         renderer_editabletext.connect("edited", self.text_edited)
 
-        # It would be nice to create a class for Toggle Buttons. For now, it works
+        
 
         # Toggle 1
         renderer_toggle_1 = Gtk.CellRendererToggle()
@@ -60,19 +62,19 @@ class AutomatonEditor(Gtk.Box):
         #~ self.selected_row = self.treeview.get_selection()
         #~ self.selected_row.connect("changed", self.item_selected)
 
-        self.add(self.treeview)
+        self.treeview_box.pack_start(self.treeview, True, True, 0)	
 
-        self.grid = Gtk.Grid()
-        self.add(self.grid)
         #Add and Delete Cell buttons
 
         self.add_button = Gtk.Button(label = 'Add Cell')
         self.add_button.connect("clicked", self.event_add)
-        self.grid.attach(self.add_button, 0, 0, 2, 1)
+        self.treeview_box.pack_start(self.add_button, True, False, 0)
 
         self.delete_button = Gtk.Button(label = 'Delete Cell')
         self.delete_button.connect("clicked", self.delete_cell)
-        self.grid.attach(self.delete_button, 0, 2, 2, 1)
+        self.treeview_box.pack_start(self.delete_button, True, False, 0)
+
+        self.add(self.treeview_box)
 
         self.update_treeview()
 
