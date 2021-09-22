@@ -21,7 +21,7 @@ class AutomatonEditor(Gtk.Box):
         self.automaton_render = AutomatonRenderer(self.automaton)
 
         self.pack_start(self.paned, True, True, 0)
-        self.paned.pack1(self.scrolled, True, True)
+        self.paned.pack1(self.scrolled, True, False)
         self.scrolled.add(self.automaton_render)
 
         self.build_treeview()
@@ -45,7 +45,7 @@ class AutomatonEditor(Gtk.Box):
 
         renderer_editabletext.connect("edited", self.text_edited)
 
-        
+
 
         # Toggle 1
         renderer_toggle_1 = Gtk.CellRendererToggle()
@@ -62,19 +62,19 @@ class AutomatonEditor(Gtk.Box):
         #~ self.selected_row = self.treeview.get_selection()
         #~ self.selected_row.connect("changed", self.item_selected)
 
-        self.treeview_box.pack_start(self.treeview, True, True, 0)	
+        self.treeview_box.pack_start(self.treeview, True, True, 0)
 
         #Add and Delete Cell buttons
 
         self.add_button = Gtk.Button(label = 'Add Cell')
         self.add_button.connect("clicked", self.event_add)
-        self.treeview_box.pack_start(self.add_button, True, False, 0)
+        self.treeview_box.pack_start(self.add_button, False, False, 0)
 
         self.delete_button = Gtk.Button(label = 'Delete Cell')
         self.delete_button.connect("clicked", self.delete_cell)
-        self.treeview_box.pack_start(self.delete_button, True, False, 0)
+        self.treeview_box.pack_start(self.delete_button, False, False, 0)
 
-        self.add(self.treeview_box)
+        self.paned.pack2(self.treeview_box, True, False)
 
         self.update_treeview()
 
