@@ -8,6 +8,9 @@ import random
 from random import seed
 from random import randint
 
+class EventNameDuplicateException(Exception):
+    pass
+
 class Base:
     def __init__(self, *args, **kwargs):
         for key, value in kwargs.items():
@@ -82,6 +85,9 @@ class Event(Base):
         if isinstance(value, bool):
             self._observable = value
 
+    def transition_add(self, transition):
+        self.transitions.add(transition)
+
 
 class EventSet(Base):  # TODO
     pass
@@ -120,9 +126,13 @@ class TransitionLayout:
 
 
 class State(Base):
-    def __init__(self, name=None, marked=False, x=0, y=0, tex=None, *args, **kwargs):
+    def __init__(self, name=None, marked=False, x=0, y=0, quantity=None, *args, **kwargs):
+        if name is None:
+            if quantity is not None:
+                name = str(quantity + 1)
+            else:
+                name = '?'
         self.name = name
-        self.tex = tex
         self.marked = marked
         self.x = x
         self.y = y
@@ -282,7 +292,7 @@ class Automaton(Base):
     def event_add(self, *args, **kwargs):
         e = self.event_class(*args, **kwargs)
         if e.name in self.events:
-            return None
+            raise EventNameDuplicateException
         self.events[e.name] = e
         return e
 
@@ -293,20 +303,31 @@ class Automaton(Base):
             del self.events[event_name]
         except KeyError:
             return False
-        else:
-            for t in event.transitions:
-                self.transition_remove(t)
-            return True
+
+        for t in event.transitions:
+            print("REMOVING", t)
+            self.transition_remove(t)
+        return True
 
     def event_remove(self, event):
         """event's name are unique"""
         return self.event_remove_by_name(event.name)
 
+    def event_rename(self, event, event_name):
+        # TODO improve: two sources of truth
+        if event_name in self.events:
+            raise EventNameDuplicateException
+
+        del self.events[event.name]
+        self.events[event_name] = event
+        event.name = event_name
+
     def has_event_name(self, event_name):
         return event_name in self.events  # check if the event_name key exists in self.events
 
     def state_add(self, *args, initial=False, **kwargs):
-        s = self.state_class(*args, **kwargs)
+        quantity = len(self.states)
+        s = self.state_class(*args, quantity=quantity, **kwargs)
         self.states.add(s)
         if initial:
             self.initial_state = s
@@ -344,10 +365,12 @@ class Automaton(Base):
         if isinstance(value, self.state_class) or (value is None):
             self._initial_state = value
 
-    def transition_add(self, from_state, to_state, *args, **kwargs):
-        t = self.transition_class(from_state, to_state, *args, **kwargs)
+    def transition_add(self, from_state, to_state, event, *args, **kwargs):
+        t = self.transition_class(from_state, to_state, event, *args, **kwargs)
         from_state.transition_out_add(t)
         to_state.transition_in_add(t)
+        event.transition_add(t)
+
         return t
 
     # TODO: test

@@ -1,7 +1,8 @@
-import cairo
 import math
 
-# from machine.automaton import Automaton
+import cairo
+import gi
+from gi.repository import GLib, Gio, Gtk, Gdk
 
 
 class Point2D:
@@ -152,7 +153,7 @@ class Point2D:
             return 2*math.pi - math.acos(x0 / r)
 
 
-class AutomatonRender:
+class AutomatonRenderer(Gtk.DrawingArea):
     MIN_RADIUS = 32
     DOUBLE_RADIUS_GAP = 4
     TEXT_RADIUS_GAP = 4
@@ -186,8 +187,12 @@ class AutomatonRender:
 
     }
 
-    def __init__(self):
-        pass
+    def __init__(self, automaton, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.automaton = automaton
+        self.set_events(Gdk.EventMask.BUTTON_MOTION_MASK |
+                        Gdk.EventMask.BUTTON_PRESS_MASK
+        )
 
     def _draw_point(self, cr, V, r=0, g=0, b=0):
         cr.set_source_rgb(r, g, b)
@@ -243,8 +248,7 @@ class AutomatonRender:
         # cr.stroke()
         cr.fill()
 
-    def draw_state_transitions(self, cr, from_state, states_radius, factor=1.0,
-                               ccw=True):
+    def draw_state_transitions(self, cr, from_state, states_radius, factor=1.0, ccw=True):
         transitions = dict()
         for trans in from_state.out_transitions:
             if trans.to_state not in transitions:
@@ -340,14 +344,14 @@ class AutomatonRender:
                 cr.stroke()
             return radius
 
-    def draw(self, cr, automaton):
+    def draw(self, cr):
         # draw states
         state_radius = dict()
 
-        for state in automaton.states:
+        for state in self.automaton.states:
             state_radius[state] = self.draw_state(cr, state, arc_color=(0, 0, 0))
 
-        for state in automaton.states:
+        for state in self.automaton.states:
             self.draw_state_transitions(cr, state, state_radius, ccw=True, factor=2.0)
 
     def get_connected_states(self, state, forward_deep, backward_deep):
@@ -382,12 +386,11 @@ class AutomatonRender:
                         stack.append(src)
 
         return states
-        
 
-    def draw_partial(self, cr, automaton, current_state, forward_deep=1, backward_deep=0):
+    def draw_partial(self, cr, current_state, forward_deep=1, backward_deep=0):
         state_radius = dict()
         show_states = self.get_connected_states(current_state, forward_deep=forward_deep, backward_deep=backward_deep)
-        
+
         for state in show_states:
             c = (0, 0, 0)
             if state == current_state:
