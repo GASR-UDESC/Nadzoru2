@@ -9,8 +9,394 @@ sys.path.insert(1, base_path)
 import pluggins
 
 from machine.automaton import Automaton
-g = Automaton()
+import time
+'''
+#PAG 115 FIG 5.4 (5.1.4)
+G = Automaton()
+S = Automaton()
 
+g0 = G.state_add('0', marked = True, initial = True)
+g1 = G.state_add('1', False)
+g2 = G.state_add('2', True)
+g3 = G.state_add('3', False)
+g4 = G.state_add('4', False)
+
+ga = G.event_add('a', True, True)
+gb = G.event_add('b', True, True)
+gc = G.event_add('c', True, True)
+
+G.transition_add(g0, g1, ga)
+G.transition_add(g1, g2, gb)
+G.transition_add(g2, g3, gb)
+G.transition_add(g3, g0, gc)
+G.transition_add(g2, g4, ga)
+G.transition_add(g4, g2, gc)
+G.transition_add(g4, g4, gb)
+
+s0 = S.state_add('0', marked = False, initial = True)
+s1 = S.state_add('1', True)
+s2 = S.state_add('2', True)
+s3 = S.state_add('3', False)
+s4 = S.state_add('4', False)
+
+sa = S.event_add('a', True,True)
+sb = S.event_add('b', True, True)
+sc = S.event_add('c', True, True)
+
+S.transition_add(s0, s1, sa)
+S.transition_add(s1, s2, sb)
+S.transition_add(s2, s3, sb)
+S.transition_add(s3, s0, sc)
+S.transition_add(s2, s4, sa)
+S.transition_add(s4, s2, sc)
+S.transition_add(s4, s4, sb)
+
+print(time.time())
+S.supervisor_reduction(G, 'a')
+print(time.time())
+
+
+#PAG 79 FIG 3.12 - PAG 144 FIG 5.3
+G = Automaton()
+S = Automaton()
+
+g0 = G.state_add('0', marked = True, initial = True)
+g1 = G.state_add('1', False)
+g2 = G.state_add('2', False)
+g3 = G.state_add('3', False)
+g4 = G.state_add('4', False)
+g5 = G.state_add('5', False)
+
+ga = G.event_add('a', True, True)
+gb = G.event_add('b', True, True)
+gc = G.event_add('c', False, True)
+gd = G.event_add('d', False, True)
+
+G.transition_add(g0, g1, ga)
+G.transition_add(g0, g2, gb)
+G.transition_add(g1, g3, gb)
+G.transition_add(g1, g4, ga)
+G.transition_add(g2, g5, ga)
+G.transition_add(g2, g4, gb)
+G.transition_add(g3, g4, gc)
+G.transition_add(g5, g4, gc)
+G.transition_add(g4, g0, gd)
+
+s0 = S.state_add('0', marked = True, initial = True)
+s1 = S.state_add('1', True)
+s2 = S.state_add('2', True)
+s3 = S.state_add('3', True)
+
+sa = S.event_add('a', True,True)
+sb = S.event_add('b', True, True)
+sc = S.event_add('c', False, True)
+sd = S.event_add('d', False, True)
+
+
+S.transition_add(s0, s1, sa)
+S.transition_add(s0, s2, sb)
+S.transition_add(s1, s3, sa)
+S.transition_add(s2, s3, sb)
+S.transition_add(s3, s0, sd)
+
+print(time.time())
+S.supervisor_reduction(G, 'a')
+print(time.time())
+
+
+#PAG 113 FIG 5.2 (5.1.2a)
+
+G = Automaton()
+S = Automaton()
+
+g0 = G.state_add('0', marked = True, initial = True)
+g1 = G.state_add('1', False)
+g2 = G.state_add('2', False)
+g3 = G.state_add('3', False)
+g4 = G.state_add('4', False)
+
+ga = G.event_add('a', False, True)
+gb = G.event_add('b', False, True)
+gc = G.event_add('c', False, True)
+gd = G.event_add('d', True, True)
+
+G.transition_add(g0, g1, gb)
+G.transition_add(g0, g3, ga)
+G.transition_add(g0, g4, gc)
+G.transition_add(g1, g2, gb)
+G.transition_add(g2, g0, ga)
+G.transition_add(g3, g2, ga)
+G.transition_add(g3, g0, gd)
+G.transition_add(g4, g0, ga)
+G.transition_add(g4, g3, gd)
+
+
+s0 = S.state_add('0', marked = True, initial = True)
+s1 = S.state_add('1', True)
+s2 = S.state_add('2', True)
+s3 = S.state_add('3', True)
+s4 = S.state_add('4', True)
+
+sa = S.event_add('a', False,True)
+sb = S.event_add('b', False, True)
+sc = S.event_add('c', False, True)
+sd = S.event_add('d', True, True)
+
+S.transition_add(s0, s1, sb)
+S.transition_add(s0, s4, sa)
+S.transition_add(s0, s3, sc)
+S.transition_add(s1, s2, sb)
+S.transition_add(s2, s0, sa)
+S.transition_add(s3, s0, sa)
+S.transition_add(s4, s0, sd)
+S.transition_add(s4, s2, sa)
+
+print(time.time())
+S.supervisor_reduction(G, 'a')
+print(time.time())
+
+#PAG 113 FIG 5.1 (5.1.1)
+
+G = Automaton()
+S = Automaton()
+
+g0 = G.state_add('0', marked = True, initial = True)
+g1 = G.state_add('1', False)
+g2 = G.state_add('2', False)
+
+ga = G.event_add('a', False, True)
+gb = G.event_add('b', False, True)
+gc = G.event_add('c', False, True)
+gd = G.event_add('d', True, True)
+
+G.transition_add(g0, g0, ga)
+G.transition_add(g0, g1, gc)
+G.transition_add(g1, g0, gb)
+G.transition_add(g1, g1, gd)
+G.transition_add(g1, g2, ga)
+G.transition_add(g2, g0, gc)
+G.transition_add(g2, g2, gb)
+G.transition_add(g2, g2, gd)
+
+
+s0 = S.state_add('0', marked = True, initial = True)
+s1 = S.state_add('1', True)
+s2 = S.state_add('2', True)
+
+sa = S.event_add('a', False,True)
+sb = S.event_add('b', False, True)
+sc = S.event_add('c', False, True)
+sd = S.event_add('d', True, True)
+
+S.transition_add(s0, s0, sa)
+S.transition_add(s0, s1, sc)
+S.transition_add(s1, s1, sd)
+S.transition_add(s1, s0, sb)
+S.transition_add(s1, s2, sa)
+S.transition_add(s2, s2, sb)
+S.transition_add(s2, s0, sc)
+
+print(time.time())
+S.supervisor_reduction(G, 'a')
+print(time.time())
+'''
+#PAG 113 FIG 5.2 (5.1.2a)
+
+G = Automaton()
+S = Automaton()
+
+g0 = G.state_add('0', marked = True, initial = True)
+g1 = G.state_add('1', False)
+g2 = G.state_add('2', False)
+g3 = G.state_add('3', False)
+g4 = G.state_add('4', False)
+
+ga = G.event_add('a', False, True)
+gb = G.event_add('b', False, True)
+gc = G.event_add('c', False, True)
+gd = G.event_add('d', True, True)
+
+G.transition_add(g0, g1, gb)
+G.transition_add(g0, g3, ga)
+G.transition_add(g0, g4, gc)
+G.transition_add(g1, g2, gb)
+G.transition_add(g2, g0, ga)
+G.transition_add(g3, g2, ga)
+G.transition_add(g3, g0, gd)
+G.transition_add(g4, g0, ga)
+G.transition_add(g4, g3, gd)
+
+
+s0 = S.state_add('0', marked = True, initial = True)
+s1 = S.state_add('1', True)
+s2 = S.state_add('2', True)
+s3 = S.state_add('3', True)
+
+sa = S.event_add('a', False,True)
+sb = S.event_add('b', False, True)
+sc = S.event_add('c', False, True)
+sd = S.event_add('d', True, True)
+
+S.transition_add(s0, s1, sb)
+S.transition_add(s0, s3, sa)
+S.transition_add(s0, s2, sc)
+S.transition_add(s1, s2, sb)
+S.transition_add(s2, s0, sa)
+S.transition_add(s3, s0, sd)
+S.transition_add(s3, s2, sa)
+
+print(time.time())
+S.supervisor_reduction(G, 'a')
+print(time.time())
+'''
+
+######
+g1 = Automaton()
+E = Automaton()
+
+ev1 = g1.event_add('a1', True, True)
+ev2 = g1.event_add('b1', False, True)
+ev3 = g1.event_add('a2', True, True)
+ev4 = g1.event_add('b2', False, True)
+
+s0 = g1.state_add('0', marked=True, initial=True)
+s1 = g1.state_add('1', marked=False)
+s2 = g1.state_add('2', marked=False)
+s3 = g1.state_add('3', marked=False)
+s4 = g1.state_add('4', marked=False)
+s5 = g1.state_add('5', marked=False)
+s6 = g1.state_add('6', marked=False)
+s7 = g1.state_add('7', marked=False)
+
+t1 = g1.transition_add(s0, s1, ev1)
+t2 = g1.transition_add(s1, s2, ev2)
+t3 = g1.transition_add(s2, s3, ev3)
+t4 = g1.transition_add(s2, s7, ev1)
+t5 = g1.transition_add(s3, s4, ev1)
+t6 = g1.transition_add(s3, s0, ev4)
+t7 = g1.transition_add(s4, s5, ev2)
+t8 = g1.transition_add(s4, s1, ev4)
+t9 = g1.transition_add(s5, s6, ev1)
+t10 = g1.transition_add(s5, s2, ev4)
+t11 = g1.transition_add(s6, s7, ev4)
+t12 = g1.transition_add(s7, s4, ev3)
+
+ev5 = E.event_add('a1', True, True)
+ev6 = E.event_add('b1', False, True)
+ev7 = E.event_add('a2', True, True)
+ev8 = E.event_add('b2', False, True)
+
+sg0 = E.state_add('0', marked=True, initial=True)
+sg1 = E.state_add('1', marked=False)
+sg2 = E.state_add('2', marked=False)
+sg3 = E.state_add('3', marked=False)
+
+tg1 = E.transition_add(sg0, sg1, ev5)
+tg2 = E.transition_add(sg0, sg2, ev7)
+tg3 = E.transition_add(sg1, sg0, ev6)
+tg4 = E.transition_add(sg1, sg3, ev7)
+tg5 = E.transition_add(sg2, sg1, ev8)
+tg6 = E.transition_add(sg2, sg3, ev5)
+tg7 = E.transition_add(sg3, sg2, ev6)
+tg8 = E.transition_add(sg3, sg1, ev8)
+
+
+R = E.sup_c(g1)
+
+R.supervisor_reduction(g1, 'a')
+
+
+##second test minimize
+g1 = Automaton()
+E = Automaton()
+
+ev1 = g1.event_add('a1', True, True)
+ev2 = g1.event_add('b1', False, True)
+ev3 = g1.event_add('a2', True, True)
+ev4 = g1.event_add('b2', False, True)
+
+s0 = g1.state_add('0', marked=True, initial=True)
+s1 = g1.state_add('1', marked=False)
+s2 = g1.state_add('2', marked=False)
+s3 = g1.state_add('3', marked=False)
+s4 = g1.state_add('4', marked=False)
+s5 = g1.state_add('5', marked=False)
+s6 = g1.state_add('6', marked=False)
+s7 = g1.state_add('7', marked=False)
+
+t1 = g1.transition_add(s0, s1, ev1)
+t2 = g1.transition_add(s1, s2, ev2)
+t3 = g1.transition_add(s2, s3, ev3)
+t4 = g1.transition_add(s2, s7, ev1)
+t5 = g1.transition_add(s3, s4, ev1)
+t6 = g1.transition_add(s3, s0, ev4)
+t7 = g1.transition_add(s4, s5, ev2)
+t8 = g1.transition_add(s4, s1, ev4)
+t9 = g1.transition_add(s5, s6, ev1)
+t10 = g1.transition_add(s5, s2, ev4)
+t11 = g1.transition_add(s6, s7, ev4)
+t12 = g1.transition_add(s7, s4, ev3)
+
+ev5 = E.event_add('a1', True, True)
+ev6 = E.event_add('b1', False, True)
+ev7 = E.event_add('a2', True, True)
+ev8 = E.event_add('b2', False, True)
+
+sg0 = E.state_add('0', marked=True, initial=True)
+sg1 = E.state_add('1', marked=False)
+sg2 = E.state_add('2', marked=False)
+sg3 = E.state_add('3', marked=False)
+
+tg1 = E.transition_add(sg0, sg1, ev5)
+tg2 = E.transition_add(sg0, sg2, ev7)
+tg3 = E.transition_add(sg1, sg0, ev6)
+tg4 = E.transition_add(sg1, sg3, ev7)
+tg5 = E.transition_add(sg2, sg1, ev8)
+tg6 = E.transition_add(sg2, sg3, ev5)
+tg7 = E.transition_add(sg3, sg2, ev6)
+tg8 = E.transition_add(sg3, sg1, ev8)
+
+
+R = E.sup_c(g1)
+print(R)
+
+
+q0 = g.state_add('q0', x=50, y=150, marked=False, initial=True)
+q1 = g.state_add('q1', x=250, y=150, marked=False)
+q12 = g.state_add('q12', x=450, y=150, marked=False)
+q13 = g.state_add('q13', x=250, y=400, marked=False)
+q2 = g.state_add('q2', x=450, y=400, marked=False)
+q123 = g.state_add('q123', x=650, y=150, marked=True)
+
+a = g.event_add('a', True, True)
+b = g.event_add('b', False, True)
+c = g.event_add('c', True, False)
+
+
+g.transition_add(q0, q0, c)
+g.transition_add(q0, q0, b)
+g.transition_add(q0, q1, a)
+g.transition_add(q1, q12, b)
+g.transition_add(q1, q13, c)
+g.transition_add(q1, q1, a)
+g.transition_add(q12, q1, a)
+g.transition_add(q12, q2, b)
+g.transition_add(q12, q123, c)
+g.transition_add(q123, q1, a)
+g.transition_add(q123, q2, b)
+g.transition_add(q123, q13, c)
+g.transition_add(q13, q1, a)
+g.transition_add(q13, q2, b)
+g.transition_add(q13, q13, c)
+g.transition_add(q2, q2, b)
+g.transition_add(q2, q1, a)
+g.transition_add(q2, q13, c)
+
+print(g)
+y = g.minimize()
+print(y)
+
+#first test minimize
 Q0 = g.state_add('Q0', marked = False, initial=True)
 Q1 = g.state_add('Q1', marked = False, initial=False)
 Q2 = g.state_add('Q2', marked = True, initial=False)
@@ -34,7 +420,8 @@ t10 = g.transition_add(Q2, Q3, e0)
 print(g)
 y = g.minimize()
 print(y)
-'''
+##################
+
 S = g.state_add('S', marked = False, initial = True)
 A = g.state_add('A', marked = False)
 B = g.state_add('B', marked = True)

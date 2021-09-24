@@ -4,6 +4,9 @@
 
 import copy
 import functools
+import random
+from random import seed
+from random import randint
 
 class Base:
     def __init__(self, *args, **kwargs):
@@ -518,7 +521,7 @@ class Automaton(Base):
             for ev_name, ev in g.events.items():
                 if ev.name not in event_names:
                     new_event = ev.copy()
-                    self.events.add(new_event)
+                    self.events[new_event] = ev
                     added_events.append(new_event)
                     event_names.add(ev.name)
                 else:
@@ -879,3 +882,258 @@ class Automaton(Base):
     def isomorphic_check(G1, G2):
         pass
 
+    def supervisor_reduction(self, G, criteria):
+
+        # dict[supervisor_state] = plant_state
+        univ_map = G.univocal(self)
+
+        # this function returns the set of disabled events in the supervisor
+        def get_disabled_events(sup_state):
+            enabled_events_in_supervisor = set()
+            enabled_events_in_system = set()
+            disabled_events = list()
+
+            for transition in sup_state.out_transitions: enabled_events_in_supervisor.add(transition.event.name)
+            for transition in univ_map[sup_state].out_transitions: enabled_events_in_system.add(transition.event.name)
+
+            for transition in enabled_events_in_system:
+                if transition not in enabled_events_in_supervisor:
+                    disabled_events.append(transition)
+
+            return set(disabled_events)
+
+        # this function returns the set of enabled events in a state
+        def get_enabled_events(state):
+            enabled_events = list()
+
+            for transition in state.out_transitions: enabled_events.append(transition.event.name)
+
+            return set(enabled_events)
+
+        # marked attribute
+        # returns 1 if T(x) = 1 AND M(x) = 1, 0 if T(x) = 0, -1 if T(x) = 1 AND M(x) = 0
+        # T(x) refers to plant G and M(x) refers to supervisor S
+        def get_marked_attribute(sup_state):
+            if univ_map[sup_state].marked is False:
+                return 0
+            else:
+                if sup_state.marked is True:
+                    return 1
+                else:
+                    return -1
+
+        def get_marked_action_attribute(x1, x2):
+            mx1 = get_marked_attribute(x1)
+            mx2 = get_marked_attribute(x2)
+            if (mx1 == mx2) or ((mx1 == 0) and (mx2 != 0)) or ((mx2 == 0) and (mx1 != 0)):
+                return True
+            else:
+                return False
+
+        # lists the states of the supervisor
+        states = list(self.states)
+        # half matrix: dict(frozenset of pair of states) = relatable, not relatable or dependancy
+        aggregate_matrix = dict()
+        # creates a half matrix so we can relate all pairs of states
+        for i in range(1, len(states)):
+            for j in range(0, len(states) - 1):
+                if states[i] != states[j]:
+                    pair = frozenset((states[i], states[j]))
+                    # Condition 1: E(x1) Intersection D(x2) = 0 AND E(x2) Intersection D(x1) = 0
+                    x1 = get_enabled_events(states[i])
+                    x2 = get_disabled_events(states[j])
+                    x3 = get_enabled_events(states[j])
+                    x4 = get_disabled_events(states[i])
+                    if (len(get_enabled_events(states[i]).intersection(get_disabled_events(states[j]))) == 0) and (len(get_enabled_events(states[j]).intersection(get_disabled_events(states[i]))) == 0):
+                        # Marked Criteria - Sivolella def 4.1
+                        if get_marked_action_attribute(states[i], states[j]) is True:
+                            # Condition 3: Looking for dependancies
+                            common_transitions = get_enabled_events(states[i]).intersection(get_enabled_events(states[j]))
+                            if len(common_transitions) == 0:
+                                aggregate_matrix[pair] = True
+                            else:
+                                i_transition_function_dict = dict()
+                                for transition in states[i].out_transitions:
+                                    i_transition_function_dict[transition.event.name] = transition.to_state
+                                j_transition_function_dict = dict()
+                                for transition in states[j].out_transitions:
+                                    j_transition_function_dict[transition.event.name] = transition.to_state
+                                dependancies = set()
+                                for each in common_transitions:
+                                    target_pair = frozenset((i_transition_function_dict[each], j_transition_function_dict[each]))
+                                    if target_pair != pair:
+                                        dependancies.add(frozenset((i_transition_function_dict[each], j_transition_function_dict[each])))
+                                if len(dependancies):
+                                    aggregate_matrix[pair] = dependancies
+                                else:
+                                    aggregate_matrix[pair] = True
+                        else:
+                            aggregate_matrix[pair] = False
+                    else:
+                        aggregate_matrix[pair] = False
+        # R condition
+
+        #function calculates the out transition function of the state
+        def get_transition_function(state):
+            transition_function = dict()
+            for transition in state.out_transitions:
+                transition_function[transition.event.name] = transition.to_state
+            return transition_function
+
+        def a_size_criteria(aggregation_indexes, states):
+            cell_sizes = dict()
+            sizes = list()
+            for j in aggregation_indexes:
+                cell_sizes[len(control_cover_dict[j])] = j
+                sizes.append(len(control_cover_dict[j]))
+
+            chosen_cell = cell_sizes[max(sizes)]
+            for state in states:
+                if state not in control_cover_dict[chosen_cell]:
+                    control_cover_dict[chosen_cell].add(state)
+
+            state_stack.append(control_cover_dict[chosen_cell])
+            pass
+
+        def b_min_dependancies_criteria(aggregation_indexes, states):
+
+            pass
+
+        def c_target_state_intersection_criteria(aggregation_indexes, states):
+            intersection_dict = dict()
+            intersections = list()
+            for j in aggregation_indexes:
+                intersection_dict[frozenset(control_cover_dict[j].intersection(states))] = j
+                intersections.append(control_cover_dict[j].intersection(states))
+
+            chosen_cell = intersection_dict[frozenset(max(intersections))]
+            for state in states:
+                if state not in control_cover_dict[chosen_cell]:
+                    control_cover_dict[chosen_cell].add(state)
+
+            #state_stack.append(control_cover_dict[chosen_cell])
+            pass
+
+        def d_future_agregation_criteria():
+            pass
+
+        def e_random_criteria(aggregation_indexes, states):
+            chosen_cell = random.choice(aggregation_indexes)
+
+            for each in states:
+                if each not in control_cover_dict[chosen_cell]:
+                    control_cover_dict[chosen_cell].add(each)
+
+            #state_stack.append(control_cover_dict[chosen_cell])
+            pass
+
+        # Control Cover
+        # creates first control cover cell with supervisor's initial state
+        control_cover_dict = dict()
+        control_cover_state = set()
+        control_cover_state.add(self.initial_state)
+        control_cover_dict[0] = control_cover_state
+        state_stack = list()
+        state_stack.append(control_cover_state)
+
+        while len(state_stack) != 0:
+            #current is one element of control_cover_dict (a control cover cell)
+            current_cell_updated = False
+            current = state_stack.pop(0)
+            for event in self.events:
+                control_cover_state = set()
+                for state in current:
+                    trans_function = get_transition_function(state)
+                    try:
+                        control_cover_state.add(trans_function[event])
+                    except KeyError:
+                        pass
+                # at this point control_cover_state holds a set with the destiny states
+                # decide if there is already a control cover that has this set, if not, create it
+                control_cell_covered = False
+                for j in range(0, len(control_cover_dict)):
+                    if control_cover_state.issubset(control_cover_dict[j]):
+                        #there is already a control cover that has this set, do nothing
+                        control_cell_covered = True
+                if control_cell_covered is False:
+                    possible_aggregation_indexes = list()
+                    # if not covered already verify R condition
+                    for j in range(0, len(control_cover_dict)):
+                        counter = 0
+                        for cover_state in control_cover_dict[j]:
+                            for target_state in control_cover_state:
+                                if(cover_state != target_state):
+                                    pair = frozenset([cover_state, target_state])
+                                    if aggregate_matrix[pair] is not False:
+                                        counter = counter + 1
+                                else:
+                                    counter = counter + 1
+                        if counter == len(control_cover_dict[j])*len(control_cover_state):
+                            # aggregation is possible, store the index of control cover to decide later on the criteria
+                            possible_aggregation_indexes.append(j)
+                    #if target states cant be aggregated in any existing cells
+                    if len(possible_aggregation_indexes) == 0:
+                        if len(control_cover_state) == 1:
+                            control_cover_dict[len(control_cover_dict)] = control_cover_state
+                            state_stack.append(control_cover_state)
+                        else:
+                            counter = 0
+                            #verify if the cell can be aggregated before creating new state
+                            for s1 in control_cover_state:
+                                for s2 in control_cover_state:
+                                    if s1 != s2:
+                                        if aggregate_matrix[frozenset((s1, s2))] is not False:
+                                            counter = counter + 1
+                                    else:
+                                        counter = counter + 1
+                            if counter == len(control_cover_state) * len(control_cover_state):
+                                control_cover_dict[len(control_cover_dict)] = control_cover_state
+                                state_stack.append(control_cover_state)
+                    else:
+                        # aggregate based on the criteria given
+                        current_cell_updated = True
+                        if criteria == 'b':
+                            b_min_dependancies_criteria()
+                        elif criteria == 'c':
+                            c_target_state_intersection_criteria(possible_aggregation_indexes, control_cover_state)
+                        elif criteria == 'd':
+                            d_future_agregation_criteria()
+                        elif criteria == 'e':
+                            e_random_criteria(possible_aggregation_indexes, control_cover_state)
+                        else: #if 'a' but also default
+                            a_size_criteria(possible_aggregation_indexes, control_cover_state)
+                if current_cell_updated is True:
+                    break
+
+        Sr = Automaton()
+        sr_state_map = dict()
+        sr_event_map = dict()
+        #key is tuple, value is new state
+        def Sr_state_add(state_tuple, initial=False):
+            marked = functools.reduce(lambda val, s: val and s.marked, state_tuple, True)
+            state_name = ",".join(state.name for state in state_tuple)
+            s = Sr.state_add(state_name, initial=initial, marked=marked)
+            sr_state_map[state_tuple] = s
+
+        for key in control_cover_dict:
+            state_tuple = tuple(state for state in control_cover_dict[key])
+            Sr_state_add(state_tuple, True if key == 0 else False)
+
+        for event in self.events:
+            sr_event_map[event] = Sr.event_add(event, True, True)
+
+        for each in sr_state_map:
+            for event in Sr.events:
+                target_states = set()
+                for state in each:
+                    t_function = get_transition_function(state)
+                    try:
+                        target_states.add(t_function[event])
+                    except:
+                        pass
+                for state in sr_state_map:
+                    if target_states.issubset(set(state)) and len(target_states) > 0:
+                        Sr.transition_add(sr_state_map[each], sr_state_map[state], sr_event_map[event])
+                        break
+
+        return(Sr)
