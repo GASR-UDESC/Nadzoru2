@@ -73,7 +73,7 @@ class AutomatonEditor(Gtk.Box):
         self.delete_button = Gtk.Button(label = 'Delete Cell')
         self.delete_button.connect("clicked", self.delete_cell)
         self.treeview_box.pack_start(self.delete_button, False, False, 0)
-
+        self.paned.set_position(600) # Value can be any value, just to make it smaller than the minimum
         self.paned.pack2(self.treeview_box, True, False)
 
         self.update_treeview()
