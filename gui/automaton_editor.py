@@ -131,6 +131,17 @@ class AutomatonEditor(Gtk.Box):
 
         if tool_name == 'state_add':
             self.automaton.state_add(None, x=x, y=y)
+
+        elif tool_name == 'state_initial':
+            state = self.automaton_render.get_state_at(x, y)
+            if state is not None:
+                self.automaton.initial_state = state
+
+        elif tool_name == 'state_marked':
+            state = self.automaton_render.get_state_at(x, y)
+            if state is not None:
+                state.marked = not state.marked
+
         elif tool_name == 'transition_add':
             pass
 

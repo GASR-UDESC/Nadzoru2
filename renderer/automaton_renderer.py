@@ -194,6 +194,14 @@ class AutomatonRenderer(Gtk.DrawingArea):
                         Gdk.EventMask.BUTTON_PRESS_MASK
         )
 
+        self.reset_cache()
+
+    def reset_cache(self):
+        self.cache = {
+            'states': dict(),
+            'transitions': dict(),
+        }
+
     def _draw_point(self, cr, V, r=0, g=0, b=0):
         cr.set_source_rgb(r, g, b)
         cr.arc(V.x, V.y, 2, 0, 2 * math.pi)
@@ -336,15 +344,33 @@ class AutomatonRenderer(Gtk.DrawingArea):
     def draw_state(self, cr, state, txt_color=(0, 0, 0), arc_color=(0, 0, 0)):
             cr.set_source_rgb(*txt_color)
             radius = self.write_text(cr, state.x, state.y, state.name)
+            self.cache['states'][state] = {'radius': radius}
             cr.set_source_rgb(*arc_color)
             cr.arc(state.x, state.y, radius, 0, 2 * math.pi)
             cr.stroke()
             if state.marked:
                 cr.arc(state.x, state.y, radius - self.DOUBLE_RADIUS_GAP, 0, 2 * math.pi)
                 cr.stroke()
+
+            if self.automaton.initial_state == state:
+                # Add arrow to the left of the initial state
+                tip_x, tip_y = state.x-radius, state.y
+
+                cr.move_to(tip_x, tip_y)
+                cr.line_to(tip_x-50, tip_y)
+                cr.stroke()
+
+                cr.move_to(tip_x, tip_y)
+                cr.line_to(tip_x-self.ARROW_LENGTH, tip_y+self.ARROW_MID_HEIGHT)
+                cr.line_to(tip_x-self.ARROW_LENGTH, tip_y-self.ARROW_MID_HEIGHT)
+                cr.line_to(tip_x, tip_y)
+                cr.fill()
+
             return radius
 
     def draw(self, cr):
+        self.reset_cache()
+
         # draw states
         state_radius = dict()
 
@@ -388,6 +414,8 @@ class AutomatonRenderer(Gtk.DrawingArea):
         return states
 
     def draw_partial(self, cr, current_state, forward_deep=1, backward_deep=0):
+        self.reset_cache()
+
         state_radius = dict()
         show_states = self.get_connected_states(current_state, forward_deep=forward_deep, backward_deep=backward_deep)
 
@@ -401,6 +429,17 @@ class AutomatonRenderer(Gtk.DrawingArea):
 
         for state in show_states:
             self.draw_state_transitions(cr, state, state_radius, ccw=True, factor=2.0)
+
+
+    def get_state_at(self, x, y):
+        for state in self.automaton.states:
+            sq_dist = (x - state.x)**2 + (y - state.y)**2
+            r = self.cache['states'][state]['radius']**2
+            if sq_dist <= r:
+                return state
+
+        return None
+
 
 
 
