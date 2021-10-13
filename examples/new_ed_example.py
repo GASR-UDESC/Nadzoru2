@@ -10,10 +10,28 @@ import pluggins
 
 from machine.automaton import Automaton
 import time
+
+G = Automaton()
+S = Automaton()
+gpath = r"C:\Users\sponcg\Desktop\G.xml"
+spath = r"C:\Users\sponcg\Desktop\S.xml"
+G = G.ides_import(gpath)
+S = S.ides_import(spath)
+
+
+Sr = Automaton()
+#print(time.time())
+Sr = S.supervisor_reduction(G, 'a')
+#print(time.time())
+
+print(Sr)
+
+
 '''
 #PAG 115 FIG 5.4 (5.1.4)
 G = Automaton()
 S = Automaton()
+Sr = Automaton()
 
 g0 = G.state_add('0', marked = True, initial = True)
 g1 = G.state_add('1', False)
@@ -52,13 +70,14 @@ S.transition_add(s4, s2, sc)
 S.transition_add(s4, s4, sb)
 
 print(time.time())
-S.supervisor_reduction(G, 'a')
+Sr = S.supervisor_reduction(G, 'a')
 print(time.time())
-
+print(Sr)
 
 #PAG 79 FIG 3.12 - PAG 144 FIG 5.3
 G = Automaton()
 S = Automaton()
+Sr = Automaton()
 
 g0 = G.state_add('0', marked = True, initial = True)
 g1 = G.state_add('1', False)
@@ -100,9 +119,9 @@ S.transition_add(s2, s3, sb)
 S.transition_add(s3, s0, sd)
 
 print(time.time())
-S.supervisor_reduction(G, 'a')
+Sr = S.supervisor_reduction(G, 'a')
 print(time.time())
-
+print(Sr)
 
 #PAG 113 FIG 5.2 (5.1.2a)
 
@@ -199,7 +218,7 @@ S.transition_add(s2, s0, sc)
 print(time.time())
 S.supervisor_reduction(G, 'a')
 print(time.time())
-'''
+
 #PAG 113 FIG 5.2 (5.1.2a)
 
 G = Automaton()
@@ -248,7 +267,7 @@ S.transition_add(s3, s2, sa)
 print(time.time())
 S.supervisor_reduction(G, 'a')
 print(time.time())
-'''
+
 
 ######
 g1 = Automaton()
