@@ -407,9 +407,7 @@ class Automaton(Base):
         pass
 
     def ides_import(self, file_name, load_layout=True):
-
         xml = parse(file_name).documentElement
-
         data = xml.getElementsByTagName('data')[0]
 
         states = data.getElementsByTagName('state')
@@ -427,7 +425,7 @@ class Automaton(Base):
             _id = state.getAttribute('id')
 
             # getElementsByTagName: returns a list of all descendant elements (not direct children only) with the specified tag name
-            # bool in a list returns False if empty list, True otherwise
+            # bool of a list returns False if empty list, True otherwise
             is_initial = bool(state.getElementsByTagName('initial'))
             is_marked = bool(state.getElementsByTagName('marked'))
 
