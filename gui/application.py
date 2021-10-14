@@ -1,5 +1,6 @@
 import sys
 import gi
+import os
 from gi.repository import Gdk, Gio, Gtk
 
 from machine.automaton import Automaton
@@ -26,13 +27,14 @@ class Application(Gtk.Application):
     def do_startup(self):
         Gtk.Application.do_startup(self)
 
-        self.create_action("new-automaton", self.on_new_automaton)
-        self.create_action("load-automaton", self.on_load_automaton)
-        self.create_action("save-automaton", self.on_save_automaton)
-        self.create_action("edit-automaton", self.on_edit_automaton)
-        self.create_action("simulate-automaton", self.on_simulate_automaton)
-        self.create_action("close-tab", self.on_close_tab)
-        self.create_action("quit", self.on_quit)
+        self.create_action('new-automaton', self.on_new_automaton)
+        self.create_action('load-automaton', self.on_load_automaton)
+        self.create_action('save-automaton', self.on_save_automaton)
+        self.create_action('edit-automaton', self.on_edit_automaton)
+        self.create_action('simulate-automaton', self.on_simulate_automaton)
+        self.create_action('import-ides', self.on_import_ides)
+        self.create_action('close-tab', self.on_close_tab)
+        self.create_action('quit', self.on_quit)
 
         builder = Gtk.Builder()
         builder.add_from_file("gui/ui/menubar.ui")
@@ -95,6 +97,12 @@ class Application(Gtk.Application):
                 self.window.add_tab(editor, "[new] *")
         dialog.destroy()
 
+    def on_save_automaton(self, action, param):
+        print("You saved the automata")
+
+    def on_edit_automaton(self, action, param):
+        print("You opened in editor automata")
+
     def on_simulate_automaton(self, action, param):
         # TODO: open dialog to select from self.elements
         from test_automata import automata_01  # For testing
@@ -103,14 +111,24 @@ class Application(Gtk.Application):
         simulator = AutomatonSimulator(automaton)
         self.window.add_tab(simulator, "Simulator")
 
-    def on_edit_automaton(self, action, param):
-        print("You opened in editor automata")
-
-    def on_save_automaton(self, action, param):
-        print("You saved the automata")
-
     def on_close_tab(self, action, param):
         self.window.remove_tab(self.window.note.get_current_page())
+
+    def on_import_ides(self, action, param):
+        # TODO: checkbox in dialog to choose if open in editor (maybe simulator as well) (or just load in self.elements)
+        dialog = Gtk.FileChooserDialog("Choose file", self.window, Gtk.FileChooserAction.OPEN,
+            ("_Cancel", Gtk.ResponseType.CANCEL, "_Open", Gtk.ResponseType.ACCEPT))
+        result = dialog.run()
+        if result == Gtk.ResponseType.ACCEPT:
+            for full_path_name in dialog.get_filenames():
+                file_name = os.path.basename(full_path_name)
+                automaton = Automaton()
+                automaton.ides_import(full_path_name)
+                self.elements.append(automaton)
+                if True:
+                    editor = AutomatonEditor(automaton, self)
+                    self.window.add_tab(editor, "{} *".format(file_name))
+        dialog.destroy()
 
     def on_quit(self, action, param):
         self.validade_quit()

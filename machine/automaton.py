@@ -409,55 +409,46 @@ class Automaton(Base):
     def ides_import(self, file_name, load_layout=True):
 
         xml = parse(file_name).documentElement
-        data = xml.getElementsByTagName('data')
 
-        for info in data:
-            states = info.getElementsByTagName('state')
-            events = info.getElementsByTagName('event')
-            transitions = info.getElementsByTagName('transition')
+        data = xml.getElementsByTagName('data')[0]
+
+        states = data.getElementsByTagName('state')
+        events = data.getElementsByTagName('event')
+        transitions = data.getElementsByTagName('transition')
+
+        meta = xml.getElementsByTagName('meta')[0]
+        meta_states = meta.getElementsByTagName('state')
 
         stateDict = dict()
         eventDict = dict()
 
         for state in states:
             name = state.getElementsByTagName('name')[0].childNodes[0].data
-            id = state.getAttribute('id')
-            isInitial = False
-            try:
-                properties = state.getElementsByTagName("properties")[0]
-                if (properties.getElementsByTagName("initial")[0]):
-                    isInitial = True
-            except:
-                pass
-            isMarked = False
-            try:
-                properties = state.getElementsByTagName("properties")[0]
-                if (properties.getElementsByTagName("marked")[0]):
-                    isMarked = True
-            except:
-                pass
-            s = self.state_add(name, marked=isMarked, initial=isInitial)
-            stateDict[id] = s
+            _id = state.getAttribute('id')
+
+            # getElementsByTagName: returns a list of all descendant elements (not direct children only) with the specified tag name
+            # bool in a list returns False if empty list, True otherwise
+            is_initial = bool(state.getElementsByTagName('initial'))
+            is_marked = bool(state.getElementsByTagName('marked'))
+
+            s = self.state_add(name, marked=is_marked, initial=is_initial)
+            stateDict[_id] = s
+
+        for state in meta_states:  # layout
+            _id = state.getAttribute('id')
+            circle = state.getElementsByTagName("circle")[0]
+            x = int(float(circle.getAttribute('x')))
+            y = int(float(circle.getAttribute('y')))
+            stateDict[_id].x = x
+            stateDict[_id].y = y
 
         for event in events:
             name = event.getElementsByTagName('name')[0].childNodes[0].data
-            id = event.getAttribute('id')
-            isObservable = False
-            try:
-                properties = event.getElementsByTagName("properties")[0]
-                if (properties.getElementsByTagName("observable")[0]):
-                    observable = True
-            except:
-                pass
-            isControllable = False
-            try:
-                properties = event.getElementsByTagName("properties")[0]
-                if (properties.getElementsByTagName("controllable")[0]):
-                    controllable = True
-            except:
-                pass
-            ev = self.event_add(name, observable=isObservable, controllable=isControllable)
-            eventDict[id] = ev
+            _id = event.getAttribute('id')
+            is_observable = bool(event.getElementsByTagName('observable'))
+            is_controllable = bool(event.getElementsByTagName('controllable'))
+            ev = self.event_add(name, observable=is_observable, controllable=is_controllable)
+            eventDict[_id] = ev
 
         for transition in transitions:
             tEvent = transition.getAttribute('event')

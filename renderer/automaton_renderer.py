@@ -157,7 +157,7 @@ class AutomatonRenderer(Gtk.DrawingArea):
     MIN_RADIUS = 32
     DOUBLE_RADIUS_GAP = 4
     TEXT_RADIUS_GAP = 4
-    FONT_SIZE = 26
+    FONT_SIZE = 18
     TRANSITION_TEXT_SPACE = 12
     ARROW_LENGTH = 20
     ARROW_MID_HEIGHT = 5
