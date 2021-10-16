@@ -4,6 +4,8 @@ import cairo
 import gi
 from gi.repository import GLib, Gio, Gtk, Gdk
 
+from functools import reduce
+
 
 class Point2D:
     def __init__(self, x, y):
@@ -194,13 +196,25 @@ class AutomatonRenderer(Gtk.DrawingArea):
                         Gdk.EventMask.BUTTON_PRESS_MASK
         )
 
-        self.reset_cache()
+        self.cache_reset()
 
-    def reset_cache(self):
-        self.cache = {
-            'states': dict(),
-            'transitions': dict(),
-        }
+    def cache_reset(self):
+        self.cache = dict()
+
+    def cahe_get(self, *keys, default=None):
+        def getter(level, key):
+            return default if level is default else level.get(key, default)
+
+        return reduce(getter, keys, self.cache)
+
+    def cache_set(self, value, *keys):
+        d = self.cache
+        for key in keys[:-1]:
+            if not key in d:
+                d[key] = dict()
+            d = d[key]
+        last_key = keys[-1]
+        d[last_key] = value
 
     def _draw_point(self, cr, V, r=0, g=0, b=0):
         cr.set_source_rgb(r, g, b)
@@ -344,7 +358,8 @@ class AutomatonRenderer(Gtk.DrawingArea):
     def draw_state(self, cr, state, txt_color=(0, 0, 0), arc_color=(0, 0, 0)):
             cr.set_source_rgb(*txt_color)
             radius = self.write_text(cr, state.x, state.y, state.name)
-            self.cache['states'][state] = {'radius': radius}
+            #~ self.cache['states'][state] = {'radius': radius}
+            self.cache_set(radius, 'states', state, 'radius')
             cr.set_source_rgb(*arc_color)
             cr.arc(state.x, state.y, radius, 0, 2 * math.pi)
             cr.stroke()
@@ -369,7 +384,7 @@ class AutomatonRenderer(Gtk.DrawingArea):
             return radius
 
     def draw(self, cr):
-        self.reset_cache()
+        self.cache_reset()
 
         # draw states
         state_radius = dict()
@@ -414,7 +429,7 @@ class AutomatonRenderer(Gtk.DrawingArea):
         return states
 
     def draw_partial(self, cr, current_state, forward_deep=1, backward_deep=0):
-        self.reset_cache()
+        self.cache_reset()
 
         state_radius = dict()
         show_states = self.get_connected_states(current_state, forward_deep=forward_deep, backward_deep=backward_deep)
@@ -434,8 +449,9 @@ class AutomatonRenderer(Gtk.DrawingArea):
     def get_state_at(self, x, y):
         for state in self.automaton.states:
             sq_dist = (x - state.x)**2 + (y - state.y)**2
-            r = self.cache['states'][state]['radius']**2
-            if sq_dist <= r:
+            #~ r = self.cache['states'][state]['radius']**2
+            r = self.cahe_get('states', state, 'radius', default=0)**2
+            if sq_dist < r:
                 return state
 
         return None
