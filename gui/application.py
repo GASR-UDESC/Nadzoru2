@@ -117,15 +117,16 @@ class Application(Gtk.Application):
     def on_import_ides(self, action, param):
         # TODO: checkbox in dialog to choose if open in editor (maybe simulator as well) (or just load in self.elements)
         dialog = Gtk.FileChooserDialog("Choose file", self.window, Gtk.FileChooserAction.OPEN,
-            ("_Cancel", Gtk.ResponseType.CANCEL, "_Open", Gtk.ResponseType.ACCEPT))
+            ("_Cancel", Gtk.ResponseType.CANCEL, "_Open", Gtk.ResponseType.ACCEPT, "_Edit", Gtk.ResponseType.OK))
+        dialog.set_property('select-multiple', True)
         result = dialog.run()
-        if result == Gtk.ResponseType.ACCEPT:
+        if result in [Gtk.ResponseType.ACCEPT, Gtk.ResponseType.OK]:
             for full_path_name in dialog.get_filenames():
                 file_name = os.path.basename(full_path_name)
                 automaton = Automaton()
                 automaton.ides_import(full_path_name)
                 self.elements.append(automaton)
-                if True:
+                if result == Gtk.ResponseType.OK:
                     editor = AutomatonEditor(automaton, self)
                     self.window.add_tab(editor, "{} *".format(file_name))
         dialog.destroy()
