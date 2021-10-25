@@ -29,6 +29,10 @@ class AutomatonEditor(Gtk.Box):
         self.automaton_render.connect("draw", self.on_draw)
         self.automaton_render.connect("motion-notify-event", self.on_motion_notify)
         self.automaton_render.connect("button-press-event", self.on_button_press)
+        #self.automaton_render.connect("button-release-event", self.on_button_release)
+
+        self.from_state = None
+        self.to_state = None
 
     def build_treeview(self):
         self.liststore = Gtk.ListStore(str, bool, bool, object)
@@ -128,22 +132,41 @@ class AutomatonEditor(Gtk.Box):
     def on_button_press(self, automaton_render, event):
         x, y = event.get_coords()
         tool_name = self.application.window.toolpallet.get_selected_tool()
+        state = self.automaton_render.get_state_at(x, y)
 
         if tool_name == 'state_add':
             self.automaton.state_add(None, x=x, y=y)
 
         elif tool_name == 'state_initial':
-            state = self.automaton_render.get_state_at(x, y)
             if state is not None:
                 self.automaton.initial_state = state
 
         elif tool_name == 'state_marked':
-            state = self.automaton_render.get_state_at(x, y)
             if state is not None:
                 state.marked = not state.marked
 
+ #       elif tool_name == 'transition_add':
+ #           pass
+
         elif tool_name == 'transition_add':
-            pass
+
+            if state is not None:
+                if self.from_state is None:
+                    self.from_state = state
+                else:
+                    _, tree_iter = self.treeview.get_selection().get_selected()
+                    print(tree_iter)
+                    if tree_iter is None:
+                        return
+                    selected_event = self.liststore.get(tree_iter, 3)[0]
+                    print(selected_event)
+                    self.automaton.transition_add(self.from_state, state, selected_event)
+                    self.from_state = None
+
+        elif tool_name == "delete":
+            if state is not None:
+                self.automaton.state_remove(state)
+
 
         self.automaton_render.queue_draw()
 
