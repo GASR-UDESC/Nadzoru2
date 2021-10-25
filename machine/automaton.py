@@ -403,8 +403,54 @@ class Automaton(Base):
     def save(self, file_name):
         pass
 
+ 
+
     def load(self, file_name):
-        pass
+
+        def str2bool(_str): 
+            return(_str.lower() in ['true'])
+
+        xml = parse(file_name).documentElement
+        data = xml.getElementsByTagName('data')[0]
+
+        states = data.getElementsByTagName('state')
+        events = data.getElementsByTagName('event')
+        transitions = data.getElementsByTagName('transition')
+
+        stateDict = dict()
+        eventDict = dict()
+
+        for state in states:
+            _id = state.getAttribute('id')
+            name = state.getAttribute('name')
+            is_marked = str2bool(state.getAttribute('marked'))
+            is_initial = str2bool(state.getAttribute('initial'))
+            x = state.getAttribute('x')
+            y = state.getAttribute('y')
+
+            s = self.state_add(name, marked=is_marked, initial=is_initial, x=x, y=y)
+            stateDict[_id] = s
+        
+        for event in events:
+            _id = event.getAttribute('id')
+            name = event.getAttribute('name')
+            is_observable = str2bool(state.getAttribute('observable'))
+            is_controllable = str2bool(state.getAttribute('controllable'))
+
+            ev = self.event_add(name, observable=is_observable, controllable=is_controllable)
+            eventDict[_id] = ev
+
+        for transition in transitions:
+            tEvent = transition.getAttribute('event')
+            tSource = transition.getAttribute('source')
+            tTarget = transition.getAttribute('target')
+            ev = eventDict[tEvent]
+            ss = stateDict[tSource]
+            st = stateDict[tTarget]
+            self.transition_add(ss, st, ev)
+    
+        return self
+        
 
     def ides_import(self, file_name, load_layout=True):
         xml = parse(file_name).documentElement
