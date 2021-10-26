@@ -401,14 +401,14 @@ class Automaton(Base):
     """
 
     def save(self, file_name):
-        pass
+         pass ##################################################################################
 
  
 
     def load(self, file_name):
 
-        def str2bool(_str): 
-            return(_str.lower() in ['true'])
+        def str2bool(_str):
+            return (_str.lower() in ['true'])
 
         xml = parse(file_name).documentElement
         data = xml.getElementsByTagName('data')[0]
@@ -434,8 +434,8 @@ class Automaton(Base):
         for event in events:
             _id = event.getAttribute('id')
             name = event.getAttribute('name')
-            is_observable = str2bool(state.getAttribute('observable'))
-            is_controllable = str2bool(state.getAttribute('controllable'))
+            is_observable = str2bool(event.getAttribute('observable'))
+            is_controllable = str2bool(event.getAttribute('controllable'))
 
             ev = self.event_add(name, observable=is_observable, controllable=is_controllable)
             eventDict[_id] = ev

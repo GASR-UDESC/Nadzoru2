@@ -155,11 +155,9 @@ class AutomatonEditor(Gtk.Box):
                     self.from_state = state
                 else:
                     _, tree_iter = self.treeview.get_selection().get_selected()
-                    print(tree_iter)
                     if tree_iter is None:
                         return
                     selected_event = self.liststore.get(tree_iter, 3)[0]
-                    print(selected_event)
                     self.automaton.transition_add(self.from_state, state, selected_event)
                     self.from_state = None
 
