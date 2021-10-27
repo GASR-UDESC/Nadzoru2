@@ -29,7 +29,7 @@ class Application(Gtk.Application):
 
         self.create_action('new-automaton', self.on_new_automaton)
         self.create_action('load-automaton', self.on_load_automaton)
-        self.create_action('save-automaton', self.on_save_automaton)
+        self.create_action('save-automaton', self.on_save_automaton) 
         self.create_action('edit-automaton', self.on_edit_automaton)
         self.create_action('simulate-automaton', self.on_simulate_automaton)
         self.create_action('import-ides', self.on_import_ides)
@@ -99,8 +99,22 @@ class Application(Gtk.Application):
                     self.window.add_tab(editor, "{} *".format(file_name))
         dialog.destroy()
 
-    def on_save_automaton(self, action, param):
-        print("You saved the automata")
+    def on_save_automaton(self, action, param): 
+        dialog = Gtk.FileChooserDialog("Choose file", self.window, Gtk.FileChooserAction.SAVE,
+            ("_Cancel", Gtk.ResponseType.CANCEL, "_Save", Gtk.ResponseType.OK))
+        result = dialog.run()
+        file_path = dialog.get_filename()
+        print(file_path)
+        if result ==  Gtk.ResponseType.OK:            
+            file = f'{file_path}.xmd'
+            for automata in self.elements: #check a tab to save 
+                automata.save(file)
+            print("You saved the automata")
+        else:
+            print("cancel")
+        dialog.destroy()
+
+
 
     def on_edit_automaton(self, action, param):
         print("You opened in editor automata")

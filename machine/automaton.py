@@ -401,7 +401,60 @@ class Automaton(Base):
     """
 
     def save(self, file_name):
-        pass
+       
+
+        file = open(file_name,'w')
+        file.write('<?xml version="1.0" encoding="UTF-8"?>\n')
+        file.write('<model version="2.1" type="FSA" id="Untitled">\n')
+        file.write('<data>\n')
+        
+        #states check
+            
+        for pos,state in enumerate(self.states):
+            _id  = pos
+            name = state.name
+            if self.initial_state == name:
+                initial = True
+            else:
+                initial = False
+            marked = state.marked
+            x=state.x
+            y=state.y
+            file.write(f'\t<state id="{_id}" name="{name}" initial ="{initial}" marked="{marked}" x="{x}" y="{y}" />\n')
+        
+        #events check
+
+        for pos, eventkey in enumerate(self.events.keys()):
+            event = self.events[eventkey]
+            _id = pos
+            name = event.name
+            controllable= event.controllable
+            observable = event.observable 
+            file.write(f'\t<event id="{_id}" name="{name}" controllable="{controllable}" observable="{observable}"/>\n')
+
+
+        #transitions check
+
+        for pos,state in enumerate(self.states):
+            in_transitions = state.in_transitions 
+            for transition in in_transitions:
+                for pos2,state2 in enumerate(self.states):
+                    out_transitions = state2.out_transitions
+                    if transition in out_transitions:
+                        for pos3, eventkey in enumerate(self.events.keys()):
+                            event = self.events[eventkey]
+                            transitions_event = self.events[eventkey].transitions
+                            if transition in transitions_event:
+                                file.write(f'\t<transition source="{pos2}" target="{pos}" event="{pos3}"/>"\n')
+            
+
+
+        file.write('</data>\n')
+        file.write("</model>\n")
+
+
+
+
 
     def load(self, file_name):
         pass
