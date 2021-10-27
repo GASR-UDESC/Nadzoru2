@@ -53,8 +53,12 @@
                     <section>
                         <item>
                             <attribute name="action">app.import-ides</attribute>
-                            <attribute name="label" translatable="yes">Import IDES</attribute>
-                        </item>
+                            <attribute name="label" translatable="yes">Import IDES</attribute>           
+                    	</item>
+                	<item>
+                            <attribute name="action">app.export-ides</attribute>
+                            <attribute name="label" translatable="yes">Export IDES</attribute> 
+                       </item>
                     </section>
                 </submenu>
             </section>

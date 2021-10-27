@@ -32,9 +32,10 @@ class Application(Gtk.Application):
         self.create_action('save-automaton', self.on_save_automaton)
         self.create_action('edit-automaton', self.on_edit_automaton)
         self.create_action('simulate-automaton', self.on_simulate_automaton)
-        self.create_action('import-ides', self.on_import_ides)
+        self.create_action('import-ides', self.on_import_ides)       
         self.create_action('close-tab', self.on_close_tab)
         self.create_action('quit', self.on_quit)
+        self.create_action('export-ides', self.on_export_ides)
 
         builder = Gtk.Builder()
         builder.add_from_file("gui/ui/menubar.ui")
@@ -131,7 +132,20 @@ class Application(Gtk.Application):
                     editor = AutomatonEditor(automaton, self)
                     self.window.add_tab(editor, "{} *".format(file_name))
         dialog.destroy()
-
+        
+    def on_export_ides(self, action, default_filename=None):
+        dialog = Gtk.FileChooserDialog("Choose Path", self.window, Gtk.FileChooserAction.SAVE,
+            ("_Cancel", Gtk.ResponseType.CANCEL, "_Export", Gtk.ResponseType.ACCEPT))
+        dialog.resize(700, 500)
+        if default_filename:
+            dialog.set_filename(os.path.abspath(default_filename))
+        filename = None
+        response = dialog.run()
+        if response == Gtk.ResponseType.OK:
+            filename = dialog.get_filename()
+        dialog.destroy()
+        return filename
+        
     def on_quit(self, action, param):
         self.validade_quit()
 
