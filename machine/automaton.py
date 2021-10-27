@@ -405,48 +405,29 @@ class Automaton(Base):
         file.write('<?xml version="1.0" encoding="UTF-8"?>\n')
         file.write('<model version="2.1" type="FSA" id="Untitled">\n')
         file.write('<data>\n')
-        for pos,state in enumerate(self.states):
-            _id  = pos
-            name = state.name
-            if self.initial_state == name:
-                initial = True
-            else:
-                initial = False
-            marked = state.marked
-            x=state.x
-            y=state.y
-            file.write(f'\t<state id="{_id}" name="{name}" initial ="{initial}" marked="{marked}" x="{x}" y="{y}" />\n')
-        for pos, eventkey in enumerate(self.events.keys()):
-            event = self.events[eventkey]
-            _id = pos
-            name = event.name
-            controllable= event.controllable
-            observable = event.observable 
-            file.write(f'\t<event id="{_id}" name="{name}" controllable="{controllable}" observable="{observable}"/>\n')
 
+        state_id_map = dict()
+        event_id_map = dict()
 
-        #transitions check
+        for _id, state in enumerate(self.states):
+            state_id_map[state] = _id
+            initial = state == self.initial_state
+            file.write(f'\t<state id="{_id}" name="{state.name}" initial ="{initial}" marked="{state.marked}" x="{state.x}" y="{state.y}" />\n')
 
-        for pos,state in enumerate(self.states):
-            in_transitions = state.in_transitions 
-            for transition in in_transitions:
-                for pos2,state2 in enumerate(self.states):
-                    out_transitions = state2.out_transitions
-                    if transition in out_transitions:
-                        for pos3, eventkey in enumerate(self.events.keys()):
-                            event = self.events[eventkey]
-                            transitions_event = self.events[eventkey].transitions
-                            if transition in transitions_event:
-                                file.write(f'\t<transition source="{pos2}" target="{pos}" event="{pos3}"/>"\n')
-            
+        for _id, event_name in enumerate(self.events.keys()):
+            event = self.events[event_name]
+            event_id_map[event] = _id
+            file.write(f'\t<event id="{_id}" name="{event_name}" controllable="{event.controllable}" observable="{event.observable}"/>\n')
 
+        for source_state in self.states:
+            for transition in source_state.out_transitions:
+                source_id = state_id_map[transition.from_state]
+                target_id = state_id_map[transition.to_state]
+                event_id = event_id_map[transition.event]
+                file.write(f'\t<transition source="{source_id}" target="{target_id}" event="{event_id}"/>\n')
 
         file.write('</data>\n')
         file.write("</model>\n")
-
-
-
-
 
     def load(self, file_name):
 
@@ -473,7 +454,7 @@ class Automaton(Base):
 
             s = self.state_add(name, marked=is_marked, initial=is_initial, x=x, y=y)
             stateDict[_id] = s
-        
+
         for event in events:
             _id = event.getAttribute('id')
             name = event.getAttribute('name')
@@ -491,9 +472,9 @@ class Automaton(Base):
             ss = stateDict[tSource]
             st = stateDict[tTarget]
             self.transition_add(ss, st, ev)
-    
+
         return self
-        
+
 
     def ides_import(self, file_name, load_layout=True):
         xml = parse(file_name).documentElement
