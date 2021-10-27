@@ -57,14 +57,18 @@ class MainWindow(Gtk.ApplicationWindow):
 
         return note
 
-    def remove_tab(self, id):
-        if id >= 0:
-            self.note.remove_page(id)
+    def remove_tab(self, _id):
+        if _id >= 0:
+            self.note.remove_page(_id)
             self.show_all()
 
     def remove_current_tab(self, *args):
-        id = self.note.get_current_page()
-        self.remove_tab(id)
+        _id = self.note.get_current_page()
+        self.remove_tab(_id)
+
+    def get_current_tab_widget(self):
+        _id = self.note.get_current_page()
+        return self.note.get_nth_page(_id)
 
     def set_tab_page_title(self, widget, title):
         page_label = self.note.get_tab_label(widget)
