@@ -13,18 +13,25 @@ import time
 
 G = Automaton()
 S = Automaton()
-gpath = r"C:\Users\sponcg\Desktop\G.xml"
-spath = r"C:\Users\sponcg\Desktop\S.xml"
-G = G.ides_import(gpath)
-S = S.ides_import(spath)
+gpath = r"C:\Users\sponcg\Downloads\SupReduce\SupReduce\exemplos\Unreliable Machine - NOK\P"
+spath = r"C:\Users\sponcg\Downloads\SupReduce\SupReduce\exemplos\Unreliable Machine - NOK\SUP"
+ncpath = r"C:\Users\sponcg\Downloads\SupReduce\SupReduce\exemplos\Unreliable Machine - NOK\NCONT"
+G = G.grail_import(gpath, ncpath)
+S = S.grail_import(spath, ncpath)
 
 
 Sr = Automaton()
-#print(time.time())
+print(time.time())
 Sr = S.supervisor_reduction(G, 'a')
-#print(time.time())
+print(time.time())
 
 print(Sr)
+
+print(S)
+
+print(Sr.synchronization(G))
+
+#print(Sr)
 
 
 '''
