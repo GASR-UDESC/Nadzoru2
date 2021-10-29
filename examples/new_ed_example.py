@@ -13,9 +13,9 @@ import time
 
 G = Automaton()
 S = Automaton()
-gpath = r"C:\Users\sponcg\Downloads\SupReduce\SupReduce\exemplos\Unreliable Machine - NOK\P"
-spath = r"C:\Users\sponcg\Downloads\SupReduce\SupReduce\exemplos\Unreliable Machine - NOK\SUP"
-ncpath = r"C:\Users\sponcg\Downloads\SupReduce\SupReduce\exemplos\Unreliable Machine - NOK\NCONT"
+gpath = r"./reduction/Unreliable Machine - NOK/P"
+spath = r"./reduction/Unreliable Machine - NOK/SUP"
+ncpath = r"./reduction/Unreliable Machine - NOK/NCONT"
 G = G.grail_import(gpath, ncpath)
 S = S.grail_import(spath, ncpath)
 

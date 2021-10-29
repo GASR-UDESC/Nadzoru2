@@ -1,0 +1,79 @@
+C:\Documents and Settings\Eduardo Carrilho\Meus documentos\Controle Supervisorio
+\Grail\SupReduce\exemplos\Modelo Carlos e André>fmstats g
+ number of start states:       1
+ number of final states:       160
+ number of states:             160
+ number of reachable states:   160
+ number of coreachable states: 160
+ number of deadlocking states: 0
+ number of instructions:       1256
+ number of symbols:            17
+
+C:\Documents and Settings\Eduardo Carrilho\Meus documentos\Controle Supervisorio
+\Grail\SupReduce\exemplos\Modelo Carlos e André>fmstats s
+ number of start states:       1
+ number of final states:       14
+ number of states:             76
+ number of reachable states:   76
+ number of coreachable states: 76
+ number of deadlocking states: 0
+ number of instructions:       108
+ number of symbols:            17
+
+C:\Documents and Settings\Eduardo Carrilho\Meus documentos\Controle Supervisorio
+\Grail\SupReduce\exemplos\Modelo Carlos e André>fmcross g s | fmreach | fmstats
+ number of start states:       1
+ number of final states:       14
+ number of states:             76
+ number of reachable states:   76
+ number of coreachable states: 76
+ number of deadlocking states: 0
+ number of instructions:       108
+ number of symbols:            17
+
+C:\Documents and Settings\Eduardo Carrilho\Meus documentos\Controle Supervisorio
+\Grail\SupReduce\exemplos\Modelo Carlos e André>fmsync g s | fmstats
+ number of start states:       1
+ number of final states:       14
+ number of states:             76
+ number of reachable states:   76
+ number of coreachable states: 76
+ number of deadlocking states: 0
+ number of instructions:       108
+ number of symbols:            17
+
+C:\Documents and Settings\Eduardo Carrilho\Meus documentos\Controle Supervisorio
+\Grail\SupReduce\exemplos\Modelo Carlos e André>fmcross g s | fmstats
+ number of start states:       1
+ number of final states:       2240
+ number of states:             8928
+ number of reachable states:   76
+ number of coreachable states: 6656
+ number of deadlocking states: 1760
+ number of instructions:       9648
+ number of symbols:            17
+
+C:\Documents and Settings\Eduardo Carrilho\Meus documentos\Controle Supervisorio
+\Grail\SupReduce\exemplos\Modelo Carlos e André>
+C:\Documents and Settings\Eduardo Carrilho\Meus documentos\Controle Supervisorio
+\Grail\SupReduce\exemplos\Modelo Carlos e André>fmcondat1 g s
+condat2 iniciado!
+potencial conjunto de estados do produto: 12160 tempo : 0 s
+condat2 terminado!
+conjunto de estados do produto calculado: 76 tempo : 0 s
+Estados do produto:
+0 164 360 600 684 884 1084 1168 1424 1492 1692 1908 1969 2104 2384 2453 2653 274
+8 3028 3089 3209 3489 3640 3733 3853 4133 4255 4444 4528 4648 4928 5096 5172 529
+2 5572 5615 5900 5960 6096 6376 6444 6573 6740 7020 7112 7200 7436 7524 7753 788
+0 8077 8204 8404 8553 8673 8953 9032 9197 9317 9597 9676 9876 9992 10112 10392 1
+0476 10596 10876 10997 11080 11244 11479 11568 11732 11879 12037
+
+C:\Documents and Settings\Eduardo Carrilho\Meus documentos\Controle Supervisorio
+\Grail\SupReduce\exemplos\Modelo Carlos e André>fmcondat1 g s
+condat1 iniciado!
+potencial conjunto de estados do produto: 12160 tempo : 0 s
+condat1 terminado!
+conjunto de estados do produto calculado: 76 tempo : 0 s
+
+C:\Documents and Settings\Eduardo Carrilho\Meus documentos\Controle Supervisorio
+\Grail\SupReduce\exemplos\Modelo Carlos e André>

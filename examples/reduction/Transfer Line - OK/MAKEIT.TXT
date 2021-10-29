@@ -1,0 +1,145 @@
+M1 = Create(M1,[mark 0],[tran [0,1,1],[1,2,0]])  (2,2)
+
+M2 = Create(M2,[mark 0],[tran [0,3,1],[1,4,0]])  (2,2)
+
+TU = Create(TU,[mark 0],[tran [0,5,1],[1,6,0],[1,8,0]])  (2,3)
+
+B1 = Create(B1,[mark 0,1],[tran [0,2,1],[0,8,1],[1,3,0]])  (2,3)
+
+B2 = Create(B2,[mark 0,1],[tran [0,4,1],[1,5,0]])  (2,2)
+
+DESL = Create(DESL,[mark 0,1,2],[tran [0,6,0],[0,8,1],[1,6,0],[1,8,2]])  (
+       3,4)
+
+G = Sync(M1,M2)  (4,8)  Blocked_events = None  
+    Computing time = 00:00:00
+
+G = Sync(G,TU)  (8,28)  Blocked_events = None  
+    Computing time = 00:00:00
+
+E = Sync(B1,B2)  (4,10)  Blocked_events = None  
+    Computing time = 00:00:00
+
+E = Sync(E,DESL)  (12,36)  Blocked_events = None  
+    Computing time = 00:00:00
+
+K = Sync(G,E)  (92,188)  Blocked_events = None  
+    Computing time = 00:00:00
+
+K = Trim(K)  (70,148)
+    Computing time = 00:00:00
+
+S = Supcon(G,K)  (25,32)
+    Computing time = 00:00:00
+
+SDAT = Condat(G,S)  Controllable.
+       Computing time = 00:00:00
+
+SR = Supreduce(G,S,SDAT)  (11,21;slb=10)
+     Computing time = 00:00:00
+
+GT = Create(GT,[mark 0],[tran [0,1,1],[1,3,2],[1,5,3],[2,6,0],[3,8,0]])  (
+     4,5)
+
+ST = Create(ST,[mark 0,6],[tran [0,1,1],[1,3,2],[2,6,3],[3,1,4],[4,5,5],[5
+     ,8,6]])  (7,6)
+
+STDAT = Condat(GT,ST)  Controllable.
+        Computing time = 00:00:00
+
+STR = Supreduce(GT,ST,STDAT)  (3,6;slb=3)
+      Computing time = 00:00:00
+
+STR = Supreduce(GT,ST,STDAT)  (3,6;slb=3)
+      Computing time = 00:00:00
+
+ST = Edit(ST,[mark +[0],+[1],+[2],+[3],+[4],+[5],+[6]],rch)  (7,6)
+
+B1 = Edit(B1,[mark -[1]])  (2,3)
+
+B2 = Edit(B2,[mark -[1]])  (2,2)
+
+E = Sync(B1,B2)  (4,10)  Blocked_events = None  
+    Computing time = 00:00:00
+
+E = Sync(E,DESL)  (12,36)  Blocked_events = None  
+    Computing time = 00:00:00
+
+K = Sync(G,E)  (92,188)  Blocked_events = None  
+    Computing time = 00:00:00
+
+K = Trim(K)  (62,134)
+    Computing time = 00:00:00
+
+S = Supcon(G,K)  (1,0)
+    Computing time = 00:00:00
+
+E = Sync(B1,B2)  (4,10)  Blocked_events = None  
+    Computing time = 00:00:00
+
+K = Sync(G,E)  (32,72)  Blocked_events = None  
+    Computing time = 00:00:00
+
+K = Trim(K)  (32,72)
+    Computing time = 00:00:00
+
+S = Supcon(G,K)  (6,7)
+    Computing time = 00:00:00
+
+SDAT = Condat(G,S)  Controllable.
+       Computing time = 00:00:00
+
+SR = Supreduce(G,S,SDAT)  (3,7;slb=3)
+     Computing time = 00:00:00
+
+SR = Supreduce(G,S,SDAT)  (3,7;slb=3)
+     Computing time = 00:00:00
+
+B2 = Edit(B2,[mark +[1]])  (2,2)
+
+E = Sync(B1,B2)  (4,10)  Blocked_events = None  
+    Computing time = 00:00:00
+
+E = Sync(DESL,E)  (12,36)  Blocked_events = None  
+    Computing time = 00:00:00
+
+K = Sync(G,E)  (92,188)  Blocked_events = None  
+    Computing time = 00:00:00
+
+K = Trim(K)  (65,137)
+    Computing time = 00:00:00
+
+S = Supcon(G,K)  (13,14)
+    Computing time = 00:00:00
+
+SDAT = Condat(G,S)  Controllable.
+       Computing time = 00:00:00
+
+SR = Supreduce(G,S,SDAT)  (7,14;slb=7)
+     Computing time = 00:00:00
+
+B1 = Edit(B1,[mark +[1]])  (2,3)
+
+B2 = Edit(B2,[mark -[1]])  (2,2)
+
+E = Sync(B1,B2)  (4,10)  Blocked_events = None  
+    Computing time = 00:00:00
+
+E = Sync(E,DESL)  (12,36)  Blocked_events = None  
+    Computing time = 00:00:00
+
+K = Sync(G,E)  (92,188)  Blocked_events = None  
+    Computing time = 00:00:00
+
+K = Trim(K)  (63,135)
+    Computing time = 00:00:00
+
+S = Supcon(G,K)  (11,12)
+    Computing time = 00:00:00
+
+S = Condat(G,S)  Controllable.
+    Computing time = 00:00:00
+
+SR = Supreduce(G,S,S)  (6,12;slb=6)
+     Computing time = 00:00:00
+
