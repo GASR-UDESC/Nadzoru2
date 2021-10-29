@@ -10,6 +10,7 @@ import sys
 from random import seed
 from random import randint
 from xml.dom.minidom import parse
+import re
 
 cur_path = os.path.realpath(__file__)
 base_path = os.path.dirname(os.path.dirname(cur_path))
@@ -531,6 +532,100 @@ class Automaton(Base):
 
     def ides_export(self, file_name):
         pass
+
+    def grail_import(self, file_name, ncont_name):
+        file = open(file_name, 'r')
+        ncont = open(ncont_name, 'r')
+        initial_state_name = None
+
+        stateDict = dict()
+        eventDict = dict()
+        marked_states = set()
+        uncontrollable_events = set()
+        state_indexes = [0, 2]
+
+        for line in ncont:
+            if re.search(r'(START)', line) == None and re.search(r'(FINAL)', line) == None:
+                uncontrollable_events.add(re.split(r' ', line)[1].strip('\n'))
+
+        for line in file:
+            if re.search(r'(FINAL)', line) != None:
+                l = re.split(r' ', line)
+                marked_states.add(l[0])
+            elif re.search(r'(START)', line) != None:
+                initial_state_name = re.split(r' ', line)[2].strip('\n')
+
+        file = open(file_name, 'r')
+        for line in file:
+            if re.search(r'(FINAL)', line) is not None:
+                break
+            elif re.search(r'(START)', line) is not None:
+                pass
+            elif initial_state_name is not None:
+                l = re.split(r' ', line)
+                for each in state_indexes:
+                    state = set()
+                    s = l[each].strip('\n')
+                    state.add(s)
+                    if s not in stateDict.keys():
+                        init = False
+                        markd = False
+                        if initial_state_name == s:
+                            init = True
+                        if state.issubset(marked_states):
+                            markd = True
+                        stateDict[s] = self.state_add(s, marked=markd, initial=init)
+                if l[1] not in eventDict.keys():
+                    ev_name = set()
+                    ev_name.add(l[1])
+                    controllable = True
+                    if ev_name.issubset(uncontrollable_events):
+                        controllable = False
+                    eventDict[l[1]] = self.event_add(l[1], controllable, True)
+                self.transition_add(stateDict[l[0].strip('\n')], stateDict[l[2].strip('\n')], eventDict[l[1]])
+        return self
+
+    def tct_import(self, file_name):
+        file = open(file_name, 'r')
+        initial_state_name = None
+
+        stateDict = dict()
+        eventDict = dict()
+        marked_states = set()
+        state_indexes = [0, 2]
+
+        for line in file:
+            if re.search(r'(FINAL)', line) != None:
+                l = re.split(r' ', line)
+                marked_states.add(l[0])
+            elif re.search(r'(START)', line) != None:
+                initial_state_name = re.split(r' ', line)[2].strip('\n')
+
+        file = open(file_name, 'r')
+        for line in file:
+            if re.search(r'(FINAL)', line) is not None:
+                break
+            elif re.search(r'(START)', line) is not None:
+                pass
+            elif initial_state_name is not None:
+                l = re.split(r' ', line)
+                for each in state_indexes:
+                    state = l[each].strip('\n')
+                    if state not in stateDict.keys():
+                        init = False
+                        markd = False
+                        if initial_state_name == state:
+                            init = True
+                        if marked_states.issubset(state):
+                            markd = True
+                        stateDict[state] = self.state_add(state, marked=markd, initial=init)
+                if l[1] not in eventDict.keys():
+                    controllable = True
+                    if not l[1]%2:
+                        controllable = False
+                    eventDict[l[1]] = self.event_add(l[1], controllable, True)
+                self.transition_add(stateDict[l[0].strip('\n')], stateDict[l[2].strip('\n')], eventDict[l[1]])
+        return self
 
     def tct_import(self, file_name):
         pass
@@ -1147,7 +1242,7 @@ class Automaton(Base):
                 if state not in control_cover_dict[chosen_cell]:
                     control_cover_dict[chosen_cell].add(state)
 
-            # state_stack.append(control_cover_dict[chosen_cell])
+            state_stack.append(control_cover_dict[chosen_cell])
             pass
 
         def d_future_agregation_criteria():
@@ -1159,7 +1254,7 @@ class Automaton(Base):
             for each in states:
                 if each not in control_cover_dict[chosen_cell]:
                     control_cover_dict[chosen_cell].add(each)
-            # state_stack.append(control_cover_dict[chosen_cell])
+            state_stack.append(control_cover_dict[chosen_cell])
             pass
 
         # key is tuple, value is new state
@@ -1225,12 +1320,12 @@ class Automaton(Base):
 
         while len(aggregate_stack) > 0:
             pair = aggregate_stack.pop()
-            for each in aggregate_matrix:
-                if pair in aggregate_matrix[each]:
+            for each in aggregate_matrix.keys():
+                debug_1 = aggregate_matrix[each]
+                if pair in debug_1:
                     aggregate_matrix[each].remove(pair)
                     if len(aggregate_matrix[each]) == 0:
                         aggregate_stack.append(each)
-
 
         # Control Cover
         # creates first control cover cell with supervisor's initial state
