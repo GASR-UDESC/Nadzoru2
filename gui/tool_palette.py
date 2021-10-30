@@ -41,8 +41,8 @@ class ToolPalette(Gtk.ToolPalette):
         self.add_toggle_button('edit', tool_id='move', label="Move", icon_file_name='./res/icons/move.png')
         self.add_toggle_button('edit', tool_id='delete', label="Delete", icon_file_name='./res/icons/delete.png')
 
-        self.add_toggle_button('view', tool_id='zoom_in', label="Zoom In", icon_file_name='./res/icons/zoom_in.png')
-        self.add_toggle_button('view', tool_id='zoom_out', label="Zoom Out", icon_file_name='./res/icons/zoom_out.png')
+        self.add_button('view', label="Zoom In", icon_file_name='./res/icons/zoom_in.png')
+        self.add_button('view', label="Zoom Out", icon_file_name='./res/icons/zoom_out.png')
 
         GObject.signal_new('nadzoru-tool-change', self, GObject.SIGNAL_RUN_LAST, GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT,))
 
