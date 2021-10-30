@@ -31,8 +31,7 @@ class AutomatonEditor(Gtk.Box):
         self.automaton_render.connect("button-press-event", self.on_button_press)
         #self.automaton_render.connect("button-release-event", self.on_button_release)
 
-        self.from_state = None
-        self.to_state = None
+        self.application.window.toolpallet.connect('nadzoru-tool-change', self.on_tool_change)
 
     def build_treeview(self):
         self.liststore = Gtk.ListStore(str, bool, bool, object)
@@ -40,6 +39,8 @@ class AutomatonEditor(Gtk.Box):
         self.treeview_box = Gtk.Box(orientation = Gtk.Orientation.VERTICAL)
 
         self.treeview = Gtk.TreeView(model=self.liststore)
+        self.treeview_selection  = self.treeview.get_selection()
+        self.treeview_selection.set_mode(Gtk.SelectionMode.MULTIPLE)
 
         renderer_editabletext = Gtk.CellRendererText()
         renderer_editabletext.set_property("editable", True)
@@ -48,8 +49,6 @@ class AutomatonEditor(Gtk.Box):
         self.treeview.append_column(column_editabletext)
 
         renderer_editabletext.connect("edited", self.text_edited)
-
-
 
         # Toggle 1
         renderer_toggle_1 = Gtk.CellRendererToggle()
@@ -124,10 +123,17 @@ class AutomatonEditor(Gtk.Box):
         self.automaton_render.queue_draw()
 
     def on_draw(self, automaton_render, cr):
-        self.automaton_render.draw(cr)
+        self.automaton_render.draw(cr, highlight_state=self.selected_state)
 
     def on_motion_notify(self, automaton_render, event):
-        pass
+        x, y = event.get_coords()
+        tool_name = self.application.window.toolpallet.get_selected_tool()
+
+        if tool_name == 'move':
+            if not self.selected_state is None:
+                self.selected_state.x = x
+                self.selected_state.y = y
+                self.automaton_render.queue_draw()
 
     def on_button_press(self, automaton_render, event):
         x, y = event.get_coords()
@@ -135,37 +141,48 @@ class AutomatonEditor(Gtk.Box):
         state = self.automaton_render.get_state_at(x, y)
 
         if tool_name == 'state_add':
-            self.automaton.state_add(None, x=x, y=y)
-
+            state = self.automaton.state_add(None, x=x, y=y)
+            self.selected_state = state
         elif tool_name == 'state_initial':
             if state is not None:
                 self.automaton.initial_state = state
-
+                self.selected_state = state
         elif tool_name == 'state_marked':
             if state is not None:
                 state.marked = not state.marked
-
- #       elif tool_name == 'transition_add':
- #           pass
-
+                self.selected_state = state
         elif tool_name == 'transition_add':
-
-            if state is not None:
-                if self.from_state is None:
-                    self.from_state = state
+            if state is None:
+                self.selected_state = None
+            else:
+                if self.selected_state is None:
+                    self.selected_state = state
                 else:
-                    _, tree_iter = self.treeview.get_selection().get_selected()
-                    if tree_iter is None:
-                        return
-                    selected_event = self.liststore.get(tree_iter, 3)[0]
-                    self.automaton.transition_add(self.from_state, state, selected_event)
-                    self.from_state = None
-
-        elif tool_name == "delete":
+                    _, tree_path_list = self.treeview_selection.get_selected_rows()
+                    added_transition = False
+                    for tree_path in tree_path_list:
+                        tree_iter = self.liststore.get_iter(tree_path)
+                        selected_event = self.liststore.get(tree_iter, 3)[0]
+                        transition = self.automaton.transition_add(self.selected_state, state, selected_event)
+                        if transition is not None:
+                            added_transition = True
+                    if added_transition:
+                        #  only if add at least one transition, reset 'selected_state'
+                        self.selected_state = None
+        elif tool_name == 'move':
+            self.selected_state = state
+        elif tool_name == 'delete':
             if state is not None:
                 self.automaton.state_remove(state)
 
-
         self.automaton_render.queue_draw()
 
+    def on_tool_change(self, toolpallet, tool_id):
+        self.selected_state = None
+        self.automaton_render.queue_draw()
 
+    #~ _, tree_iter = self.treeview.get_selection().get_selected()
+    #~ if not tree_iter is None:
+        #~ selected_event = self.liststore.get(tree_iter, 3)[0]
+        #~ self.automaton.transition_add(self.selected_state, state, selected_event)
+        #~ self.selected_state = None

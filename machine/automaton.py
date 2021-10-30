@@ -157,6 +157,18 @@ class State(Base):
 
     # ---------------------------------------------
 
+    def in_transition_exists(self, from_state, event):
+        for transition in self.in_transitions:
+            if (transition.from_state is from_state) and (transition.event is event):
+                return True
+        return False
+
+    def out_transition_exists(self, to_state, event):
+        for transition in self.out_transitions:
+            if (transition.to_state is to_state) and (transition.event is event):
+                return True
+        return False
+
     def transition_in_add(self, transition):
         self.in_transitions.add(transition)
 
@@ -360,8 +372,6 @@ class Automaton(Base):
         except KeyError:
             return False
         else:
-            if self.initial_state == state:
-                self.initial_state = None
             return True
 
     @property
@@ -373,7 +383,12 @@ class Automaton(Base):
         if isinstance(value, self.state_class) or (value is None):
             self._initial_state = value
 
+    def transition_exists(self, from_state, to_state, event):
+        return from_state.out_transition_exists(to_state, event)
+
     def transition_add(self, from_state, to_state, event, *args, **kwargs):
+        if self.transition_exists(from_state, to_state, event):
+            return None
         t = self.transition_class(from_state, to_state, event, *args, **kwargs)
         from_state.transition_out_add(t)
         to_state.transition_in_add(t)
