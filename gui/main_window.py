@@ -32,27 +32,6 @@ class MainWindow(Gtk.ApplicationWindow):
         self.note.set_scrollable(True)
         self.note.set_show_border(True)
 
-        # Test button (tool)
-        self.toolpallet.add_button('file', label="Save", icon_name='gtk-floppy', callback=self.button_save_automaton)
-
-        self.show_all()
-
-    def button_save_automaton(self, *args):
-        print(self.note.get_current_page())
-        dialog = Gtk.FileChooserDialog("Choose file", self, Gtk.FileChooserAction.SAVE,
-            ("_Cancel", Gtk.ResponseType.CANCEL, "_Save", Gtk.ResponseType.OK))
-        result = dialog.run()
-        if result ==  Gtk.ResponseType.OK:
-            file_path = dialog.get_filename()
-            file_path = f'{file_path}.xmd'
-            widget = self.get_current_tab_widget()
-            if type(widget) == AutomatonEditor:
-                    automata = widget.automaton
-                    automata.save(file_path)
-        dialog.destroy()
-
-
-
     def do_delete_event(self, event):
         self.props.application.validade_quit()
         return True
