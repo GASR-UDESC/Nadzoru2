@@ -146,18 +146,18 @@ class Application(Gtk.Application):
                     self.window.add_tab(editor, "{} *".format(file_name))
         dialog.destroy()
 
-    def on_export_ides(self, action, default_filename=None):
-        dialog = Gtk.FileChooserDialog("Choose Path", self.window, Gtk.FileChooserAction.SAVE,
-            ("_Cancel", Gtk.ResponseType.CANCEL, "_Export", Gtk.ResponseType.ACCEPT))
-        dialog.resize(700, 500)
-        if default_filename:
-            dialog.set_filename(os.path.abspath(default_filename))
-        filename = None
-        response = dialog.run()
-        if response == Gtk.ResponseType.OK:
-            filename = dialog.get_filename()
+    def on_export_ides(self, action, param):
+        dialog = Gtk.FileChooserDialog("Choose File", self.window, Gtk.FileChooserAction.SAVE,
+            ("_Cancel", Gtk.ResponseType.CANCEL, "_Export", Gtk.ResponseType.OK))
+        result = dialog.run()
+        if result == Gtk.ResponseType.OK:
+            file_path = dialog.get_filename()
+            file_path = f'{file_path}.xml'
+            widget = self.window.get_current_tab_widget()
+            if type(widget) == AutomatonEditor:
+                automata = widget.automaton
+                automata.save(file_path)
         dialog.destroy()
-        return filename
 
     def on_quit(self, action, param):
         self.validade_quit()
