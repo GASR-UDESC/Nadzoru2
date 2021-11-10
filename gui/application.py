@@ -180,7 +180,7 @@ class Application(Gtk.Application):
             widget = self.window.get_current_tab_widget()
             if type(widget) == AutomatonEditor:
                 automata = widget.automaton
-                automata.save(file_path)
+                automata.ides_export(file_path)
         dialog.destroy()
 
     def on_quit(self, action, param):

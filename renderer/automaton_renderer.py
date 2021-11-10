@@ -201,7 +201,7 @@ class AutomatonRenderer(Gtk.DrawingArea):
     def cache_reset(self):
         self.cache = dict()
 
-    def cahe_get(self, *keys, default=None):
+    def cache_get(self, *keys, default=None):
         def getter(level, key):
             return default if level is default else level.get(key, default)
 
@@ -453,7 +453,7 @@ class AutomatonRenderer(Gtk.DrawingArea):
         for state in self.automaton.states:
             sq_dist = (x - state.x)**2 + (y - state.y)**2
             #~ r = self.cache['states'][state]['radius']**2
-            r = self.cahe_get('states', state, 'radius', default=0)**2
+            r = self.cache_get('states', state, 'radius', default=0)**2
             if sq_dist < r:
                 return state
 
