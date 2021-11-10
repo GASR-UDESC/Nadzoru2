@@ -114,13 +114,14 @@ class Application(Gtk.Application):
                 ("_Cancel", Gtk.ResponseType.CANCEL, "_Save", Gtk.ResponseType.OK))
             result = dialog.run()
             if result ==  Gtk.ResponseType.OK:
-                file_path = (dialog.get_filename()).split('.')
-                file_path = f'{file_path[0]}.xmd'
-                automata.set_file_name(file_path)
-                automata.save(file_path)
-            dialog.destroy()
-        else:
-            automata.save(automata.get_file_name())
+                file_path = (dialog.get_filename())
+            if not(file_path.lower().endswith('xmd')):
+                file_path = f'{file_path}.xmd'
+            automata = widget.automaton
+            automata.set_file_name(file_path)
+            automata.save(file_path)
+        dialog.destroy()
+        
 
 
     def on_save_as_automaton(self, action, param=None):
@@ -132,7 +133,7 @@ class Application(Gtk.Application):
         result = dialog.run()
         if result ==  Gtk.ResponseType.OK:
             file_path = (dialog.get_filename())
-            if not(file_path.lower().endswith('xml')):
+            if not(file_path.lower().endswith('xmd')):
                 file_path = f'{file_path}.xmd'
             automata = widget.automaton
             automata.set_file_name(file_path)
