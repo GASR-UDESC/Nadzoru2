@@ -305,14 +305,17 @@ class Automaton(Base):
         self.events = dict()  # map event_name to event class, names must be unique!
         self.states = set()
         self.initial_state = None
-        self.file_name = None 
+        self.file_path_name = None
         super().__init__(*args, **kwargs)
 
-    def get_file_name(self): 
-        return self.file_name
+    def get_file_name(self):
+        return os.path.basename(self.file_path_name)
 
-    def set_file_name(self,file_name):
-        self.file_name = file_name
+    def get_file_path_name(self):
+        return self.file_path_name
+
+    def set_file_path_name(self,file_path_name):
+        self.file_path_name = file_path_name
 
     def __str__(self):
         transitions = list()
@@ -430,8 +433,10 @@ class Automaton(Base):
         pass
     """
 
-    def save(self, file_name):
-        file = open(file_name,'w')
+    def save(self, file_path_name):
+        self.set_file_path_name(file_path_name)
+
+        file = open(file_path_name,'w')
         file.write('<?xml version="1.0" encoding="UTF-8"?>\n')
         file.write('<model version="2.1" type="FSA" id="Untitled">\n')
         file.write('<data>\n')
@@ -459,12 +464,13 @@ class Automaton(Base):
         file.write('</data>\n')
         file.write("</model>\n")
 
-    def load(self, file_name):
+    def load(self, file_path_name):
+        self.set_file_path_name(file_path_name)
 
         def str2bool(_str):
             return (_str.lower() in ['true'])
 
-        xml = parse(file_name).documentElement
+        xml = parse(file_path_name).documentElement
         data = xml.getElementsByTagName('data')[0]
 
         states = data.getElementsByTagName('state')
@@ -506,8 +512,10 @@ class Automaton(Base):
         return self
 
 
-    def ides_import(self, file_name, load_layout=True):
-        xml = parse(file_name).documentElement
+    def ides_import(self, file_path_name, load_layout=True):
+        self.set_file_path_name(None)  # check rule
+
+        xml = parse(file_path_name).documentElement
         data = xml.getElementsByTagName('data')[0]
 
         states = data.getElementsByTagName('state')
@@ -559,8 +567,8 @@ class Automaton(Base):
 
         return self
 
-    def ides_export(self, file_name):
-        file = open(file_name,'w')
+    def ides_export(self, file_path_name):
+        file = open(file_path_name,'w')
         file.write('<?xml version="1.0" encoding="UTF-8"?>\n')
         file.write('<model version="2.1" type="FSA" id="Untitled">\n')
         file.write('<data>\n')
@@ -596,8 +604,10 @@ class Automaton(Base):
         file.write("</model>\n")
         pass
 
-    def grail_import(self, file_name, ncont_name):
-        file = open(file_name, 'r')
+    def grail_import(self, file_path_name, ncont_name):
+        self.set_file_path_name(None)  # check rule
+
+        file = open(file_path_name, 'r')
         ncont = open(ncont_name, 'r')
         initial_state_name = None
 
@@ -618,7 +628,7 @@ class Automaton(Base):
             elif re.search(r'(START)', line) != None:
                 initial_state_name = re.split(r' ', line)[2].strip('\n')
 
-        file = open(file_name, 'r')
+        file = open(file_path_name, 'r')
         for line in file:
             if re.search(r'(FINAL)', line) is not None:
                 break
@@ -648,8 +658,8 @@ class Automaton(Base):
                 self.transition_add(stateDict[l[0].strip('\n')], stateDict[l[2].strip('\n')], eventDict[l[1]])
         return self
 
-    def tct_import(self, file_name):
-        file = open(file_name, 'r')
+    def tct_import(self, file_path_name):
+        file = open(file_path_name, 'r')
         initial_state_name = None
 
         stateDict = dict()
@@ -664,7 +674,7 @@ class Automaton(Base):
             elif re.search(r'(START)', line) != None:
                 initial_state_name = re.split(r' ', line)[2].strip('\n')
 
-        file = open(file_name, 'r')
+        file = open(file_path_name, 'r')
         for line in file:
             if re.search(r'(FINAL)', line) is not None:
                 break
@@ -690,10 +700,10 @@ class Automaton(Base):
                 self.transition_add(stateDict[l[0].strip('\n')], stateDict[l[2].strip('\n')], eventDict[l[1]])
         return self
 
-    def tct_import(self, file_name):
+    def tct_import(self, file_path_name):
         pass
 
-    def tct_export(self, file_name):
+    def tct_export(self, file_path_name):
         pass
 
     # Basic operations (e.g., sync, supC)
