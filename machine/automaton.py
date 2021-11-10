@@ -157,6 +157,12 @@ class State(Base):
 
     # ---------------------------------------------
 
+    def __repr__(self):
+        if self.marked:
+            return "(" + self.name + ")"
+        else:
+            return "[" + self.name + "]"
+
     def transition_in_add(self, transition):
         self.in_transitions.add(transition)
 
@@ -1007,11 +1013,12 @@ class Automaton(Base):
 
     def minimize(self, copy=False):
 
-        state_list = list(self.states)
-        event_set = set(self.events)
-        dict_x = dict()
-        dict_y = dict()
-        marked_matrix = list(list(False for index_y in range(index_x + 1, len(state_list))) for index_x in range(0, len(state_list) - 1))
+        # function calculates the out transition function of the state
+        def get_transition_function(state):
+            transition_function = dict()
+            for transition in state.out_transitions:
+                transition_function[transition.event.name] = transition.to_state
+            return transition_function
 
         def transition_already_exists(from_state, to_state, ev):
             for t in from_state.out_transitions:
@@ -1019,74 +1026,58 @@ class Automaton(Base):
                     return True
             return False
 
-        for index_x in range(0, len(state_list) - 1):
-            dict_x[state_list[index_x]] = index_x
-            for index_y in range(index_x + 1, len(state_list)):
-                dict_y[state_list[index_y]] = index_y - 1
+        # list the events
+        evs = list(self.events)
+        # lists the states of the supervisor
+        states = list(self.states)
+        # half matrix: dict(frozenset of pair of states) = have or not have same marked attribute
+        marked_matrix = dict()
+        # creates a half matrix so we can relate all pairs of states
+        can_be_equivalent_stack = list()
+        # If marked_matrix = True, states are not equivalent
+        for i in range(1, len(states)):
+            for j in range(0, len(states) - 1):
+                if states[i] != states[j]:
+                    pair = frozenset((states[i], states[j]))
+                    if states[i].marked != states[j].marked:
+                        marked_matrix[pair] = True
+                    else:
+                        marked_matrix[pair] = False
+                        can_be_equivalent_stack.append(pair)
 
-        for state_x in dict_x.keys():
-            for state_y in dict_y.keys():
-                if dict_y[state_y] >= dict_x[state_x] and state_x.marked != state_y.marked:
-                    marked_matrix[dict_x[state_x]][dict_y[state_y] - dict_x[state_x]] = True
-
-        # TODO: determine how many times it has to loop - maybe half of matrix is enough
-        for i in range(0, len(marked_matrix)):
-            for state_x in dict_x.keys():
-                for state_y in dict_y.keys():
-                    if dict_y[state_y] >= dict_x[state_x]:
-                        if state_x == state_y:
-                            marked_matrix[dict_x[state_x]][dict_y[state_y] - dict_x[state_x]] = True
-                        elif not marked_matrix[dict_x[state_x]][dict_y[state_y] - dict_x[state_x]]:
-                            to_state_x = state_x
-                            to_state_y = state_y
-                            for event in event_set:
-                                for transition in state_x.out_transitions:
-                                    if transition.event.name == event:
-                                        to_state_x = transition.to_state
-                                        break
-                                for transition in state_y.out_transitions:
-                                    if transition.event.name == event:
-                                        to_state_y = transition.to_state
-                                        break
-                                if to_state_y != to_state_x:
-                                    try:
-                                        if dict_y[to_state_y] >= dict_x[to_state_x]:
-                                            if marked_matrix[dict_x[to_state_x]][
-                                                dict_y[to_state_y] - dict_x[to_state_x]]:
-                                                marked_matrix[dict_x[state_x]][dict_y[state_y] - dict_x[state_x]] = True
-                                        elif dict_y[to_state_x] >= dict_x[to_state_y]:
-                                            if marked_matrix[dict_x[to_state_y]][
-                                                dict_y[to_state_x] - dict_x[to_state_y]]:
-                                                marked_matrix[dict_x[state_x]][dict_y[state_y] - dict_x[state_x]] = True
-                                    except KeyError:
-                                        if dict_y[to_state_x] >= dict_x[to_state_y]:
-                                            if marked_matrix[dict_x[to_state_y]][
-                                                dict_y[to_state_x] - dict_x[to_state_y]]:
-                                                marked_matrix[dict_x[state_x]][dict_y[state_y] - dict_x[state_x]] = True
-                                        elif dict_y[to_state_y] >= dict_x[to_state_x]:
-                                            if marked_matrix[dict_x[to_state_x]][
-                                                dict_y[to_state_y] - dict_x[to_state_x]]:
-                                                marked_matrix[dict_x[state_x]][dict_y[state_y] - dict_x[state_x]] = True
+        #now we are going to evaluate the transition functions of each unmarked pair
+        #ToDo: Does this have to loop?
+        while len(can_be_equivalent_stack) != 0:
+            pair = can_be_equivalent_stack.pop()
+            for event in evs:
+                target_states = set()
+                for state in pair:
+                    trans_function = get_transition_function(state)
+                    try:
+                        target_states.add(trans_function[event])
+                    except KeyError:
+                        pass
+                try:
+                    if marked_matrix[frozenset(target_states)] is True:
+                        marked_matrix[pair] = True
+                except KeyError:
+                    pass
 
         equivalences = set()
-        for row in range(0, len(marked_matrix)):
-            state_equivalent = set()
-            for column in range(0, len(marked_matrix[row])):
-                if not marked_matrix[row][column]:
-                    state_equivalent.add(state_list[row + column + 1])
-            if len(state_equivalent) > 1:
-                for s1 in state_equivalent:
-                    for s2 in state_equivalent:
-                        if s1 != s2:
-                            try:
-                                if dict_y[s2] >= dict_x[s1]:
-                                    marked_matrix[dict_x[s1]][dict_y[s2] - dict_x[s1]] = True
-                            except KeyError:
-                                if dict_y[s1] >= dict_x[s2]:
-                                    marked_matrix[dict_x[s2]][dict_y[s1] - dict_x[s2]] = True
-            if len(state_equivalent) > 0:
-                state_equivalent.add(state_list[row])
-                equivalences.add(frozenset(state_equivalent))
+        for state_1 in states:
+            state_equivalences = set()
+            state_equivalences.add(state_1)
+            for state_2 in states:
+                if state_1 != state_2:
+                    pair = frozenset((state_1,state_2))
+                    try:
+                        if marked_matrix[pair] is False:
+                            state_equivalences.add(state_2)
+                    except KeyError:
+                        pass
+            if len(state_equivalences) > 1:
+                if not state_equivalences.issubset(equivalences):
+                    equivalences.add(frozenset(state_equivalences))
 
         states_to_remove = set()
 
@@ -1121,7 +1112,6 @@ class Automaton(Base):
 
         for each in states_to_remove:
             self.state_remove(each)
-
         return self
 
     def mask(self, masks, copy=False):
