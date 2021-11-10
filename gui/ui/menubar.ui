@@ -29,6 +29,11 @@
                     <attribute name="label" translatable="yes">_Save</attribute>
                     <attribute name="accel">&lt;Primary&gt;s</attribute>
                 </item>
+                <item>
+                    <attribute name="action">app.save_as-automaton</attribute>
+                    <attribute name="label" translatable="yes">_Save As</attribute>
+                    <attribute name="accel">&lt;Primary&gt;b</attribute>
+                </item>
             </section>
             <section>
                 <item>

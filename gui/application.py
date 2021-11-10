@@ -31,6 +31,7 @@ class Application(Gtk.Application):
         self.create_action('new-automaton', self.on_new_automaton)
         self.create_action('load-automaton', self.on_load_automaton)
         self.create_action('save-automaton', self.on_save_automaton)
+        self.create_action('save_as-automaton', self.on_save_as_automaton)
         self.create_action('edit-automaton', self.on_edit_automaton)
         self.create_action('simulate-automaton', self.on_simulate_automaton)
         self.create_action('import-ides', self.on_import_ides)
@@ -95,6 +96,7 @@ class Application(Gtk.Application):
             for full_path_name in dialog.get_filenames():
                 file_name = os.path.basename(full_path_name)
                 automaton = Automaton()
+                automaton.set_file_name(file_name)
                 automaton.load(full_path_name)
                 self.elements.append(automaton)
                 if result == Gtk.ResponseType.OK:
@@ -106,14 +108,34 @@ class Application(Gtk.Application):
         widget = self.window.get_current_tab_widget()
         if (widget is None) or type(widget) != AutomatonEditor:
             return
+        automata = widget.automaton
+        if automata.get_file_name() ==None:
+            dialog = Gtk.FileChooserDialog("Choose file", self.window, Gtk.FileChooserAction.SAVE,
+                ("_Cancel", Gtk.ResponseType.CANCEL, "_Save", Gtk.ResponseType.OK))
+            result = dialog.run()
+            if result ==  Gtk.ResponseType.OK:
+                file_path = (dialog.get_filename()).split('.')
+                file_path = f'{file_path[0]}.xmd'
+                automata.set_file_name(file_path)
+                automata.save(file_path)
+            dialog.destroy()
+        else:
+            automata.save(automata.get_file_name())
 
+
+    def on_save_as_automaton(self, action, param=None):
+        widget = self.window.get_current_tab_widget()
+        if (widget is None) or type(widget) != AutomatonEditor:
+            return
         dialog = Gtk.FileChooserDialog("Choose file", self.window, Gtk.FileChooserAction.SAVE,
-            ("_Cancel", Gtk.ResponseType.CANCEL, "_Save", Gtk.ResponseType.OK))
+                ("_Cancel", Gtk.ResponseType.CANCEL, "_Save", Gtk.ResponseType.OK))
         result = dialog.run()
         if result ==  Gtk.ResponseType.OK:
-            file_path = dialog.get_filename()
-            file_path = f'{file_path}.xmd'
+            file_path = (dialog.get_filename())
+            if not(file_path.lower().endswith('xml')):
+                file_path = f'{file_path}.xmd'
             automata = widget.automaton
+            automata.set_file_name(file_path)
             automata.save(file_path)
         dialog.destroy()
 

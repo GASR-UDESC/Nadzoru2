@@ -295,7 +295,14 @@ class Automaton(Base):
         self.events = dict()  # map event_name to event class, names must be unique!
         self.states = set()
         self.initial_state = None
+        self.file_name = None 
         super().__init__(*args, **kwargs)
+
+    def get_file_name(self): 
+        return self.file_name
+
+    def set_file_name(self,file_name):
+        self.file_name = file_name
 
     def __str__(self):
         transitions = list()
