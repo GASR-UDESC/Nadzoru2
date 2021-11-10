@@ -3,6 +3,8 @@ import gi
 from gi.repository import Gdk, Gio, Gtk
 
 from gui.tool_palette import ToolPalette
+from gui.automaton_editor import AutomatonEditor
+
 
 class MainWindow(Gtk.ApplicationWindow):
     def __init__(self, *args, **kwargs):
@@ -29,15 +31,6 @@ class MainWindow(Gtk.ApplicationWindow):
         self.note.popup_disable()
         self.note.set_scrollable(True)
         self.note.set_show_border(True)
-
-        # Test
-        self.toolpallet.add_button('file', label="Save", icon_name='gtk-floppy', callback=self.test)
-
-        self.show_all()
-
-    def test(self, *args):
-        print(self.note.get_current_page())
-
 
     def do_delete_event(self, event):
         self.props.application.validade_quit()

@@ -383,14 +383,17 @@ class AutomatonRenderer(Gtk.DrawingArea):
 
             return radius
 
-    def draw(self, cr):
+    def draw(self, cr, highlight_state=None):
         self.cache_reset()
 
         # draw states
         state_radius = dict()
 
         for state in self.automaton.states:
-            state_radius[state] = self.draw_state(cr, state, arc_color=(0, 0, 0))
+            if state == highlight_state:
+                state_radius[state] = self.draw_state(cr, state, arc_color=(1, 0, 0))
+            else:
+                state_radius[state] = self.draw_state(cr, state, arc_color=(0, 0, 0))
 
         for state in self.automaton.states:
             self.draw_state_transitions(cr, state, state_radius, ccw=True, factor=2.0)
@@ -428,7 +431,7 @@ class AutomatonRenderer(Gtk.DrawingArea):
 
         return states
 
-    def draw_partial(self, cr, current_state, forward_deep=1, backward_deep=0):
+    def draw_partial(self, cr, current_state, forward_deep=1, backward_deep=0, highlight_state=None):
         self.cache_reset()
 
         state_radius = dict()

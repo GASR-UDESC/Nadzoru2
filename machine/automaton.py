@@ -155,13 +155,29 @@ class State(Base):
         else:
             return "[" + self.name + "]"
 
-    # ---------------------------------------------
+    # -------------------------------- def __repr__(self):
+    #         if self.marked:
+    #             return "(" + self.name + ")"
+    #         else:
+    #             return "[" + self.name + "]"-------------
 
     def __repr__(self):
         if self.marked:
             return "(" + self.name + ")"
         else:
             return "[" + self.name + "]"
+
+    def in_transition_exists(self, from_state, event):
+        for transition in self.in_transitions:
+            if (transition.from_state is from_state) and (transition.event is event):
+                return True
+        return False
+
+    def out_transition_exists(self, to_state, event):
+        for transition in self.out_transitions:
+            if (transition.to_state is to_state) and (transition.event is event):
+                return True
+        return False
 
     def transition_in_add(self, transition):
         self.in_transitions.add(transition)
@@ -537,6 +553,40 @@ class Automaton(Base):
         return self
 
     def ides_export(self, file_name):
+        file = open(file_name,'w')
+        file.write('<?xml version="1.0" encoding="UTF-8"?>\n')
+        file.write('<model version="2.1" type="FSA" id="Untitled">\n')
+        file.write('<data>\n')
+
+        state_id_map = dict()
+        event_id_map = dict()
+
+        for _id, state in enumerate(self.states):
+                state_id_map[state] = _id
+                initial = state == self.initial_state
+                if initial:
+                   file.write(f'\t<state id="{_id+1}">\n \t\t<properties>\n \t\t\t<initial />\n \t\t\t<marked />\n \t\t</properties>\n \t\t<name>{_id+1}</name>\n \t</state>\n')
+                else:
+                   file.write(f'\t<state id="{_id+1}">\n \t\t<properties>\n \t\t\t<marked />\n \t\t</properties>\n \t\t<name>{_id+1}</name>\n \t</state>\n')
+
+        for _id, event_name in enumerate(self.events.keys()):
+            event = self.events[event_name]
+            event_id_map[event] = _id
+            if event.controllable == True:
+               file.write(f'\t<event id="{_id+1}">\n \t\t<properties>\n \t\t\t<controllable />\n \t\t\t<observable />\n \t\t</properties>\n \t\t<name>{event_name}</name>\n \t</event>\n')
+            else:
+               file.write(f'\t<event id="{_id+1}">\n \t\t<properties>\n \t\t\t<observable />\n \t\t</properties>\n \t\t<name>{event_name}</name>\n \t</event>\n')
+
+        for source_state in self.states:
+            for transition in source_state.out_transitions:
+                state_id_map[state] = _id
+                source_id = state_id_map[transition.from_state]
+                target_id = state_id_map[transition.to_state]
+                event_id = event_id_map[transition.event]
+                file.write(f'\t<transition id="{_id+1}" source="{source_id}" target="{target_id}" event="{event_id}">\n \t</transition>\n')
+
+        file.write('</data>\n')
+        file.write("</model>\n")
         pass
 
     def grail_import(self, file_name, ncont_name):
@@ -1112,6 +1162,7 @@ class Automaton(Base):
 
         for each in states_to_remove:
             self.state_remove(each)
+
         return self
 
     def mask(self, masks, copy=False):

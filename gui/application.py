@@ -16,7 +16,6 @@ class MouseButtons:
 class Application(Gtk.Application):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, application_id="org.nadzoru2.application", **kwargs)
-        self.window = None
         self.elements = list()
 
     def create_action(self, action_name, callback):
@@ -26,6 +25,8 @@ class Application(Gtk.Application):
 
     def do_startup(self):
         Gtk.Application.do_startup(self)
+
+        self.window = MainWindow(application=self, title="Nadzoru 2")
 
         self.create_action('new-automaton', self.on_new_automaton)
         self.create_action('load-automaton', self.on_load_automaton)
@@ -37,14 +38,15 @@ class Application(Gtk.Application):
         self.create_action('quit', self.on_quit)
         self.create_action('export-ides', self.on_export_ides)
 
+        self.window.toolpallet.add_button('file', label="Save", icon_name='gtk-floppy', callback=self.on_save_automaton)
+
         builder = Gtk.Builder()
         builder.add_from_file("gui/ui/menubar.ui")
         self.menubar = builder.get_object("menubar")
         self.set_menubar(self.menubar)
 
     def do_activate(self):
-        if not self.window:
-            self.window = MainWindow(application=self, title="Nadzoru 2")
+        self.window.show_all()
         self.window.present()
 
     def do_command_line(self, command_line):
@@ -100,21 +102,20 @@ class Application(Gtk.Application):
                     self.window.add_tab(editor, "{} *".format(file_name))
         dialog.destroy()
 
-    def on_save_automaton(self, action, param):
+    def on_save_automaton(self, action, param=None):
+        widget = self.window.get_current_tab_widget()
+        if (widget is None) or type(widget) != AutomatonEditor:
+            return
+
         dialog = Gtk.FileChooserDialog("Choose file", self.window, Gtk.FileChooserAction.SAVE,
             ("_Cancel", Gtk.ResponseType.CANCEL, "_Save", Gtk.ResponseType.OK))
         result = dialog.run()
         if result ==  Gtk.ResponseType.OK:
             file_path = dialog.get_filename()
             file_path = f'{file_path}.xmd'
-            widget = self.window.get_current_tab_widget()
-            if type(widget) == AutomatonEditor:
-                automata = widget.automaton
-                automata.save(file_path)
-            #~ print("You saved the automata")
+            automata = widget.automaton
+            automata.save(file_path)
         dialog.destroy()
-
-
 
     def on_edit_automaton(self, action, param):
         print("You opened in editor automata")
@@ -146,18 +147,18 @@ class Application(Gtk.Application):
                     self.window.add_tab(editor, "{} *".format(file_name))
         dialog.destroy()
 
-    def on_export_ides(self, action, default_filename=None):
-        dialog = Gtk.FileChooserDialog("Choose Path", self.window, Gtk.FileChooserAction.SAVE,
-            ("_Cancel", Gtk.ResponseType.CANCEL, "_Export", Gtk.ResponseType.ACCEPT))
-        dialog.resize(700, 500)
-        if default_filename:
-            dialog.set_filename(os.path.abspath(default_filename))
-        filename = None
-        response = dialog.run()
-        if response == Gtk.ResponseType.OK:
-            filename = dialog.get_filename()
+    def on_export_ides(self, action, param):
+        dialog = Gtk.FileChooserDialog("Choose File", self.window, Gtk.FileChooserAction.SAVE,
+            ("_Cancel", Gtk.ResponseType.CANCEL, "_Export", Gtk.ResponseType.OK))
+        result = dialog.run()
+        if result == Gtk.ResponseType.OK:
+            file_path = dialog.get_filename()
+            file_path = f'{file_path}.xml'
+            widget = self.window.get_current_tab_widget()
+            if type(widget) == AutomatonEditor:
+                automata = widget.automaton
+                automata.ides_export(file_path)
         dialog.destroy()
-        return filename
 
     def on_quit(self, action, param):
         self.validade_quit()

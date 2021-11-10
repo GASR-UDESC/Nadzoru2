@@ -1,5 +1,5 @@
 import gi
-from gi.repository import GLib, Gio, Gtk
+from gi.repository import GLib, Gio, Gtk, GObject
 
 
 class FileIconMixin:
@@ -41,8 +41,10 @@ class ToolPalette(Gtk.ToolPalette):
         self.add_toggle_button('edit', tool_id='move', label="Move", icon_file_name='./res/icons/move.png')
         self.add_toggle_button('edit', tool_id='delete', label="Delete", icon_file_name='./res/icons/delete.png')
 
-        self.add_toggle_button('view', tool_id='zoom_in', label="Zoom In", icon_file_name='./res/icons/zoom_in.png')
-        self.add_toggle_button('view', tool_id='zoom_out', label="Zoom Out", icon_file_name='./res/icons/zoom_out.png')
+        self.add_button('view', label="Zoom In", icon_file_name='./res/icons/zoom_in.png')
+        self.add_button('view', label="Zoom Out", icon_file_name='./res/icons/zoom_out.png')
+
+        GObject.signal_new('nadzoru-tool-change', self, GObject.SIGNAL_RUN_LAST, GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT,))
 
     def add_group(self, name, label):
         assert name not in self.groups, "group '{}' already exists".format(name)
@@ -69,14 +71,17 @@ class ToolPalette(Gtk.ToolPalette):
         if not self.tool is None:
             self.tool.set_active(False)
             self.tool = None
+            self.emit('nadzoru-tool-change', self.get_selected_tool())
 
     def on_toggled(self, btn):
         if btn.get_active() and self.tool != btn:
             if self.tool is not None:
                 self.tool.set_active(False)
             self.tool = btn
+            self.emit('nadzoru-tool-change', self.get_selected_tool())
         else:
             self.tool = None
+            self.emit('nadzoru-tool-change', self.get_selected_tool())
 
     #~ def on_click_test(self, *args):
         #~ print(self.get_selected_tool())
