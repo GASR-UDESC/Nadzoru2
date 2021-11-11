@@ -1,7 +1,7 @@
 #~ import os
 import sys
 import gi
-from gi.repository import GLib, Gio, Gtk
+from gi.repository import GLib, Gio, Gtk, GObject
 
 from renderer import AutomatonRenderer
 
@@ -97,20 +97,24 @@ class AutomatonEditor(Gtk.Box):
         event = self.liststore[path][3]
         self.automaton.event_rename(event, event_name)
         self.update_treeview()
+        self.emit('nadzoru-editor-change', None)
 
     def renderer_toggle_controllable(self, widget, path):
         event = self.liststore[path][3]
         event.controllable = not event.controllable
         self.update_treeview()
+        self.emit('nadzoru-editor-change', None)
 
     def renderer_toggle_observable(self, widget, path):
         event = self.liststore[path][3]
         event.observable = not event.observable
         self.update_treeview()
+        self.emit('nadzoru-editor-change', None)
 
     def event_add(self, widget):
         self.automaton.event_add(name="new Event")
         self.update_treeview()
+        self.emit('nadzoru-editor-change', None)
 
     def delete_cell(self, widget):
         _, tree_iter = self.treeview.get_selection().get_selected()
@@ -121,6 +125,7 @@ class AutomatonEditor(Gtk.Box):
         self.automaton.event_remove(event)
         self.update_treeview()
         self.automaton_render.queue_draw()
+        self.emit('nadzoru-editor-change', None)
 
     def on_draw(self, automaton_render, cr):
         self.automaton_render.draw(cr, highlight_state=self.selected_state)
@@ -134,6 +139,7 @@ class AutomatonEditor(Gtk.Box):
                 self.selected_state.x = x
                 self.selected_state.y = y
                 self.automaton_render.queue_draw()
+                self.emit('nadzoru-editor-change', None)
 
     def on_button_press(self, automaton_render, event):
         x, y = event.get_coords()
@@ -143,14 +149,17 @@ class AutomatonEditor(Gtk.Box):
         if tool_name == 'state_add':
             state = self.automaton.state_add(None, x=x, y=y)
             self.selected_state = state
+            self.emit('nadzoru-editor-change', None)
         elif tool_name == 'state_initial':
             if state is not None:
                 self.automaton.initial_state = state
                 self.selected_state = state
+                self.emit('nadzoru-editor-change', None)
         elif tool_name == 'state_marked':
             if state is not None:
                 state.marked = not state.marked
                 self.selected_state = state
+                self.emit('nadzoru-editor-change', None)
         elif tool_name == 'transition_add':
             if state is None:
                 self.selected_state = None
@@ -169,11 +178,13 @@ class AutomatonEditor(Gtk.Box):
                     if added_transition:
                         #  only if add at least one transition, reset 'selected_state'
                         self.selected_state = None
+                        self.emit('nadzoru-editor-change', None)
         elif tool_name == 'move':
             self.selected_state = state
         elif tool_name == 'delete':
             if state is not None:
                 self.automaton.state_remove(state)
+                self.emit('nadzoru-editor-change', None)
 
         self.automaton_render.queue_draw()
 
@@ -186,3 +197,6 @@ class AutomatonEditor(Gtk.Box):
         #~ selected_event = self.liststore.get(tree_iter, 3)[0]
         #~ self.automaton.transition_add(self.selected_state, state, selected_event)
         #~ self.selected_state = None
+
+
+GObject.signal_new('nadzoru-editor-change', AutomatonEditor, GObject.SIGNAL_RUN_LAST, GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT,))

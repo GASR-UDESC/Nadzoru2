@@ -305,17 +305,22 @@ class Automaton(Base):
         self.events = dict()  # map event_name to event class, names must be unique!
         self.states = set()
         self.initial_state = None
-        self.file_path_name = None
+
+        # editor related attributes
+        self._file_path_name = None
+
         super().__init__(*args, **kwargs)
 
     def get_file_name(self):
-        return os.path.basename(self.file_path_name)
+        if self._file_path_name is not None:
+            return os.path.basename(self._file_path_name)
+        return 'untitled'
 
     def get_file_path_name(self):
-        return self.file_path_name
+        return self._file_path_name
 
-    def set_file_path_name(self,file_path_name):
-        self.file_path_name = file_path_name
+    def set_file_path_name(self, file_path_name):
+        self._file_path_name = file_path_name
 
     def __str__(self):
         transitions = list()
@@ -345,8 +350,8 @@ class Automaton(Base):
             return False
 
         for t in event.transitions:
-            print("REMOVING", t)
             self.transition_remove(t)
+
         return True
 
     def event_remove(self, event):
@@ -410,7 +415,6 @@ class Automaton(Base):
         from_state.transition_out_add(t)
         to_state.transition_in_add(t)
         event.transition_add(t)
-
         return t
 
     # TODO: test
@@ -420,18 +424,6 @@ class Automaton(Base):
         transition.to_state.transition_in_remove(transition)
 
     # Editor specific methods
-
-    # These should be calculated by the renderer
-    """
-    def state_get_at(self, x, y):
-        pass
-
-    def transition_get_at(self, x, y):
-        pass
-
-    def state_auto_position(self):  # OLD: position_states
-        pass
-    """
 
     def save(self, file_path_name):
         self.set_file_path_name(file_path_name)
