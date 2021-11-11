@@ -44,8 +44,6 @@ class ToolPalette(Gtk.ToolPalette):
         self.add_button('view', label="Zoom In", icon_file_name='./res/icons/zoom_in.png')
         self.add_button('view', label="Zoom Out", icon_file_name='./res/icons/zoom_out.png')
 
-        GObject.signal_new('nadzoru-tool-change', self, GObject.SIGNAL_RUN_LAST, GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT,))
-
     def add_group(self, name, label):
         assert name not in self.groups, "group '{}' already exists".format(name)
         self.groups[name] = Gtk.ToolItemGroup.new(label)
@@ -85,3 +83,5 @@ class ToolPalette(Gtk.ToolPalette):
 
     #~ def on_click_test(self, *args):
         #~ print(self.get_selected_tool())
+
+GObject.signal_new('nadzoru-tool-change', ToolPalette, GObject.SIGNAL_RUN_LAST, GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT,))

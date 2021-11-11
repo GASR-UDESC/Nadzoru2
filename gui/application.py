@@ -80,12 +80,11 @@ class Application(Gtk.Application):
             self.quit()
 
     def on_new_automaton(self, action, param):
-        from test_automata import automata_01  # For testing
         automaton = Automaton()
-        automata_01(automaton)  # For testing
         self.elements.append(automaton)
         editor = AutomatonEditor(automaton, self)
-        self.window.add_tab(editor, "[new] *")
+        self.window.add_tab(editor, editor.automaton.get_file_name())
+        editor.connect('nadzoru-editor-change', self.on_editor_change)
 
     def on_load_automaton(self, action, param):
         dialog = Gtk.FileChooserDialog("Choose file", self.window, Gtk.FileChooserAction.OPEN,
@@ -100,7 +99,8 @@ class Application(Gtk.Application):
                 self.elements.append(automaton)
                 if result == Gtk.ResponseType.OK:
                     editor = AutomatonEditor(automaton, self)
-                    self.window.add_tab(editor, "{} *".format(file_name))
+                    editor.connect('nadzoru-editor-change', self.on_editor_change)
+                    self.window.add_tab(editor, file_name)
         dialog.destroy()
 
     def on_save_automaton(self, action, param=None):
@@ -115,6 +115,7 @@ class Application(Gtk.Application):
             self.window.set_tab_page_title(widget, automata.get_file_name())
         else:
             automata.save(file_path_name)
+        self.window.set_tab_label_color(widget, '#000')
 
     def on_save_as_automaton(self, action, param=None):
         widget = self.window.get_current_tab_widget()
@@ -123,6 +124,7 @@ class Application(Gtk.Application):
         automata = widget.automaton
         self._save_dialog(automata)
         self.window.set_tab_page_title(widget, automata.get_file_name())
+        self.window.set_tab_label_color(widget, '#000')
 
     def _save_dialog(self, automata):
         dialog = Gtk.FileChooserDialog("Choose file", self.window, Gtk.FileChooserAction.SAVE,
@@ -149,6 +151,11 @@ class Application(Gtk.Application):
     def on_close_tab(self, action, param):
         self.window.remove_tab(self.window.note.get_current_page())
 
+    def on_editor_change(self, editor, *args):
+        self.window.set_tab_label_color(editor, '#F00')
+
+
+
     def on_import_ides(self, action, param):
         dialog = Gtk.FileChooserDialog("Choose file", self.window, Gtk.FileChooserAction.OPEN,
             ("_Cancel", Gtk.ResponseType.CANCEL, "_Open", Gtk.ResponseType.ACCEPT, "_Edit", Gtk.ResponseType.OK))
@@ -162,6 +169,7 @@ class Application(Gtk.Application):
                 self.elements.append(automaton)
                 if result == Gtk.ResponseType.OK:
                     editor = AutomatonEditor(automaton, self)
+                    editor.connect('nadzoru-editor-change', self.on_editor_change)
                     self.window.add_tab(editor, "{} *".format(file_name))
         dialog.destroy()
 

@@ -64,7 +64,15 @@ class MainWindow(Gtk.ApplicationWindow):
         return self.note.get_nth_page(_id)
 
     def set_tab_page_title(self, widget, title):
-        page_label = self.note.get_tab_label(widget)
-        page_label.set_text(title)
+        label = self.note.get_tab_label(widget)
+        label.set_text(title)
+        self.show_all()
+
+    def set_tab_label_color(self, widget, color="#000000"):
+        label = self.note.get_tab_label(widget)
+
+        rgba = Gdk.RGBA(0, 0, 0)
+        rgba.parse(color)
+        label.override_color(Gtk.StateFlags.NORMAL, rgba)
 
         self.show_all()
