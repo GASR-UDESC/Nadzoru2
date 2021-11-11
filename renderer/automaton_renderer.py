@@ -348,10 +348,20 @@ class AutomatonRenderer(Gtk.DrawingArea):
                 cr.arc(Vc.x, Vc.y, r, Acs + Ads, Ace - Ade - Aae)
                 Varrow = Point2D.from_rad_angle(Ace - Ade).set_length(r).add(Vc)
                 Varrowend = Point2D.from_rad_angle(Ace - Ade - Aae).set_length(r).add(Vc)
+                for trans in transitions[to_state]:
+                    self.cache_set(r, 'transitions', trans, 'arc_radius')
+                    self.cache_set(Vc, 'transitions', trans, 'arc_center')
+                    self.cache_set(Acs + Ads, 'transitions', trans, 'start_angle')
+                    self.cache_set(Ace - Ade, 'transitions', trans, 'end_angle')
             else:
                 cr.arc(Vc.x, Vc.y, r, Ace + Ade + Aae, Acs - Ads)
                 Varrow = Point2D.from_rad_angle(Ace + Ade).set_length(r).add(Vc)
                 Varrowend = Point2D.from_rad_angle(Ace + Ade + Aae).set_length(r).add(Vc)
+                for trans in transitions[to_state]:
+                    self.cache_set(r, 'transitions', trans, 'arc_radius')
+                    self.cache_set(Vc, 'transitions', trans, 'arc_center')
+                    self.cache_set(Ace + Ade, 'transitions', trans, 'start_angle')
+                    self.cache_set(Acs - Ads, 'transitions', trans, 'end_angle')
             cr.stroke()
             self.draw_arrow(cr, Varrow, Varrowend)
 
@@ -459,6 +469,27 @@ class AutomatonRenderer(Gtk.DrawingArea):
 
         return None
 
+    def get_transition_at(self, x, y):
+        a=4 
+        for state in self.automaton.states:
+            for trans in state.out_transitions:
+                arc_radius = self.cache_get('transitions', trans, 'arc_radius')
+                arc_center = self.cache_get('transitions', trans, 'arc_center')
+                start_angle = self.cache_get('transitions', trans, 'start_angle')
+                end_angle = self.cache_get('transitions', trans, 'end_angle')
+                sqd_dist = (x-arc_center.x)**2 + (y-arc_center.y)**2
 
+                if (arc_radius-a)**2 < sqd_dist < (arc_radius+a)**2:                    #checks if cursor is between transition's arc radius
+                    angle = math.atan2((arc_center.y-y),(arc_center.x-x)) + math.pi     #+180 deg, cairo works with positve y pointing down
+
+                    if start_angle > end_angle:         #this condition means the end_angle should be negative (same as adding one full rotation)
+                        if 0 < angle < end_angle:       #cursor is between 0deg and end_angle; angle must adjust for the new end_angle value 
+                            angle += 2*math.pi          #i.e. adding a full rotation to angle
+                        end_angle += 2*math.pi
+                        
+                    if start_angle < angle < end_angle:
+                        #print(trans)
+                        return trans
+        return None
 
 
