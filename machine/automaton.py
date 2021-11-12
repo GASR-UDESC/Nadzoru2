@@ -1197,27 +1197,35 @@ class Automaton(Base):
         def get_disabled_events(sup_state):
             enabled_events_in_supervisor = set()
             enabled_events_in_system = set()
-            disabled_events = list()
+            disabled_events = set()
 
-            for transition in sup_state.out_transitions: enabled_events_in_supervisor.add(transition.event.name)
-            for transition in univ_map[sup_state].out_transitions: enabled_events_in_system.add(transition.event.name)
+            for transition in sup_state.out_transitions:
+                enabled_events_in_supervisor.add(transition.event.name)
 
-            for transition in enabled_events_in_system:
-                if transition not in enabled_events_in_supervisor:
-                    disabled_events.append(transition)
+            for transition in univ_map[sup_state].out_transitions:
+                enabled_events_in_system.add(transition.event.name)
 
-            return set(disabled_events)
+            for event_name in enabled_events_in_system:
+                if event_name not in enabled_events_in_supervisor:
+                    disabled_events.add(event_name)
+
+            return disabled_events
 
         # this function returns the set of enabled events in a state
         def get_enabled_events(state):
-            enabled_events = list()
+            enabled_events = set()
 
-            for transition in state.out_transitions: enabled_events.append(transition.event.name)
+            for transition in state.out_transitions:
+                enabled_events.add(transition.event.name)
 
-            return set(enabled_events)
+            return enabled_events
 
-        # marked attribute
-        # returns 1 if T(x) = 1 AND M(x) = 1, 0 if T(x) = 0, -1 if T(x) = 1 AND M(x) = 0
+        # marked attribute, A(x) Def 4.1
+        # T(x) if the univocal state in the plant is marked
+        # M(x) if the state in the supervisor is marked
+        # returns 1 if T(x) = 1 AND M(x) = 1,
+        # returns 0 if T(x) = 0,
+        # return -1 if T(x) = 1 AND M(x) = 0
         # T(x) refers to plant G and M(x) refers to supervisor S
         def get_marked_attribute(sup_state):
             if univ_map[sup_state].marked is False:
@@ -1228,10 +1236,12 @@ class Automaton(Base):
                 else:
                     return -1
 
+        # Def 4.2 item 2
         def get_marked_action_attribute(x1, x2):
             mx1 = get_marked_attribute(x1)
             mx2 = get_marked_attribute(x2)
-            if (mx1 == mx2) or ((mx1 == 0) and (mx2 != 0)) or ((mx2 == 0) and (mx1 != 0)):
+            #~ if (mx1 == mx2) or ((mx1 == 0) and (mx2 != 0)) or ((mx2 == 0) and (mx1 != 0)):
+            if (mx1 == mx2) or (mx1 == 0) or (mx2 == 0):
                 return True
             else:
                 return False
@@ -1277,7 +1287,6 @@ class Automaton(Base):
             return var
 
         def b_min_dependancies_criteria(aggregation_indexes, states):
-
             pass
 
         def c_target_state_intersection_criteria(aggregation_indexes, states):
