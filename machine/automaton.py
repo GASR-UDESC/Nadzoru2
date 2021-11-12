@@ -1247,7 +1247,7 @@ class Automaton(Base):
                 return False
 
         def verify_aggretation(s1, s2):
-            count = 0
+            count = 0  # TODO: remove
             for state_1 in s1:
                 for state_2 in s2:
                     if state_1 != state_2:
@@ -1255,10 +1255,10 @@ class Automaton(Base):
                             if len(aggregate_matrix[frozenset((state_1, state_2))]) == 0:
                                 count = count + 1
                         except:
-                            pass
-                    else:
-                        count = count + 1
-            return count
+                            pass  # False
+                    else:  # TODO: remove
+                        count = count + 1  # TODO: remove
+            return count  # True
 
         # function calculates the out transition function of the state
         def get_transition_function(state):
