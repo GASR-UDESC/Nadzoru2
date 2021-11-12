@@ -145,6 +145,7 @@ class AutomatonEditor(Gtk.Box):
         x, y = event.get_coords()
         tool_name = self.application.window.toolpallet.get_selected_tool()
         state = self.automaton_render.get_state_at(x, y)
+        transition = self.automaton_render.get_transition_at(x, y)
 
         if tool_name == 'state_add':
             state = self.automaton.state_add(None, x=x, y=y)
