@@ -593,6 +593,14 @@ class Automaton(Base):
                 file.write(f'\t<transition id="{_id+1}" source="{source_id}" target="{target_id}" event="{event_id}">\n \t</transition>\n')
 
         file.write('</data>\n')
+        file.write('<meta tag="layout" version="2.1">\n')
+        meta_id_map=dict()
+        for _id, state in enumerate(self.states):
+                state_id_map[state] = _id
+                initial = state == self.initial_state
+                file.write(f'\t<state id="{_id+1}">\n \t\t<circle x="{state.x}" y="{state.y}" />\n \t</state>\n')
+        
+        file.write('</meta>\n')
         file.write("</model>\n")
         pass
 
