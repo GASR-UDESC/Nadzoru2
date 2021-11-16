@@ -179,7 +179,7 @@ class Application(Gtk.Application):
         result = dialog.run()
         if result == Gtk.ResponseType.OK:
             file_path = dialog.get_filename()
-            file_path = f'{file_path}.xml'
+            file_path = f'{file_path}.xmd'
             widget = self.window.get_current_tab_widget()
             if type(widget) == AutomatonEditor:
                 automata = widget.automaton
