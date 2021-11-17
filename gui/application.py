@@ -95,7 +95,11 @@ class Application(Gtk.Application):
             for file_path_name in dialog.get_filenames():
                 file_name = os.path.basename(file_path_name)
                 automaton = Automaton()
-                automaton.load(file_path_name)
+                try:
+                    automaton.load(file_path_name)
+                except:
+                    dialog.destroy()
+                    return
                 self.elements.append(automaton)
                 if result == Gtk.ResponseType.OK:
                     editor = AutomatonEditor(automaton, self)
