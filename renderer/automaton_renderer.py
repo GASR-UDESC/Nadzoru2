@@ -470,26 +470,30 @@ class AutomatonRenderer(Gtk.DrawingArea):
         return None
 
     def get_transition_at(self, x, y):
-        a=4 
+        a = 4
+        transitions_at = list()
         for state in self.automaton.states:
             for trans in state.out_transitions:
                 arc_radius = self.cache_get('transitions', trans, 'arc_radius')
                 arc_center = self.cache_get('transitions', trans, 'arc_center')
                 start_angle = self.cache_get('transitions', trans, 'start_angle')
                 end_angle = self.cache_get('transitions', trans, 'end_angle')
-                sqd_dist = (x-arc_center.x)**2 + (y-arc_center.y)**2
+                sqd_dist = (x - arc_center.x)**2 + (y - arc_center.y)**2
+                
+                if (arc_radius - a)**2 < sqd_dist < (arc_radius + a)**2:                    # checks if cursor is between transition's arc radius
+                    angle = math.atan2((arc_center.y - y),(arc_center.x - x)) + math.pi     # +180 deg, cairo works with positve y pointing down
 
-                if (arc_radius-a)**2 < sqd_dist < (arc_radius+a)**2:                    #checks if cursor is between transition's arc radius
-                    angle = math.atan2((arc_center.y-y),(arc_center.x-x)) + math.pi     #+180 deg, cairo works with positve y pointing down
-
-                    if start_angle > end_angle:         #this condition means the end_angle should be negative (same as adding one full rotation)
-                        if 0 < angle < end_angle:       #cursor is between 0deg and end_angle; angle must adjust for the new end_angle value 
-                            angle += 2*math.pi          #i.e. adding a full rotation to angle
-                        end_angle += 2*math.pi
+                    if start_angle > end_angle:         # this condition means the end_angle should be negative (same as adding one full rotation)
+                        if 0 < angle < end_angle:       # cursor is between 0deg and end_angle; angle must adjust for the new end_angle value 
+                            angle += 2 * math.pi        # i.e. adding a full rotation to angle
+                        end_angle += 2 * math.pi
                         
                     if start_angle < angle < end_angle:
-                        #print(trans)
-                        return trans
-        return None
+                        transitions_at.append(trans)
+                        
+            if transitions_at:          # returns if list isn't empty
+                return transitions_at
+        
+        return transitions_at           # return empty list
 
 

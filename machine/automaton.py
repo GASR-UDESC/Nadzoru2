@@ -193,6 +193,7 @@ class State(Base):
 
     def transition_out_remove(self, transition):
         self.out_transitions.discard(transition)
+        self.transition_layouts[transition.to_state].dec_ref()
         if self.transition_layouts[transition.to_state].ref_count == 0:
             del self.transition_layouts[transition.to_state]
 

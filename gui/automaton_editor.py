@@ -145,7 +145,7 @@ class AutomatonEditor(Gtk.Box):
         x, y = event.get_coords()
         tool_name = self.application.window.toolpallet.get_selected_tool()
         state = self.automaton_render.get_state_at(x, y)
-        transition = self.automaton_render.get_transition_at(x, y)
+        transitions = self.automaton_render.get_transition_at(x, y)
 
         if tool_name == 'state_add':
             state = self.automaton.state_add(None, x=x, y=y)
@@ -186,6 +186,10 @@ class AutomatonEditor(Gtk.Box):
             if state is not None:
                 self.automaton.state_remove(state)
                 self.emit('nadzoru-editor-change', None)
+            
+            for trans in transitions:
+                self.automaton.transition_remove(trans)
+            self.emit('nadzoru-editor-change', None)
 
         self.automaton_render.queue_draw()
 
