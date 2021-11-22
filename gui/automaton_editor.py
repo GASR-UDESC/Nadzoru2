@@ -85,8 +85,8 @@ class AutomatonEditor(Gtk.Box):
         self.liststore.clear()
         rows = list()
 
-        for event_name, event in self.automaton.events.items():
-            rows.append([event_name, event.controllable, event.observable, event])
+        for event in self.automaton.events:
+            rows.append([event.name, event.controllable, event.observable, event])
 
         rows.sort(key=lambda row: row[0])
 
@@ -186,7 +186,7 @@ class AutomatonEditor(Gtk.Box):
             if state is not None:
                 self.automaton.state_remove(state)
                 self.emit('nadzoru-editor-change', None)
-            
+
             for trans in transitions:
                 self.automaton.transition_remove(trans)
             self.emit('nadzoru-editor-change', None)

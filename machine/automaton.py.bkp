@@ -96,14 +96,6 @@ class Event(Base):
     def transition_add(self, transition):
         self.transitions.add(transition)
 
-    def equivalent_properties(self, other):
-        if self.controllable != other.controllable:
-            return False
-        if self.observable != other.observable:
-            return False
-        return True
-
-
 
 class EventSet(Base):  # TODO
     pass
@@ -310,7 +302,8 @@ class Automaton(Base):
     type_str = 'FSA'
 
     def __init__(self, *args, **kwargs):
-        self.events = set()
+        #  self.events = set()
+        self.events = dict()  # map event_name to event class, names must be unique!
         self.states = set()
         self.initial_state = None
 
@@ -318,19 +311,6 @@ class Automaton(Base):
         self._file_path_name = None
 
         super().__init__(*args, **kwargs)
-
-    def __str__(self):
-        transitions = list()
-        for s in self.states:
-            transitions = transitions + list(s.out_transitions)
-        return "Events: {events} \nStates: {states}\nInitial: {initial}\nTransitions:\n    {transitions}".format(
-            events = ", ".join(map(lambda event: event.name, self.events)),
-            states = "; ".join(map(str, self.states)),
-            initial = str(self.initial_state),
-            transitions = "\n    ".join(map(str, transitions)),
-        )
-
-    # --------------------------------------------------------------------------
 
     def get_file_name(self):
         if self._file_path_name is not None:
@@ -343,100 +323,53 @@ class Automaton(Base):
     def set_file_path_name(self, file_path_name):
         self._file_path_name = file_path_name
 
-    # ------------------------------------------------------------------------ #
-    # -------------------------- Event manipulation -------------------------- #
-    # ------------------------------------------------------------------------ #
-
-    def event_get_by_name(self, event_name):
-        for event in self.events:
-            if event.name == event_name:
-                return event
-        return None
-
-    def event_name_exists(self, event_name):
-        return self.event_get_by_name(event_name) is not None
+    def __str__(self):
+        transitions = list()
+        for s in self.states:
+            transitions = transitions + list(s.out_transitions)
+        return "Events: {events} \nStates: {states}\nInitial: {initial}\nTransitions:\n    {transitions}".format(
+            events = ", ".join(map(str, self.events)),
+            states = "; ".join(map(str, self.states)),
+            initial = str(self.initial_state),
+            transitions = "\n    ".join(map(str, transitions)),
+        )
+        # deletes transitions which have state as destiny:
 
     def event_add(self, *args, **kwargs):
-        event = self.event_class(*args, **kwargs)
-        if self.event_name_exists(event.name):
+        e = self.event_class(*args, **kwargs)
+        if e.name in self.events:
             raise EventNameDuplicateException
-        self.events.add(event)
-        return event
+        self.events[e.name] = e
+        return e
+
+    # TODO: test
+    def event_remove_by_name(self, event_name):
+        try:
+            event = self.events[event_name]
+            del self.events[event_name]
+        except KeyError:
+            return False
+
+        for t in event.transitions:
+            self.transition_remove(t)
+
+        return True
 
     def event_remove(self, event):
-        try:
-            self.events.delete(event)
-        except:
-            return False  # event doesn't exists in ser
-        return True
+        """event's name are unique"""
+        return self.event_remove_by_name(event.name)
 
-    def event_remove_by_name(self, event_name):
-        event = self.event_get_by_name(event_name)
-        if event is None:
-            return False
-        self.event_remove(event)
-        for transition in event.transitions:
-            self.transition_remove(transition)
-        return True
-
-    def event_rename(self, event, new_event_name):
-        if event.name == new_event_name:
-            return False  #  This event's name is already event_name
-        if self.event_name_exists(new_event_name):  # ANOTHER event is already named 'event_name'
+    def event_rename(self, event, event_name):
+        # TODO improve: two sources of truth
+        if event_name in self.events:
             raise EventNameDuplicateException
-        event.name = new_event_name
-        return True
 
-    def event_get_name_list(self):
-        return {event.name for event in self.events}
+        del self.events[event.name]
+        self.events[event_name] = event
+        event.name = event_name
 
-    def event_name_map(self):
-        """Returns a map (dict) relating events' names with their respective object"""
-        event_map = dict()
-        for event in self.events:
-            event_map[event.name] = event
-        return event_map
-
-    def event_map(G1, G2):
-        """Returns a (bi-directional) map (dict) relating events in G1 with events in G2 and vice versa based on events' names"""
-        event_map = dict()
-        G1_only_events = list()
-        G2_only_events = list()
-        G1_event_name_map = G1.event_name_map()
-        G2_event_name_map = G2.event_name_map()
-
-        for event_name, g1_event in G1_event_name_map.items():
-            if event_name in G2_event_name_map:
-                g2_event = G2_event_name_map[event_name]
-                event_map[g1_event] = g2_event
-                event_map[g2_event] = g1_event
-            else:
-                G1_only_events.append(g1_event)
-
-        for event_name, g2_event in G2_event_name_map.items():
-            if g2_event not in event_map:
-                G2_only_events.append(g2_event)
-
-        return event_map, G1_only_events, G2_only_events
-
-    def check_equivalent_event_set(self, other):
-        if len(self.events) != len(other.events):
-            return False, None
-
-        event_map, self_only_events, other_only_events = self.event_map(other)
-        if len(self_only_events) != 0 or len(other_only_events) != 0:
-            return False, None
-
-        for event_a, event_b in event_map.items():
-            if not event_a.equivalent_properties(event_b):
-                return False, None
-
-        return True, event_map
-
-    # ------------------------------------------------------------------------ #
-    # -------------------------- State manipulation -------------------------- #
-    # ------------------------------------------------------------------------ #
-
+    def has_event_name(self, event_name):
+        return event_name in self.events  # check if the event_name key exists in self.events
 
     def state_add(self, *args, initial=False, **kwargs):
         quantity = len(self.states)
@@ -510,9 +443,10 @@ class Automaton(Base):
             initial = state == self.initial_state
             file.write(f'\t<state id="{_id}" name="{state.name}" initial ="{initial}" marked="{state.marked}" x="{state.x}" y="{state.y}" />\n')
 
-        for _id, event in enumerate(self.events):
-            event_id_map[event.name] = _id
-            file.write(f'\t<event id="{_id}" name="{event.name}" controllable="{event.controllable}" observable="{event.observable}"/>\n')
+        for _id, event_name in enumerate(self.events.keys()):
+            event = self.events[event_name]
+            event_id_map[event] = _id
+            file.write(f'\t<event id="{_id}" name="{event_name}" controllable="{event.controllable}" observable="{event.observable}"/>\n')
 
         for source_state in self.states:
             for transition in source_state.out_transitions:
@@ -644,12 +578,13 @@ class Automaton(Base):
                 else:
                    file.write(f'\t<state id="{_id+1}">\n \t\t<properties>\n \t\t\t<marked />\n \t\t</properties>\n \t\t<name>{_id+1}</name>\n \t</state>\n')
 
-        for _id, event in enumerate(self.events):
-            event_id_map[event.name] = _id
+        for _id, event_name in enumerate(self.events.keys()):
+            event = self.events[event_name]
+            event_id_map[event] = _id
             if event.controllable == True:
-               file.write(f'\t<event id="{_id+1}">\n \t\t<properties>\n \t\t\t<controllable />\n \t\t\t<observable />\n \t\t</properties>\n \t\t<name>{event.name}</name>\n \t</event>\n')
+               file.write(f'\t<event id="{_id+1}">\n \t\t<properties>\n \t\t\t<controllable />\n \t\t\t<observable />\n \t\t</properties>\n \t\t<name>{event_name}</name>\n \t</event>\n')
             else:
-               file.write(f'\t<event id="{_id+1}">\n \t\t<properties>\n \t\t\t<observable />\n \t\t</properties>\n \t\t<name>{event.name}</name>\n \t</event>\n')
+               file.write(f'\t<event id="{_id+1}">\n \t\t<properties>\n \t\t\t<observable />\n \t\t</properties>\n \t\t<name>{event_name}</name>\n \t</event>\n')
 
         for source_state in self.states:
             for transition in source_state.out_transitions:
@@ -903,14 +838,14 @@ class Automaton(Base):
         event_names = {event.name for event in self.events}  # set, initiate with events' names already in self
         added_events = list()  # so we can undo in case of error
         for g in args:
-            for g_event in g.events:
-                if g_event.name not in event_names:
-                    new_event = g_event.copy()
-                    self.events.add(new_event)
+            for ev_name, ev in g.events.items():
+                if ev.name not in event_names:
+                    new_event = ev.copy()
+                    self.events[new_event] = ev
                     added_events.append(new_event)
-                    event_names.add(g_event.name)
+                    event_names.add(ev.name)
                 else:
-                    pass  # TODO (1) check if g_event and self.get_event_by_name(g_event.name) are equivallent (method in Event) - controlabilly, observabilitty
+                    pass  # TODO (1) check if ev and self.get_event(ev.name) are equivallent (method in event)
                           #      (2) if not undo previously added events (from added_events)
                           #      (3) raise Error ErrorMultiplePropetiesForEventName
 
@@ -946,7 +881,7 @@ class Automaton(Base):
                 enabled = True
                 target_state_tuple = list()
                 for g, s in zip(args, state_tuple):
-                    if g.event_name_exists(event.name):
+                    if g.has_event_name(event.name):
                         target = s.get_target_from_event_name(event.name)
                         if target is None:  # forbidden, so no transition with 'event'
                             enabled = False
@@ -969,9 +904,17 @@ class Automaton(Base):
     def projection(self, *args):
         pass
 
+    def check_equal_event_set(self, other):
+        for event_name in self.events:
+            if not other.has_event_name(event_name):
+                return False
+        for event_name in other.events:
+            if not self.has_event_name(event_name):
+                return False
+        return True
+
     def univocal(G, R):
-        equivalent_events, event_map = G.check_equivalent_event_set(R)
-        if not equivalent_events:
+        if G.check_equal_event_set(R) is False:
             raise Exception   # TODO: custom error that can be catch by application
 
         univocal_map = {R.initial_state: G.initial_state} # [state in R] to [state in G]
@@ -1146,14 +1089,14 @@ class Automaton(Base):
                 transition_function[transition.event.name] = transition.to_state
             return transition_function
 
-        def transition_already_exists(from_state, to_state, event):
+        def transition_already_exists(from_state, to_state, ev):
             for t in from_state.out_transitions:
-                if t.to_state == to_state and t.event == event:
+                if t.to_state == to_state and t.event == ev:
                     return True
             return False
 
-        # list the events' names
-        events_names = self.event_get_name_list()  # list of event's names
+        # list the events
+        evs = list(self.events)  # list of keys, i.e., event_names
         # lists the states of the supervisor
         states = list(self.states)
         # half matrix: dict(frozenset of pair of states) = have or not have same marked attribute
@@ -1175,12 +1118,12 @@ class Automaton(Base):
         #ToDo: Does this have to loop?
         while len(can_be_equivalent_stack) != 0:
             pair = can_be_equivalent_stack.pop()
-            for event_name in events_names:
+            for event in evs:
                 target_states = set()
                 for state in pair:
                     trans_function = get_transition_function(state)
                     try:
-                        target_states.add(trans_function[event_name])
+                        target_states.add(trans_function[event])
                     except KeyError:
                         pass
                 try:
@@ -1247,45 +1190,23 @@ class Automaton(Base):
     def distinguish(self, refinements, copy=False):
         pass
 
-    def isomorphic_check(G1, G2, verbose=False):
+    def event_name_map(self):
+        """Returns a map (dict) relating events' names with their respective object"""
+        event_map = dict()
+
+        for event in self.
+
+    def event_map(G1, G2):
+        """Returns a map (dict) relating events in G1 with events in G2 and vice versa based on event names"""
+
+
+
+    def isomorphic_check(G1, G2):
         if len(G1.states) != len(G2.states):
-            if verbose:
-                print("Number of states: {} != {}".format(len(G1.states), len(G2.states)))
             return False
-
-        equivalent_events, event_map = G1.check_equivalent_event_set(G2)
-        if not equivalent_events:
-            if verbose:
-                print("Events are not equivalent")
-            return False
-
-        state_map = {G1.initial_state: G2.initial_state}
-        state_stack = [(G1.initial_state, G2.initial_state)]
-
-        while len(state_stack) > 0:
-            s_g1, s_g2 = state_stack.pop()
-            if len(s_g1.out_transitions) != len(s_g2.out_transitions):
-                if verbose:
-                    print("Diferent number of transitions", s_g1, s_g2)
-                return False
-            for trans_g1 in s_g1.out_transitions:
-                event_name = trans_g1.event.name
-                target_g1 = trans_g1.to_state
-                target_g2 = s_g2.get_target_from_event_name(event_name)  # may be None
-                if target_g2 is None:
-                    if verbose:
-                        print("Transition in G1", trans_g1, "undefined in G2")
-                    return False
-                elif target_g1 not in state_map:  # OK
-                    state_map[target_g1] = target_g2
-                    state_stack.append((target_g1, target_g2))
-                elif state_map[target_g1] != target_g2:
-                    if verbose:
-                        print("Not univocal transition:", trans_g1, "|", s_g2, ",", event_name, "-->", target_g2)
-                        print("State map", state_map)
-                    return False
 
         return True
+
 
     def supervisor_reduction(self, G, criteria):
 
@@ -1499,12 +1420,12 @@ class Automaton(Base):
             #current is one element of control_cover_dict (a control cover cell)
             current_cell_updated = False
             current = state_stack.pop(0)
-            for event_name in self.event_get_name_list():
+            for event in self.events:
                 control_cover_state = set()
                 for state in current:
                     trans_function = get_transition_function(state)
                     try:
-                        control_cover_state.add(trans_function[event_name])
+                        control_cover_state.add(trans_function[event])
                     except KeyError:
                         pass
                 # at this point control_cover_state holds a set with the destiny states
@@ -1538,21 +1459,21 @@ class Automaton(Base):
             state_tuple = tuple(state for state in control_cover_dict[key])
             Sr_state_add(state_tuple, True if key == 0 else False)
 
-        for event_name in self.event_get_name_list():
-            sr_event_map[event_name] = Sr.event_add(event_name, True, True)
+        for event in self.events:
+            sr_event_map[event] = Sr.event_add(event, True, True)
 
         for each in sr_state_map:
-            for event_name in Sr.event_get_name_list():
+            for event in Sr.events:
                 target_states = set()
                 for state in each:
                     t_function = get_transition_function(state)
                     try:
-                        target_states.add(t_function[event_name])
+                        target_states.add(t_function[event])
                     except:
                         pass
                 for state in sr_state_map:
                     if target_states.issubset(set(state)) and len(target_states) > 0:
-                        Sr.transition_add(sr_state_map[each], sr_state_map[state], sr_event_map[event_name])
+                        Sr.transition_add(sr_state_map[each], sr_state_map[state], sr_event_map[event])
                         break
 
         return (Sr)
