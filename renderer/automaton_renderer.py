@@ -257,11 +257,11 @@ class AutomatonRenderer(Gtk.DrawingArea):
         min_radius = math.sqrt((width/2)**2 + (height/2)**2)
         return min_radius + self.DOUBLE_RADIUS_GAP + self.TEXT_RADIUS_GAP
 
-    def draw_arrow(self, cr, Vs, Ve):
+    def draw_arrow(self, cr, Vs, Ve, arrow_color=(0, 0, 0)):
         Vbase = (Vs - Ve).normalize()
         V1 = Vbase.copy().orthogonal_cw().mul(self.ARROW_MID_HEIGHT).add(Ve)
         V2 = Vbase.copy().orthogonal_ccw().mul(self.ARROW_MID_HEIGHT).add(Ve)
-        cr.set_source_rgb(0, 0, 0)
+        cr.set_source_rgb(*arrow_color)
 
         cr.move_to(Vs.x, Vs.y)
         cr.line_to(V1.x, V1.y)
@@ -270,7 +270,7 @@ class AutomatonRenderer(Gtk.DrawingArea):
         # cr.stroke()
         cr.fill()
 
-    def draw_state_transitions(self, cr, from_state, states_radius, factor=1.0, ccw=True):
+    def draw_state_transitions(self, cr, from_state, states_radius, factor=1.0, ccw=True, selected_transition=None):
         transitions = dict()
         for trans in from_state.out_transitions:
             if trans.to_state not in transitions:
@@ -343,7 +343,12 @@ class AutomatonRenderer(Gtk.DrawingArea):
             Aae = 2 * math.asin(self.ARROW_LENGTH/(2*r))  # angle to add/subtract for the arrow end point
 
             # Draw arc and arrow
-            cr.set_source_rgb(0, 0, 0)
+            for trans in transitions[to_state]:
+                if trans == selected_transition:
+                    arc_color = (1, 0, 0)
+                else:
+                    arc_color = (0, 0, 0)
+            cr.set_source_rgb(*arc_color)
             if ccw is True:
                 cr.arc(Vc.x, Vc.y, r, Acs + Ads, Ace - Ade - Aae)
                 Varrow = Point2D.from_rad_angle(Ace - Ade).set_length(r).add(Vc)
@@ -363,7 +368,7 @@ class AutomatonRenderer(Gtk.DrawingArea):
                     self.cache_set(Ace + Ade, 'transitions', trans, 'start_angle')
                     self.cache_set(Acs - Ads, 'transitions', trans, 'end_angle')
             cr.stroke()
-            self.draw_arrow(cr, Varrow, Varrowend)
+            self.draw_arrow(cr, Varrow, Varrowend, arc_color)
 
     def draw_state(self, cr, state, txt_color=(0, 0, 0), arc_color=(0, 0, 0)):
             cr.set_source_rgb(*txt_color)
@@ -393,7 +398,7 @@ class AutomatonRenderer(Gtk.DrawingArea):
 
             return radius
 
-    def draw(self, cr, highlight_state=None):
+    def draw(self, cr, highlight_state=None, highlight_transition=None):
         self.cache_reset()
 
         # draw states
@@ -406,7 +411,7 @@ class AutomatonRenderer(Gtk.DrawingArea):
                 state_radius[state] = self.draw_state(cr, state, arc_color=(0, 0, 0))
 
         for state in self.automaton.states:
-            self.draw_state_transitions(cr, state, state_radius, ccw=True, factor=2.0)
+            self.draw_state_transitions(cr, state, state_radius, ccw=True, factor=2.0, selected_transition=highlight_transition)
 
     def get_connected_states(self, state, forward_deep, backward_deep):
         states = [state]

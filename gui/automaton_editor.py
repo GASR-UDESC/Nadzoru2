@@ -15,6 +15,7 @@ class AutomatonEditor(Gtk.Box):
         self.automaton = automaton
         self.application = application
         self.selected_state = None
+        self.selected_transition = None
 
         self.paned = Gtk.Paned()
         self.scrolled = Gtk.ScrolledWindow.new()
@@ -128,7 +129,7 @@ class AutomatonEditor(Gtk.Box):
         self.emit('nadzoru-editor-change', None)
 
     def on_draw(self, automaton_render, cr):
-        self.automaton_render.draw(cr, highlight_state=self.selected_state)
+        self.automaton_render.draw(cr, highlight_state=self.selected_state, highlight_transition=self.selected_transition)
 
     def on_motion_notify(self, automaton_render, event):
         x, y = event.get_coords()
@@ -186,11 +187,19 @@ class AutomatonEditor(Gtk.Box):
             if state is not None:
                 self.automaton.state_remove(state)
                 self.emit('nadzoru-editor-change', None)
-
             for trans in transitions:
                 self.automaton.transition_remove(trans)
             self.emit('nadzoru-editor-change', None)
-
+        elif tool_name == 'edit':
+            if state is not None:
+                self.selected_state = state
+            else:
+                self.selected_state = None
+            if transitions:
+                for trans in transitions:
+                    self.selected_transition = trans
+            else:
+                self.selected_transition = None
         self.automaton_render.queue_draw()
 
     def on_tool_change(self, toolpallet, tool_id):
