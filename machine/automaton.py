@@ -27,7 +27,8 @@ class Base:
                     value=value,
                     class_=self.__class__
                 ))
-         # self.__dict__.update(kwargs)
+
+        # self.__dict__.update(kwargs)
 
     def copy(self):
         return copy.deepcopy(self)
@@ -102,7 +103,6 @@ class Event(Base):
         if self.observable != other.observable:
             return False
         return True
-
 
 
 class EventSet(Base):  # TODO
