@@ -270,7 +270,7 @@ class AutomatonRenderer(Gtk.DrawingArea):
         # cr.stroke()
         cr.fill()
 
-    def draw_state_transitions(self, cr, from_state, states_radius, factor=1.0, ccw=True, selected_transition=None):
+    def draw_state_transitions(self, cr, from_state, states_radius, factor=1.0, ccw=True, selected_transitions=None):
         transitions = dict()
         for trans in from_state.out_transitions:
             if trans.to_state not in transitions:
@@ -343,11 +343,13 @@ class AutomatonRenderer(Gtk.DrawingArea):
             Aae = 2 * math.asin(self.ARROW_LENGTH/(2*r))  # angle to add/subtract for the arrow end point
 
             # Draw arc and arrow
-            for trans in transitions[to_state]:
-                if trans == selected_transition:
-                    arc_color = (1, 0, 0)
-                else:
-                    arc_color = (0, 0, 0)
+            arc_color = (0, 0, 0)
+            if selected_transitions is not None:
+                for trans in transitions[to_state]:
+                    if trans in selected_transitions:
+                        arc_color = (1, 0, 0)
+                        break
+
             cr.set_source_rgb(*arc_color)
             if ccw is True:
                 cr.arc(Vc.x, Vc.y, r, Acs + Ads, Ace - Ade - Aae)
@@ -398,7 +400,7 @@ class AutomatonRenderer(Gtk.DrawingArea):
 
             return radius
 
-    def draw(self, cr, highlight_state=None, highlight_transition=None):
+    def draw(self, cr, highlight_state=None, highlight_transitions=None):
         self.cache_reset()
 
         # draw states
@@ -411,7 +413,7 @@ class AutomatonRenderer(Gtk.DrawingArea):
                 state_radius[state] = self.draw_state(cr, state, arc_color=(0, 0, 0))
 
         for state in self.automaton.states:
-            self.draw_state_transitions(cr, state, state_radius, ccw=True, factor=2.0, selected_transition=highlight_transition)
+            self.draw_state_transitions(cr, state, state_radius, ccw=True, factor=2.0, selected_transitions=highlight_transitions)
 
     def get_connected_states(self, state, forward_deep, backward_deep):
         states = [state]
@@ -461,7 +463,7 @@ class AutomatonRenderer(Gtk.DrawingArea):
             state_radius[state] = radius
 
         for state in show_states:
-            self.draw_state_transitions(cr, state, state_radius, ccw=True, factor=2.0)
+            self.draw_state_transitions(cr, state, state_radius, ccw=True, factor=2.0, selected_transitions=highlight_transitions)
 
 
     def get_state_at(self, x, y):
@@ -479,26 +481,27 @@ class AutomatonRenderer(Gtk.DrawingArea):
         transitions_at = list()
         for state in self.automaton.states:
             for trans in state.out_transitions:
-                arc_radius = self.cache_get('transitions', trans, 'arc_radius')
-                arc_center = self.cache_get('transitions', trans, 'arc_center')
-                start_angle = self.cache_get('transitions', trans, 'start_angle')
-                end_angle = self.cache_get('transitions', trans, 'end_angle')
+                arc_radius = self.cache_get('transitions', trans, 'arc_radius')  # FIXME
+                arc_center = self.cache_get('transitions', trans, 'arc_center')  # FIXME
+                start_angle = self.cache_get('transitions', trans, 'start_angle')  # FIXME
+                end_angle = self.cache_get('transitions', trans, 'end_angle')  # FIXME
+                #~ print(arc_radius, arc_center, start_angle, end_angle)  # FIXME: This is calculated for single transition? when having multiple transition with the same start/end state pair we get all None for all but one transition.
                 sqd_dist = (x - arc_center.x)**2 + (y - arc_center.y)**2
-                
+
                 if (arc_radius - a)**2 < sqd_dist < (arc_radius + a)**2:                    # checks if cursor is between transition's arc radius
                     angle = math.atan2((arc_center.y - y),(arc_center.x - x)) + math.pi     # +180 deg, cairo works with positve y pointing down
 
                     if start_angle > end_angle:         # this condition means the end_angle should be negative (same as adding one full rotation)
-                        if 0 < angle < end_angle:       # cursor is between 0deg and end_angle; angle must adjust for the new end_angle value 
+                        if 0 < angle < end_angle:       # cursor is between 0deg and end_angle; angle must adjust for the new end_angle value
                             angle += 2 * math.pi        # i.e. adding a full rotation to angle
                         end_angle += 2 * math.pi
-                        
+
                     if start_angle < angle < end_angle:
                         transitions_at.append(trans)
-                        
-            if transitions_at:          # returns if list isn't empty
-                return transitions_at
-        
-        return transitions_at           # return empty list
+
+            if transitions_at:          # found all transitions from a single state close to point
+                break
+
+        return tuple(transitions_at)           # return empty list
 
 
