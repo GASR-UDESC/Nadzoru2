@@ -481,11 +481,11 @@ class AutomatonRenderer(Gtk.DrawingArea):
         transitions_at = list()
         for state in self.automaton.states:
             for trans in state.out_transitions:
-                arc_radius = self.cache_get('transitions', trans, 'arc_radius')  # FIXME
-                arc_center = self.cache_get('transitions', trans, 'arc_center')  # FIXME
-                start_angle = self.cache_get('transitions', trans, 'start_angle')  # FIXME
-                end_angle = self.cache_get('transitions', trans, 'end_angle')  # FIXME
-                #~ print(arc_radius, arc_center, start_angle, end_angle)  # FIXME: This is calculated for single transition? when having multiple transition with the same start/end state pair we get all None for all but one transition.
+                arc_radius = self.cache_get('transitions', trans, 'arc_radius')
+                arc_center = self.cache_get('transitions', trans, 'arc_center')
+                start_angle = self.cache_get('transitions', trans, 'start_angle')
+                end_angle = self.cache_get('transitions', trans, 'end_angle')
+                print(arc_radius, arc_center, start_angle, end_angle, trans)
                 sqd_dist = (x - arc_center.x)**2 + (y - arc_center.y)**2
 
                 if (arc_radius - a)**2 < sqd_dist < (arc_radius + a)**2:                    # checks if cursor is between transition's arc radius
