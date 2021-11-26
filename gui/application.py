@@ -14,9 +14,10 @@ class MouseButtons:
 
 
 class Application(Gtk.Application):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, startup_callback=None, **kwargs):
         super().__init__(*args, application_id="org.nadzoru2.application", **kwargs)
         self.elements = list()
+        self.startup_callback = startup_callback
 
     def create_action(self, action_name, callback):
         action = Gio.SimpleAction.new(action_name, None)
@@ -45,6 +46,9 @@ class Application(Gtk.Application):
         builder.add_from_file("gui/ui/menubar.ui")
         self.menubar = builder.get_object("menubar")
         self.set_menubar(self.menubar)
+
+        if self.startup_callback is not None:
+            self.startup_callback(self)
 
     def do_activate(self):
         self.window.show_all()

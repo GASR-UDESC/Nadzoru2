@@ -492,6 +492,10 @@ class Automaton(Base):
         transition.from_state.transition_out_remove(transition)
         transition.to_state.transition_in_remove(transition)
 
+    def state_rename_sequential(self):
+        for _id, state in enumerate(self.states):
+            state.name = str(_id)
+
     # Editor specific methods
 
     def save(self, file_path_name):
@@ -969,24 +973,31 @@ class Automaton(Base):
     def projection(self, *args):
         pass
 
-    def univocal(G, R):
+    def univocal(G, R, return_status=False):
         equivalent_events, event_map = G.check_equivalent_event_set(R)
         if not equivalent_events:
             raise Exception   # TODO: custom error that can be catch by application
 
         univocal_map = {R.initial_state: G.initial_state} # [state in R] to [state in G]
-        state_stack = [(G.initial_state, R.initial_state)]
+        state_stack = [(R.initial_state, G.initial_state)]
+        status = True
 
         while len(state_stack) > 0:
-            s_g, s_r = state_stack.pop()
+            s_r, s_g = state_stack.pop()
             for trans_r in s_r.out_transitions:
                 if trans_r.to_state not in univocal_map:
                     event_name = trans_r.event.name
                     t_r = trans_r.to_state
                     t_g = s_g.get_target_from_event_name(event_name)
                     univocal_map[t_r] = t_g
-                    state_stack.append((t_g, t_r))
-        return univocal_map
+                    if t_g is not None:
+                        state_stack.append((t_r, t_g))
+                    else:
+                        status = False
+        if return_status:
+            return univocal_map, status
+        else:
+            return univocal_map
 
     def bad_states(G, R):
         univocal_map = G.univocal(R)
@@ -1288,9 +1299,9 @@ class Automaton(Base):
         return True
 
     def supervisor_reduction(self, G, criteria):
-
-        # dict[supervisor_state] = plant_state
-        univ_map = G.univocal(self)
+        univ_map, univocal_status = G.univocal(self, return_status=True)
+        if univocal_status == False:
+            print('G is not univocal for self')
         control_cover_dict = dict()
         control_cover_state = set()
         state_stack = list()
