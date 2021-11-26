@@ -63,10 +63,13 @@ def test_supervisor_reduction():
     S.grail_import(spath, ncpath)
 
     print('S', len(S.states))
+    print('G', len(G.states))
 
-    #~ S.minimize()
-    S.state_rename_sequential()
+    S.minimize()
     print('min(S)', len(S.states))
+    #~ G.minimize()  # stucking here!
+    #~ print('min(G)', len(G.states))
+    S.state_rename_sequential()
 
     Sr = S.supervisor_reduction(G, 'a')
     Sr.state_rename_sequential()
