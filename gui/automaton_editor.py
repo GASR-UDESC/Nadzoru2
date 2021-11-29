@@ -7,15 +7,15 @@ from renderer import AutomatonRenderer
 
 
 class AutomatonEditor(Gtk.Box):
-    def __init__(self, automaton, application, *args, **kwargs):
+    def __init__(self, automaton, window, *args, **kwargs):
         if 'spacing' not in kwargs:
             kwargs['spacing'] = 2
         super().__init__(*args, **kwargs)
 
         self.automaton = automaton
-        self.application = application
         self.selected_state = None
         self.selected_transitions = None
+        self.tool_change_handler_id = None
 
         self.paned = Gtk.Paned()
         self.scrolled = Gtk.ScrolledWindow.new()
@@ -31,8 +31,13 @@ class AutomatonEditor(Gtk.Box):
         self.automaton_render.connect("motion-notify-event", self.on_motion_notify)
         self.automaton_render.connect("button-press-event", self.on_button_press)
         #self.automaton_render.connect("button-release-event", self.on_button_release)
+        self.attach_to_window(window)
 
-        self.application.window.toolpallet.connect('nadzoru-tool-change', self.on_tool_change)
+    def attach_to_window(self, window):
+        if self.tool_change_handler_id is not None:
+            self.window.toolpallet.disconnect(self.tool_change_handler_id)
+        self.window = window
+        self.tool_change_handler_id = self.window.toolpallet.connect('nadzoru-tool-change', self.on_tool_change)
 
     def build_treeview(self):
         self.liststore = Gtk.ListStore(str, bool, bool, object)
@@ -133,7 +138,7 @@ class AutomatonEditor(Gtk.Box):
 
     def on_motion_notify(self, automaton_render, event):
         x, y = event.get_coords()
-        tool_name = self.application.window.toolpallet.get_selected_tool()
+        tool_name = self.window.toolpallet.get_selected_tool()
 
         if tool_name == 'move':
             if not self.selected_state is None:
@@ -144,7 +149,7 @@ class AutomatonEditor(Gtk.Box):
 
     def on_button_press(self, automaton_render, event):
         x, y = event.get_coords()
-        tool_name = self.application.window.toolpallet.get_selected_tool()
+        tool_name = self.window.toolpallet.get_selected_tool()
         state = self.automaton_render.get_state_at(x, y)
 
         if tool_name == 'state_add':
@@ -204,6 +209,7 @@ class AutomatonEditor(Gtk.Box):
 
     def on_tool_change(self, toolpallet, tool_id):
         self.selected_state = None
+        self.selected_transitions = None
         self.automaton_render.queue_draw()
 
     #~ _, tree_iter = self.treeview.get_selection().get_selected()

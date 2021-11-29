@@ -10,6 +10,8 @@ class MainWindow(Gtk.ApplicationWindow):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        print(self)
+
         self.vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
         self.hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
         self.toolpallet = ToolPalette(width_request=148)

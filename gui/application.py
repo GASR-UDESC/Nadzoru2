@@ -17,6 +17,7 @@ class Application(Gtk.Application):
     def __init__(self, *args, startup_callback=None, **kwargs):
         super().__init__(*args, application_id="org.nadzoru2.application", **kwargs)
         self.elements = list()
+        self.windows = list()
         self.startup_callback = startup_callback
 
     def create_action(self, action_name, callback):
@@ -24,10 +25,23 @@ class Application(Gtk.Application):
         action.connect("activate", callback)
         self.add_action(action)
 
+    def add_window(self, name=""):
+        new_window = MainWindow(application=self, title="Nadzoru 2" + name)
+        self.windows.append(new_window)
+        return new_window
+
+    def rm_window(self, window):
+        pass
+        # IF NOT LAST WINDOW:
+            # move all tabs from window to another (different) window in the list
+        # else
+            # close all tabs (which should ask to save)
+
     def do_startup(self):
         Gtk.Application.do_startup(self)
 
-        self.window = MainWindow(application=self, title="Nadzoru 2")
+        self.window = self.add_window()
+        self.window2 = self.add_window(" (2)")
 
         self.create_action('new-automaton', self.on_new_automaton)
         self.create_action('load-automaton', self.on_load_automaton)
@@ -53,6 +67,8 @@ class Application(Gtk.Application):
     def do_activate(self):
         self.window.show_all()
         self.window.present()
+        #~ self.window2.show_all()
+        #~ self.window2.present()
 
     def do_command_line(self, command_line):
         options = command_line.get_options_dict()
@@ -64,7 +80,7 @@ class Application(Gtk.Application):
     def validade_quit(self):
         # TODO: For each file not save ask: cancel, discard, save. If no file just quit!
         dialog = Gtk.Dialog("Nazoru2", self.window)
-        dialog.modify_style
+        #~ dialog.modify_style
         dialog.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_DISCARD, Gtk.ResponseType.YES, Gtk.STOCK_SAVE, Gtk.ResponseType.APPLY)
         dialog.set_default_size(150, 100)
 
@@ -84,9 +100,10 @@ class Application(Gtk.Application):
             self.quit()
 
     def on_new_automaton(self, action, param):
+        print(self, action, param)
         automaton = Automaton()
         self.elements.append(automaton)
-        editor = AutomatonEditor(automaton, self)
+        editor = AutomatonEditor(automaton, self.window)
         self.window.add_tab(editor, editor.automaton.get_file_name())
         editor.connect('nadzoru-editor-change', self.on_editor_change)
 
@@ -106,7 +123,7 @@ class Application(Gtk.Application):
                     return
                 self.elements.append(automaton)
                 if result == Gtk.ResponseType.OK:
-                    editor = AutomatonEditor(automaton, self)
+                    editor = AutomatonEditor(automaton, self.window)
                     editor.connect('nadzoru-editor-change', self.on_editor_change)
                     self.window.add_tab(editor, file_name)
         dialog.destroy()
@@ -162,8 +179,6 @@ class Application(Gtk.Application):
     def on_editor_change(self, editor, *args):
         self.window.set_tab_label_color(editor, '#F00')
 
-
-
     def on_import_ides(self, action, param):
         dialog = Gtk.FileChooserDialog("Choose file", self.window, Gtk.FileChooserAction.OPEN,
             ("_Cancel", Gtk.ResponseType.CANCEL, "_Open", Gtk.ResponseType.ACCEPT, "_Edit", Gtk.ResponseType.OK))
@@ -176,7 +191,7 @@ class Application(Gtk.Application):
                 automaton.ides_import(full_path_name)
                 self.elements.append(automaton)
                 if result == Gtk.ResponseType.OK:
-                    editor = AutomatonEditor(automaton, self)
+                    editor = AutomatonEditor(automaton, self.window)
                     editor.connect('nadzoru-editor-change', self.on_editor_change)
                     self.window.add_tab(editor, "{} *".format(file_name))
         dialog.destroy()

@@ -485,7 +485,6 @@ class AutomatonRenderer(Gtk.DrawingArea):
                 arc_center = self.cache_get('transitions', trans, 'arc_center')
                 start_angle = self.cache_get('transitions', trans, 'start_angle')
                 end_angle = self.cache_get('transitions', trans, 'end_angle')
-                print(arc_radius, arc_center, start_angle, end_angle, trans)
                 sqd_dist = (x - arc_center.x)**2 + (y - arc_center.y)**2
 
                 if (arc_radius - a)**2 < sqd_dist < (arc_radius + a)**2:                    # checks if cursor is between transition's arc radius
