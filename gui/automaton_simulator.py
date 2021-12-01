@@ -75,7 +75,7 @@ class AutomatonSimulator(Gtk.Box):
         self.reset_list_box()
 
     def on_draw(self, wid, cr):
-        self.renderer.draw_partial(cr, self.current_state, forward_deep=self.forward_depth, backward_deep=self.backward_depth)
+        self.renderer.draw_partial(cr, highlight_state=self.current_state, forward_deep=self.forward_depth, backward_deep=self.backward_depth)
 
     def spin_event(self, event):
         self.forward_depth = self.forward_depth_spin.get_value_as_int()

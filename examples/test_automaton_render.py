@@ -58,7 +58,7 @@ class Example(Gtk.Window):
         self.automaton = automaton
         self.current_state = self.automaton.initial_state
         self.lst_state = list(automaton.states)
-        self.ar = AutomatonRender()
+        self.ar = AutomatonRender(automaton)
         self.id = 0
 
     def init_ui(self):
@@ -80,7 +80,7 @@ class Example(Gtk.Window):
 
     def on_draw(self, wid, cr):
         # self.ar.draw(cr, self.automaton)
-        self.ar.draw_partial(cr, self.automaton, self.current_state)
+        self.ar.draw_partial(cr, highlight_state=self.current_state)
 
     def on_motion_notify(self, w, e):
         if e.type == Gdk.EventType.MOTION_NOTIFY and (e.state & Gdk.ModifierType.BUTTON1_MASK):
