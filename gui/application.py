@@ -26,9 +26,18 @@ class Application(Gtk.Application):
         new_window = MainWindow(application=self, title=title)
         self.windows.append(new_window)
         return new_window
-
+      
     def rm_window(self, window):
-        pass
+        if len(self.windows)==1:
+            self.validade_quit()
+        else:
+            for note in window.note:
+                if self.windows[0] != window:
+                    self.windows[0].append_page(note)
+                else:
+                    self.windows[1].append_page(note)
+            window.destroy()
+
         # IF NOT LAST WINDOW:
             # move all tabs from window to another (different) window in the list
         # else

@@ -1,5 +1,6 @@
 import sys
 import gi
+import os
 from gi.repository import Gdk, Gio, Gtk
 
 from machine.automaton import Automaton
@@ -30,11 +31,16 @@ class MainWindow(Gtk.ApplicationWindow):
 
         self.set_default_size(1000, 800)
         self.set_position(Gtk.WindowPosition.CENTER)
+        self.note.set_group_name('0')
+        
 
         # self.note.popup_enable()
         self.note.popup_disable()
         self.note.set_scrollable(True)
         self.note.set_show_border(True)
+
+        self.note.connect('create-window', self.nootbook_create_window)
+        self.note.connect('page-removed', self.notebook_page_removed)
 
         self._create_action('new-automaton', self.on_new_automaton)
         self._create_action('open-automaton', self.on_open_automaton)
@@ -47,6 +53,38 @@ class MainWindow(Gtk.ApplicationWindow):
         self._create_action('export-ides', self.on_export_ides)
 
         self.toolpallet.add_button('file', label="Save", icon_name='gtk-floppy', callback=self.on_save_automaton)
+
+    def nootbook_create_window(self,notebook,widget,x,y): #is widget a automaton Editor?? is  Notebook a page??
+        # handler for dropping outside of current window
+        print(widget)
+        new_window = self.props.application.add_window()
+        
+        # new_window.connect('destroy', self.sub_window_destroyed, new_notebook, notebook)
+        new_window.set_transient_for(self)
+        # new_window.set_destroy_with_parent(True)
+        # new_window.set_size_request(1000, 1000)
+        new_window.move(x, y)
+        new_window.show_all()
+        # self.windows.add(new_window)
+        return new_window.note
+
+
+    def notebook_page_removed (self, notebook, child, page):
+        #destroy the sub window after the notebook is empty
+        if notebook.get_n_pages() == 0:
+            self.destroy()
+
+    def sub_window_destroyed (self, window, cur_notebook, dest_notebook):
+            # if the sub window gets destroyed, push pages back to the main window
+            # detach the notebook pages in reverse sequence to avoid index errors
+        # for page_num in reversed(range(cur_notebook.get_n_pages())):
+        #     widget = cur_notebook.get_nth_page(page_num)
+        #     tab_label = cur_notebook.get_tab_label(widget)
+        #     cur_notebook.detach_tab(widget)
+        #     dest_notebook.append_page(widget, tab_label)
+        #     dest_notebook.set_tab_detachable(widget, True)
+        pass
+
 
     def _create_action(self, action_name, callback):
         action = Gio.SimpleAction.new(action_name, None)
@@ -71,6 +109,7 @@ class MainWindow(Gtk.ApplicationWindow):
         note = self.note.insert_page(widget, Gtk.Label.new(title), -1)
         self.show_all()
         self.note.set_current_page(note)
+        self.note.set_tab_detachable(widget, True)
 
         return note
 
