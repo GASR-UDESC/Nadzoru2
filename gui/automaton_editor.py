@@ -21,7 +21,7 @@ class AutomatonEditor(Gtk.Box, PageMixin):
         self.selected_transitions = None
         self.tool_change_handler_id = None
 
-        self.paned = Gtk.Paned()
+        self.paned = Gtk.Paned(wide_handle=True)
         self.scrolled = Gtk.ScrolledWindow.new()
         self.automaton_render = AutomatonRenderer(self.automaton)
 
@@ -65,9 +65,6 @@ class AutomatonEditor(Gtk.Box, PageMixin):
         column_toggle_2 = Gtk.TreeViewColumn("Observable", renderer_toggle_2, active=2)
         self.treeview.append_column(column_toggle_2)
 
-        #~ self.selected_row = self.treeview.get_selection()
-        #~ self.selected_row.connect("changed", self.item_selected)
-
         self.treeview_box.pack_start(self.treeview, True, True, 0)
 
         #Add and Delete Cell buttons
@@ -79,8 +76,7 @@ class AutomatonEditor(Gtk.Box, PageMixin):
         self.delete_button = Gtk.Button(label = 'Delete Cell')
         self.delete_button.connect("clicked", self.delete_cell)
         self.treeview_box.pack_start(self.delete_button, False, False, 0)
-        self.paned.set_position(600) # Value can be any value, just to make it smaller than the minimum
-        self.paned.pack2(self.treeview_box, True, False)
+        self.paned.pack2(self.treeview_box, False, False)
 
         self.update_treeview()
 
@@ -120,15 +116,15 @@ class AutomatonEditor(Gtk.Box, PageMixin):
         self.emit('nadzoru-editor-change', None)
 
     def delete_cell(self, widget):
-        _, tree_iter = self.treeview.get_selection().get_selected()
-        if tree_iter is None:
-            return
-
-        event = self.liststore.get(tree_iter, 3)[0]
-        self.automaton.event_remove(event)
+        _, tree_path_list = self.treeview_selection.get_selected_rows()
+        for tree_path in tree_path_list:
+            tree_iter = self.liststore.get_iter(tree_path)
+            event = self.liststore.get(tree_iter, 3)[0]
+            self.automaton.event_remove(event)
         self.update_treeview()
         self.automaton_render.queue_draw()
         self.emit('nadzoru-editor-change', None)
+
 
     def on_draw(self, automaton_render, cr):
         self.automaton_render.draw(cr, highlight_state=self.selected_state, highlight_transitions=self.selected_transitions)
@@ -210,12 +206,6 @@ class AutomatonEditor(Gtk.Box, PageMixin):
         self.selected_state = None
         self.selected_transitions = None
         self.automaton_render.queue_draw()
-
-    #~ _, tree_iter = self.treeview.get_selection().get_selected()
-    #~ if not tree_iter is None:
-        #~ selected_event = self.liststore.get(tree_iter, 3)[0]
-        #~ self.automaton.transition_add(self.selected_state, state, selected_event)
-        #~ self.selected_state = None
 
 
 GObject.signal_new('nadzoru-editor-change', AutomatonEditor, GObject.SIGNAL_RUN_LAST, GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT,))

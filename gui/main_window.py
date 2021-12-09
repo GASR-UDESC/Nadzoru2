@@ -15,22 +15,22 @@ class MainWindow(Gtk.ApplicationWindow):
 
         self.vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
         self.hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
-        self.toolpallet = ToolPalette(width_request=148)
-        self.note = Gtk.Notebook()
+        self.expander = Gtk.Expander(expanded=True)
+        self.toolpallet = ToolPalette(width_request=148, vexpand=True)
+        self.note = Gtk.Notebook(group_name='0', scrollable=True)
         self.statusbar = Gtk.Statusbar()
 
         self.dialogCurrentFolder = None
 
         self.vbox.pack_start(self.hbox, True, True, 0)
-        self.hbox.pack_start(self.toolpallet, False, True, 0)
+        self.hbox.pack_start(self.expander, False, False, 0)
+        self.expander.add(self.toolpallet)
         self.hbox.pack_start(self.note, True, True, 0)
         self.vbox.pack_start(self.statusbar, False, False, 0)
         self.add(self.vbox)
 
         self.set_default_size(1000, 800)
         self.set_position(Gtk.WindowPosition.CENTER)
-        self.note.set_group_name('0')
-
 
         # self.note.popup_enable()
         self.note.popup_disable()
@@ -51,7 +51,9 @@ class MainWindow(Gtk.ApplicationWindow):
         self._create_action('close-tab', self.on_close_tab)
         self._create_action('export-ides', self.on_export_ides)
 
-        self.toolpallet.add_button('file', label="Save", icon_name='gtk-floppy', callback=self.on_save_automaton)
+        self.toolpallet.add_button('file', label="Save", icon_name='gtk-save', callback=self.on_save_automaton)
+        self.toolpallet.add_button('file', label="Save", icon_name='gtk-save-as', callback=self.on_save_as_automaton)
+        self.toolpallet.add_button('file', label="Open", icon_name='gtk-open', callback=self.on_open_automaton)
 
     def nootbook_create_window(self,notebook,widget,x,y): #is widget a automaton Editor?? is  Notebook a page??
         # handler for dropping outside of current window
@@ -160,14 +162,14 @@ class MainWindow(Gtk.ApplicationWindow):
             automata.save(file_path_name)
         self.set_tab_label_color(widget, '#000')
 
-    def on_new_automaton(self, action, param):
+    def on_new_automaton(self, action, param=None):
         automaton = Automaton()
         self.props.application.elements.append(automaton)
         editor = AutomatonEditor(automaton)
         editor.connect('nadzoru-editor-change', self.props.application.on_editor_change)
         self.add_tab(editor, editor.automaton.get_file_name())
 
-    def on_open_automaton(self, action, param):
+    def on_open_automaton(self, action, param=None):
         dialog = Gtk.FileChooserDialog("Choose file", self, Gtk.FileChooserAction.OPEN,
             ("_Cancel", Gtk.ResponseType.CANCEL, "_Open", Gtk.ResponseType.ACCEPT, "_Edit", Gtk.ResponseType.OK))
         dialog.set_property('select-multiple', True)

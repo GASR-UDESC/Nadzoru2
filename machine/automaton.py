@@ -364,20 +364,19 @@ class Automaton(Base):
         return event
 
     def event_remove(self, event):
-        try:
-            self.events.delete(event)
-        except:
-            return False  # event doesn't exists in ser
+        if event not in self.events:
+            return False
+        for transition in list(event.transitions):  # list is a copy, avoiding Set changed size during iteration
+            self.transition_remove(transition)
+        self.events.remove(event)
         return True
 
     def event_remove_by_name(self, event_name):
         event = self.event_get_by_name(event_name)
         if event is None:
             return False
-        self.event_remove(event)
-        for transition in event.transitions:
-            self.transition_remove(transition)
-        return True
+        return self.event_remove(event)
+
 
     def event_rename(self, event, new_event_name):
         if event.name == new_event_name:
@@ -503,7 +502,7 @@ class Automaton(Base):
 
         f = open(file_path_name,'w')
         f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
-        f.write('<model version="2.1" type="FSA" id="Untitled">\n')
+        f.write('<model version="0.0" type="FSA" id="Untitled">\n')
         f.write('<data>\n')
 
         state_to_id_map = dict()
