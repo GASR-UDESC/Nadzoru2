@@ -7,6 +7,7 @@
                 <item>
                     <attribute name="action">app.quit</attribute>
                     <attribute name="label" translatable="yes">_Quit</attribute>
+                    <attribute name="icon">gtk-quit</attribute>
                     <attribute name="accel">&lt;Primary&gt;q</attribute>
                 </item>
             </section>
@@ -14,6 +15,7 @@
                 <item>
                     <attribute name="action">app.new-window</attribute>
                     <attribute name="label" translatable="yes">_New Window</attribute>
+                    <attribute name="icon">gtk-add</attribute>
                     <attribute name="accel">&lt;Primary&gt;&lt;Shift&gt;n</attribute>
                 </item>
             </section>
@@ -24,21 +26,25 @@
                 <item>
                     <attribute name="action">win.new-automaton</attribute>
                     <attribute name="label" translatable="yes">_New</attribute>
+                    <attribute name="icon">gtk-new</attribute>
                     <attribute name="accel">&lt;Primary&gt;n</attribute>
                 </item>
                 <item>
                     <attribute name="action">win.open-automaton</attribute>
                     <attribute name="label" translatable="yes">_Open</attribute>
+                    <attribute name="icon">gtk-open</attribute>
                     <attribute name="accel">&lt;Primary&gt;o</attribute>
                 </item>
                 <item>
                     <attribute name="action">win.save-automaton</attribute>
                     <attribute name="label" translatable="yes">_Save</attribute>
+                    <attribute name="icon">gtk-save</attribute>
                     <attribute name="accel">&lt;Primary&gt;s</attribute>
                 </item>
                 <item>
                     <attribute name="action">win.save-as-automaton</attribute>
                     <attribute name="label" translatable="yes">Save As</attribute>
+                    <attribute name="icon">gtk-save-as</attribute>
                     <attribute name="accel">&lt;Primary&gt;&lt;Shift&gt;s</attribute>
                 </item>
             </section>
@@ -46,16 +52,19 @@
                 <item>
                     <attribute name="action">win.edit-automaton</attribute>
                     <attribute name="label" translatable="yes">_Edit</attribute>
+                    <attribute name="icon">gtk-edit</attribute>
                     <attribute name="accel">&lt;Primary&gt;e</attribute>
                 </item>
                 <item>
                     <attribute name="action">win.simulate-automaton</attribute>
                     <attribute name="label" translatable="yes">Simulate</attribute>
+                    <attribute name="icon">gtk-execute</attribute>
                     <attribute name="accel">&lt;Primary&gt;&lt;Alt&gt;s</attribute>
                 </item>
                 <item>
                     <attribute name="action">win.close-tab</attribute>
                     <attribute name="label" translatable="yes">_Close Current Tab</attribute>
+                    <attribute name="icon">gtk-close</attribute>
                     <attribute name="accel">&lt;Primary&gt;w</attribute>
                 </item>
             </section>
@@ -65,11 +74,41 @@
                     <section>
                         <item>
                             <attribute name="action">win.import-ides</attribute>
-                            <attribute name="label" translatable="yes">Import IDES</attribute>
+                            <attribute name="label" translatable="yes">Import IDES 3</attribute>
                         </item>
                         <item>
                             <attribute name="action">win.export-ides</attribute>
-                            <attribute name="label" translatable="yes">Export IDES</attribute>
+                            <attribute name="label" translatable="yes">Export IDES 3</attribute>
+                       </item>
+                    </section>
+                    <section>
+                        <item>
+                            <attribute name="action">win.import-grail</attribute>
+                            <attribute name="label" translatable="yes">Import Grail</attribute>
+                        </item>
+                        <item>
+                            <attribute name="action">win.export-grail</attribute>
+                            <attribute name="label" translatable="yes">Export Grail</attribute>
+                       </item>
+                    </section>
+                    <section>
+                        <item>
+                            <attribute name="action">win.import-tct</attribute>
+                            <attribute name="label" translatable="yes">Import TCT</attribute>
+                        </item>
+                        <item>
+                            <attribute name="action">win.export-tct</attribute>
+                            <attribute name="label" translatable="yes">Export TCT</attribute>
+                       </item>
+                    </section>
+                    <section>
+                        <item>
+                            <attribute name="action">win.import-destool</attribute>
+                            <attribute name="label" translatable="yes">Import DESTool</attribute>
+                        </item>
+                        <item>
+                            <attribute name="action">win.export-destool</attribute>
+                            <attribute name="label" translatable="yes">Export DESTool</attribute>
                        </item>
                     </section>
                 </submenu>
