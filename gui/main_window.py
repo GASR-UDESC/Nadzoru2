@@ -6,9 +6,7 @@ from gi.repository import Gdk, Gio, Gtk
 from machine.automaton import Automaton
 from gui.automaton_editor import AutomatonEditor
 from gui.automaton_simulator import AutomatonSimulator
-
 from gui.tool_palette import ToolPalette
-from gui.automaton_editor import AutomatonEditor
 
 
 class MainWindow(Gtk.ApplicationWindow):
@@ -32,7 +30,7 @@ class MainWindow(Gtk.ApplicationWindow):
         self.set_default_size(1000, 800)
         self.set_position(Gtk.WindowPosition.CENTER)
         self.note.set_group_name('0')
-        
+
 
         # self.note.popup_enable()
         self.note.popup_disable()
@@ -41,6 +39,7 @@ class MainWindow(Gtk.ApplicationWindow):
 
         self.note.connect('create-window', self.nootbook_create_window)
         self.note.connect('page-removed', self.notebook_page_removed)
+        self.toolpallet.connect('nadzoru-tool-change', self.on_tool_change)
 
         self._create_action('new-automaton', self.on_new_automaton)
         self._create_action('open-automaton', self.on_open_automaton)
@@ -56,35 +55,31 @@ class MainWindow(Gtk.ApplicationWindow):
 
     def nootbook_create_window(self,notebook,widget,x,y): #is widget a automaton Editor?? is  Notebook a page??
         # handler for dropping outside of current window
-        print(widget)
         new_window = self.props.application.add_window()
-        
+
         # new_window.connect('destroy', self.sub_window_destroyed, new_notebook, notebook)
         new_window.set_transient_for(self)
         # new_window.set_destroy_with_parent(True)
         # new_window.set_size_request(1000, 1000)
         new_window.move(x, y)
         new_window.show_all()
-        # self.windows.add(new_window)
         return new_window.note
 
 
-    def notebook_page_removed (self, notebook, child, page):
+    def notebook_page_removed(self, notebook, child, page):
         #destroy the sub window after the notebook is empty
         if notebook.get_n_pages() == 0:
             self.destroy()
 
-    def sub_window_destroyed (self, window, cur_notebook, dest_notebook):
-            # if the sub window gets destroyed, push pages back to the main window
-            # detach the notebook pages in reverse sequence to avoid index errors
+    # def sub_window_destroyed (self, window, cur_notebook, dest_notebook):
+        # if the sub window gets destroyed, push pages back to the main window
+        # detach the notebook pages in reverse sequence to avoid index errors
         # for page_num in reversed(range(cur_notebook.get_n_pages())):
         #     widget = cur_notebook.get_nth_page(page_num)
         #     tab_label = cur_notebook.get_tab_label(widget)
         #     cur_notebook.detach_tab(widget)
         #     dest_notebook.append_page(widget, tab_label)
         #     dest_notebook.set_tab_detachable(widget, True)
-        pass
-
 
     def _create_action(self, action_name, callback):
         action = Gio.SimpleAction.new(action_name, None)
@@ -168,9 +163,9 @@ class MainWindow(Gtk.ApplicationWindow):
     def on_new_automaton(self, action, param):
         automaton = Automaton()
         self.props.application.elements.append(automaton)
-        editor = AutomatonEditor(automaton, self)
+        editor = AutomatonEditor(automaton)
+        editor.connect('nadzoru-editor-change', self.props.application.on_editor_change)
         self.add_tab(editor, editor.automaton.get_file_name())
-        editor.connect('nadzoru-editor-change', self.on_editor_change)
 
     def on_open_automaton(self, action, param):
         dialog = Gtk.FileChooserDialog("Choose file", self, Gtk.FileChooserAction.OPEN,
@@ -183,13 +178,14 @@ class MainWindow(Gtk.ApplicationWindow):
                 automaton = Automaton()
                 try:
                     automaton.load(file_path_name)
-                except:
+                except error:
+                    print("Fail to load", error)
                     dialog.destroy()
                     return
                 self.props.application.elements.append(automaton)
                 if result == Gtk.ResponseType.OK:
-                    editor = AutomatonEditor(automaton, self)
-                    editor.connect('nadzoru-editor-change', self.on_editor_change)
+                    editor = AutomatonEditor(automaton)
+                    editor.connect('nadzoru-editor-change', self.props.application.on_editor_change)
                     self.add_tab(editor, file_name)
         dialog.destroy()
 
@@ -242,8 +238,11 @@ class MainWindow(Gtk.ApplicationWindow):
         # TODO: check if needs saving
         self.remove_tab(self.note.get_current_page())
 
-    def on_editor_change(self, editor, *args):
-        self.set_tab_label_color(editor, '#F00')
+    def on_tool_change(self, toolpallet, tool_id):
+        for page_num in range(self.note.get_n_pages()):
+            widget = self.note.get_nth_page(page_num)
+            if type(widget) == AutomatonEditor:
+                widget.reset_selection()
 
     def on_import_ides(self, action, param):
         dialog = Gtk.FileChooserDialog("Choose file", self, Gtk.FileChooserAction.OPEN,
@@ -257,8 +256,8 @@ class MainWindow(Gtk.ApplicationWindow):
                 automaton.ides_import(full_path_name)
                 self.props.application.elements.append(automaton)
                 if result == Gtk.ResponseType.OK:
-                    editor = AutomatonEditor(automaton, self)
-                    editor.connect('nadzoru-editor-change', self.on_editor_change)
+                    editor = AutomatonEditor(automaton)
+                    editor.connect('nadzoru-editor-change', self.props.application.on_editor_change)
                     self.add_tab(editor, "{} *".format(file_name))
         dialog.destroy()
 

@@ -14,7 +14,6 @@ class Application(Gtk.Application):
     def __init__(self, *args, startup_callback=None, **kwargs):
         super().__init__(*args, application_id="org.nadzoru2.application", **kwargs)
         self.elements = list()
-        self.windows = list()
         self.startup_callback = startup_callback
 
     def _create_action(self, action_name, callback):
@@ -24,18 +23,18 @@ class Application(Gtk.Application):
 
     def add_window(self, title="Nadzoru 2"):
         new_window = MainWindow(application=self, title=title)
-        self.windows.append(new_window)
         return new_window
-      
+
     def rm_window(self, window):
-        if len(self.windows)==1:
+        windows = self.get_windows()
+        if len(windows) == 1:
             self.validade_quit()
         else:
             for note in window.note:
-                if self.windows[0] != window:
-                    self.windows[0].append_page(note)
+                if windows[0] != window:
+                    windows[0].append_page(note)
                 else:
-                    self.windows[1].append_page(note)
+                    windows[1].append_page(note)
             window.destroy()
 
         # IF NOT LAST WINDOW:
@@ -60,7 +59,7 @@ class Application(Gtk.Application):
             self.startup_callback(self)
 
     def do_activate(self):
-        for window in self.windows:
+        for window in self.get_windows():
             window.show_all()
             window.present()
 
@@ -73,7 +72,7 @@ class Application(Gtk.Application):
 
     def validade_quit(self):
         # TODO: For each file not save ask: cancel, discard, save. If no file just quit!
-        dialog = Gtk.Dialog("Nazoru2", self.windows[0])
+        dialog = Gtk.Dialog("Nadzoru 2", self.get_windows()[0])
         dialog.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_DISCARD, Gtk.ResponseType.YES, Gtk.STOCK_SAVE, Gtk.ResponseType.APPLY)
         dialog.set_default_size(150, 100)
 
@@ -99,6 +98,10 @@ class Application(Gtk.Application):
         window = self.add_window()
         window.show_all()
         window.present()
+
+    def on_editor_change(self, editor, *args):
+        window = editor.get_ancestor_window()
+        window.set_tab_label_color(editor, '#F00')
 
 
 
