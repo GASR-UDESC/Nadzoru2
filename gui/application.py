@@ -25,17 +25,17 @@ class Application(Gtk.Application):
         new_window = MainWindow(application=self, title=title)
         return new_window
 
-    def rm_window(self, window):
-        windows = self.get_windows()
-        if len(windows) == 1:
-            self.validade_quit()
-        else:
-            for note in window.note:
-                if windows[0] != window:
-                    windows[0].append_page(note)
-                else:
-                    windows[1].append_page(note)
-            window.destroy()
+    # def rm_window(self, window):
+    #     windows = self.get_windows()
+    #     if len(windows) == 1:
+    #         self.validade_quit()
+    #     else:
+    #         for note in window.note:
+    #             if windows[0] != window:
+    #                 windows[0].append_page(note)
+    #             else:
+    #                 windows[1].append_page(note)
+    #         window.destroy()
 
         # IF NOT LAST WINDOW:
             # move all tabs from window to another (different) window in the list
@@ -89,7 +89,12 @@ class Application(Gtk.Application):
         dialog.destroy()
 
         if result == Gtk.ResponseType.YES or result == Gtk.ResponseType.APPLY:
-            self.quit()
+            if len(self.elements) ==1:
+                self.quit()
+
+            else:
+                self.get_window().quit()
+            
 
     def on_quit(self, action, param):
         self.validade_quit()
