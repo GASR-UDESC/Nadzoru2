@@ -92,8 +92,7 @@ class MainWindow(Gtk.ApplicationWindow):
         # TODO: how to proper integrate with application?
         # closing window: move all tabs (or unsaved tabs) to other window
         # ... but if last window, perform the check save/discard
-        self.props.application.validade_quit()
-        return True
+        return self.props.application.validade_quit()
 
     def get_image(self, name):
         try:

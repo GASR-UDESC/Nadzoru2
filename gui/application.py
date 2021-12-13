@@ -91,10 +91,10 @@ class Application(Gtk.Application):
         if result == Gtk.ResponseType.YES or result == Gtk.ResponseType.APPLY:
             if len(self.elements) ==1:
                 self.quit()
-
             else:
-                self.get_window().quit()
-            
+                return False
+        return True
+
 
     def on_quit(self, action, param):
         self.validade_quit()
