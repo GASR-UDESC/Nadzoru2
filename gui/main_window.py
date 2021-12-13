@@ -60,11 +60,12 @@ class MainWindow(Gtk.ApplicationWindow):
         new_window = self.props.application.add_window()
 
         # new_window.connect('destroy', self.sub_window_destroyed, new_notebook, notebook)
-        new_window.set_transient_for(self)
+        #~ new_window.set_transient_for(self)  # this creates a bug: window 'self' will always be behind new_window
         # new_window.set_destroy_with_parent(True)
         # new_window.set_size_request(1000, 1000)
         new_window.move(x, y)
         new_window.show_all()
+        new_window.present()
         return new_window.note
 
 
@@ -136,7 +137,7 @@ class MainWindow(Gtk.ApplicationWindow):
 
         self.show_all()
 
-    def _save_dialog(self, automata):
+    def _save_dialog(self, widget):
         dialog = Gtk.FileChooserDialog("Choose file", self, Gtk.FileChooserAction.SAVE,
             ("_Cancel", Gtk.ResponseType.CANCEL, "_Save", Gtk.ResponseType.OK))
         result = dialog.run()
@@ -144,7 +145,7 @@ class MainWindow(Gtk.ApplicationWindow):
             file_path = (dialog.get_filename())
             if not(file_path.lower().endswith('.xml')):
                 file_path = f'{file_path}.xml'
-            automata.save(file_path)
+            widget.save(file_path)
         dialog.destroy()
 
     def on_save_automaton(self, action, param=None):
@@ -155,10 +156,10 @@ class MainWindow(Gtk.ApplicationWindow):
 
         file_path_name = automata.get_file_path_name()
         if file_path_name == None:
-            self._save_dialog(automata)
+            self._save_dialog(widget)
             self.set_tab_page_title(widget, automata.get_file_name())
         else:
-            automata.save(file_path_name)
+            widget.save(file_path_name)
         self.set_tab_label_color(widget, '#000')
 
     def on_new_automaton(self, action, param=None):
@@ -190,39 +191,14 @@ class MainWindow(Gtk.ApplicationWindow):
                     self.add_tab(editor, file_name)
         dialog.destroy()
 
-    def on_save_automaton(self, action, param=None):
-        widget = self.get_current_tab_widget()
-        if (widget is None) or type(widget) != AutomatonEditor:
-            return
-        automata = widget.automaton
-
-        file_path_name = automata.get_file_path_name()
-        if file_path_name == None:
-            self._save_dialog(automata)
-            self.set_tab_page_title(widget, automata.get_file_name())
-        else:
-            automata.save(file_path_name)
-        self.set_tab_label_color(widget, '#000')
-
     def on_save_as_automaton(self, action, param=None):
         widget = self.get_current_tab_widget()
         if (widget is None) or type(widget) != AutomatonEditor:
             return
         automata = widget.automaton
-        self._save_dialog(automata)
+        self._save_dialog(widget)
         self.set_tab_page_title(widget, automata.get_file_name())
         self.set_tab_label_color(widget, '#000')
-
-    def _save_dialog(self, automata):
-        dialog = Gtk.FileChooserDialog("Choose file", self, Gtk.FileChooserAction.SAVE,
-            ("_Cancel", Gtk.ResponseType.CANCEL, "_Save", Gtk.ResponseType.OK))
-        result = dialog.run()
-        if result ==  Gtk.ResponseType.OK:
-            file_path = (dialog.get_filename())
-            if not(file_path.lower().endswith('.xml')):
-                file_path = f'{file_path}.xml'
-            automata.save(file_path)
-        dialog.destroy()
 
     def on_edit_automaton(self, action, param):
         print("You opened in editor automata", self)

@@ -527,6 +527,8 @@ class Automaton(Base):
         f.write('</data>\n')
         f.write("</model>\n")
 
+        return True
+
     def load(self, file_path_name):
         self.set_file_path_name(file_path_name)
 

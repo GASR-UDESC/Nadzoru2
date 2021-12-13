@@ -71,7 +71,10 @@ class Application(Gtk.Application):
         return
 
     def validade_quit(self):
-        # TODO: For each file not save ask: cancel, discard, save. If no file just quit!
+        # TODO: This must no be used from MainWindow.do_delete_event. This is only the main app quit!
+            # For each window build a dialog
+                # For each tab (page) of the windows that is NOT saved (use PageMixin methods to query if saved) add to a list of things to be saved
+                    # ask: cancel, discard, save with the text of the list to be saved (label of the tab?)
         dialog = Gtk.Dialog("Nadzoru 2", self.get_windows()[0])
         dialog.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_DISCARD, Gtk.ResponseType.YES, Gtk.STOCK_SAVE, Gtk.ResponseType.APPLY)
         dialog.set_default_size(150, 100)

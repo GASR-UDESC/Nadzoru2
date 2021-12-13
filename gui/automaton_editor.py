@@ -4,13 +4,10 @@ import gi
 from gi.repository import GLib, Gio, Gtk, GObject
 
 from renderer import AutomatonRenderer
-
-class PageMixin:
-    def get_ancestor_window(self):
-        return self.get_ancestor(Gtk.Window)
+from gui.base import PageMixin
 
 
-class AutomatonEditor(Gtk.Box, PageMixin):
+class AutomatonEditor(PageMixin, Gtk.Box):
     def __init__(self, automaton, *args, **kwargs):
         if 'spacing' not in kwargs:
             kwargs['spacing'] = 2
@@ -69,12 +66,12 @@ class AutomatonEditor(Gtk.Box, PageMixin):
 
         #Add and Delete Cell buttons
 
-        self.add_button = Gtk.Button(label = 'Add Cell')
+        self.add_button = Gtk.Button(label = 'Add Event')
         self.add_button.connect("clicked", self.event_add)
         self.treeview_box.pack_start(self.add_button, False, False, 0)
 
-        self.delete_button = Gtk.Button(label = 'Delete Cell')
-        self.delete_button.connect("clicked", self.delete_cell)
+        self.delete_button = Gtk.Button(label = 'Remove Event')
+        self.delete_button.connect("clicked", self.event_remove)
         self.treeview_box.pack_start(self.delete_button, False, False, 0)
         self.paned.pack2(self.treeview_box, False, False)
 
@@ -96,26 +93,26 @@ class AutomatonEditor(Gtk.Box, PageMixin):
         event = self.liststore[path][3]
         self.automaton.event_rename(event, event_name)
         self.update_treeview()
-        self.emit('nadzoru-editor-change', None)
+        self.trigger_change()
 
     def renderer_toggle_controllable(self, widget, path):
         event = self.liststore[path][3]
         event.controllable = not event.controllable
         self.update_treeview()
-        self.emit('nadzoru-editor-change', None)
+        self.trigger_change()
 
     def renderer_toggle_observable(self, widget, path):
         event = self.liststore[path][3]
         event.observable = not event.observable
         self.update_treeview()
-        self.emit('nadzoru-editor-change', None)
+        self.trigger_change()
 
     def event_add(self, widget):
         self.automaton.event_add(name="new Event")
         self.update_treeview()
-        self.emit('nadzoru-editor-change', None)
+        self.trigger_change()
 
-    def delete_cell(self, widget):
+    def event_remove(self, widget):
         _, tree_path_list = self.treeview_selection.get_selected_rows()
         for tree_path in tree_path_list:
             tree_iter = self.liststore.get_iter(tree_path)
@@ -123,8 +120,22 @@ class AutomatonEditor(Gtk.Box, PageMixin):
             self.automaton.event_remove(event)
         self.update_treeview()
         self.automaton_render.queue_draw()
-        self.emit('nadzoru-editor-change', None)
+        self.trigger_change()
 
+    def save(self, file_path_name):
+        status = self.automaton.save(file_path_name)
+        if status == True:
+            self.__changes_to_save = False
+        return status
+
+    def trigger_change():
+        self.emit('nadzoru-editor-change', None)
+        self.__changes_to_save = True
+
+    def reset_selection(self):
+        self.selected_state = None
+        self.selected_transitions = None
+        self.automaton_render.queue_draw()
 
     def on_draw(self, automaton_render, cr):
         self.automaton_render.draw(cr, highlight_state=self.selected_state, highlight_transitions=self.selected_transitions)
@@ -139,7 +150,7 @@ class AutomatonEditor(Gtk.Box, PageMixin):
                 self.selected_state.x = x
                 self.selected_state.y = y
                 self.automaton_render.queue_draw()
-                self.emit('nadzoru-editor-change', None)
+                self.trigger_change()
 
     def on_button_press(self, automaton_render, event):
         window = self.get_ancestor_window()
@@ -150,17 +161,17 @@ class AutomatonEditor(Gtk.Box, PageMixin):
         if tool_name == 'state_add':
             state = self.automaton.state_add(None, x=x, y=y)
             self.selected_state = state
-            self.emit('nadzoru-editor-change', None)
+            self.trigger_change()
         elif tool_name == 'state_initial':
             if state is not None:
                 self.automaton.initial_state = state
                 self.selected_state = state
-                self.emit('nadzoru-editor-change', None)
+                self.trigger_change()
         elif tool_name == 'state_marked':
             if state is not None:
                 state.marked = not state.marked
                 self.selected_state = state
-                self.emit('nadzoru-editor-change', None)
+                self.trigger_change()
         elif tool_name == 'transition_add':
             if state is None:
                 self.selected_state = None
@@ -179,17 +190,17 @@ class AutomatonEditor(Gtk.Box, PageMixin):
                     if added_transition:
                         #  only if add at least one transition, reset 'selected_state'
                         self.selected_state = None
-                        self.emit('nadzoru-editor-change', None)
+                        self.trigger_change()
         elif tool_name == 'move':
             self.selected_state = state
         elif tool_name == 'delete':
             transitions = self.automaton_render.get_transition_at(x, y)
             if state is not None:
                 self.automaton.state_remove(state)
-                self.emit('nadzoru-editor-change', None)
+                self.trigger_change()
             for trans in transitions:
                 self.automaton.transition_remove(trans)
-            self.emit('nadzoru-editor-change', None)
+            self.trigger_change()
         elif tool_name == 'edit':
             transitions = self.automaton_render.get_transition_at(x, y)
             if state is not None:
@@ -200,11 +211,6 @@ class AutomatonEditor(Gtk.Box, PageMixin):
                 self.selected_transitions = transitions
             else:
                 self.selected_transitions = None
-        self.automaton_render.queue_draw()
-
-    def reset_selection(self):
-        self.selected_state = None
-        self.selected_transitions = None
         self.automaton_render.queue_draw()
 
 
