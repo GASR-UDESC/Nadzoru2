@@ -128,7 +128,7 @@ class AutomatonEditor(PageMixin, Gtk.Box):
             self.__changes_to_save = False
         return status
 
-    def trigger_change():
+    def trigger_change(self):
         self.emit('nadzoru-editor-change', None)
         self.__changes_to_save = True
 
