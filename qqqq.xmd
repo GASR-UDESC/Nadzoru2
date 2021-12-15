@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<model version="2.1" type="FSA" id="Untitled">
+<data>
+	<state id="1">
+ 		<properties>
+ 			<marked />
+ 		</properties>
+ 		<name>1</name>
+ 	</state>
+	<state id="2">
+ 		<properties>
+ 			<marked />
+ 		</properties>
+ 		<name>2</name>
+ 	</state>
+	<state id="3">
+ 		<properties>
+ 			<marked />
+ 		</properties>
+ 		<name>3</name>
+ 	</state>
+	<state id="4">
+ 		<properties>
+ 			<initial />
+ 			<marked />
+ 		</properties>
+ 		<name>4</name>
+ 	</state>
+	<state id="5">
+ 		<properties>
+ 			<marked />
+ 		</properties>
+ 		<name>5</name>
+ 	</state>
+	<event id="1">
+ 		<properties>
+ 			<observable />
+ 		</properties>
+ 		<name>a</name>
+ 	</event>
+	<transition id="1" source="0" target="3" event="0">
+ 	</transition>
+	<transition id="2" source="0" target="0" event="0">
+ 	</transition>
+	<transition id="1" source="1" target="4" event="0">
+ 	</transition>
+	<transition id="1" source="2" target="2" event="0">
+ 	</transition>
+	<transition id="1" source="4" target="2" event="0">
+ 	</transition>
+</data>
+<meta tag="layout" version="2.1">
+	<state id="1">
+ 		<circle r="18.0" x="169" y="214" />
+ 	</state>
+	<state id="2">
+ 		<circle r="18.0" x="283" y="296" />
+ 	</state>
+	<state id="3">
+ 		<circle r="18.0" x="257" y="74" />
+ 	</state>
+	<state id="4">
+ 		<circle r="18.0" x="102" y="160" />
+ 	</state>
+	<state id="5">
+ 		<circle r="18.0" x="272" y="167" />
+ 	</state>
+</meta>
+</model>

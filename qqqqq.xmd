@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<model version="2.1" type="FSA" id="Untitled">
+<data>
+	<state id="1">
+ 		<properties>
+ 			<marked />
+ 		</properties>
+ 		<name>1</name>
+ 	</state>
+	<state id="2">
+ 		<properties>
+ 			<marked />
+ 		</properties>
+ 		<name>2</name>
+ 	</state>
+	<state id="3">
+ 		<properties>
+ 			<marked />
+ 		</properties>
+ 		<name>3</name>
+ 	</state>
+	<state id="4">
+ 		<properties>
+ 			<initial />
+ 			<marked />
+ 		</properties>
+ 		<name>4</name>
+ 	</state>
+	<state id="5">
+ 		<properties>
+ 			<marked />
+ 		</properties>
+ 		<name>5</name>
+ 	</state>
+	<event id="1">
+ 		<properties>
+ 			<observable />
+ 		</properties>
+ 		<name>a</name>
+ 	</event>

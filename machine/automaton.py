@@ -657,11 +657,11 @@ class Automaton(Base):
                f.write(f'\t<event id="{event_id+1}">\n \t\t<properties>\n \t\t\t<observable />\n \t\t</properties>\n \t\t<name>{event.name}</name>\n \t</event>\n')
 
         for source_state in self.states:
-            for transition in source_state.out_transitions:
+            for transition_id, transition in enumerate(source_state.out_transitions):
                 source_id = state_id_map[transition.from_state]
                 target_id = state_id_map[transition.to_state]
                 event_id = event_id_map[transition.event]
-                f.write(f'\t<transition id="{_id+1}" source="{source_id}" target="{target_id}" event="{event_id}">\n \t</transition>\n')
+                f.write(f'\t<transition id="{transition_id+1}" source="{source_id}" target="{target_id}" event="{event_id}">\n \t</transition>\n')
 
         f.write('</data>\n')
         f.write('<meta tag="layout" version="2.1">\n')
