@@ -26,6 +26,11 @@ class Application(Gtk.Application):
         return new_window
 
     # def rm_window(self, window):
+
+    #     for note in window.note:
+    #         if note.get_tab_label_color() == vermelho:
+    #             #pergunta
+    #         pass
     #     windows = self.get_windows()
     #     if len(windows) == 1:
     #         self.validade_quit()
@@ -71,32 +76,12 @@ class Application(Gtk.Application):
         return
 
     def validade_quit(self):
+        pass
         # TODO: This must no be used from MainWindow.do_delete_event. This is only the main app quit!
             # For each window build a dialog
                 # For each tab (page) of the windows that is NOT saved (use PageMixin methods to query if saved) add to a list of things to be saved
                     # ask: cancel, discard, save with the text of the list to be saved (label of the tab?)
-        dialog = Gtk.Dialog("Nadzoru 2", self.get_windows()[0])
-        dialog.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_DISCARD, Gtk.ResponseType.YES, Gtk.STOCK_SAVE, Gtk.ResponseType.APPLY)
-        dialog.set_default_size(150, 100)
-
-        label = Gtk.Label()
-        #label.set_text("File {} not saved!")
-        label.set_text("Do you really want to exit? All work will be lost")
-        label.set_justify(Gtk.Justification.LEFT)
-
-        box_dialog = dialog.get_content_area()
-        box_dialog.add(label)
-        box_dialog.show_all()
-
-        result = dialog.run()
-        dialog.destroy()
-
-        if result == Gtk.ResponseType.YES or result == Gtk.ResponseType.APPLY:
-            if len(self.elements) ==1:
-                self.quit()
-            else:
-                return False
-        return True
+        
 
 
     def on_quit(self, action, param):

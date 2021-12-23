@@ -497,8 +497,13 @@ class Automaton(Base):
 
     # Editor specific methods
 
-    def save(self, file_path_name):
-        self.set_file_path_name(file_path_name)
+    def save(self, file_path_name=None):
+        if file_path_name is None:
+            if self._file_path_name is None:
+                return False
+            file_path_name = self._file_path_name
+        else:
+            self.set_file_path_name(file_path_name)
 
         f = open(file_path_name,'w')
         f.write('<?xml version="1.0" encoding="UTF-8"?>\n')

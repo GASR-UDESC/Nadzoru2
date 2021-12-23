@@ -122,20 +122,26 @@ class AutomatonEditor(PageMixin, Gtk.Box):
         self.automaton_render.queue_draw()
         self.trigger_change()
 
-    def save(self, file_path_name):
+    def save(self, file_path_name=None):
         status = self.automaton.save(file_path_name)
         if status == True:
-            self.__changes_to_save = False
+            self._changes_to_save = False
         return status
 
+    def has_file_path_name(self):
+        return self.automaton.get_file_path_name() is not None
+
     def trigger_change(self):
+        self._changes_to_save = True
         self.emit('nadzoru-editor-change', None)
-        self.__changes_to_save = True
 
     def reset_selection(self):
         self.selected_state = None
         self.selected_transitions = None
         self.automaton_render.queue_draw()
+
+    def get_tab_name(self):
+        return self.automaton.get_file_name()
 
     def on_draw(self, automaton_render, cr):
         self.automaton_render.draw(cr, highlight_state=self.selected_state, highlight_transitions=self.selected_transitions)

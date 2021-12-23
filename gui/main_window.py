@@ -109,11 +109,41 @@ class MainWindow(Gtk.ApplicationWindow):
         self.note.set_tab_detachable(widget, True)
 
         return note
+    
+    def _popup(self, tab_name):
+        dialog = Gtk.Dialog("Nadzoru 2", self)
+        dialog.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_DISCARD, Gtk.ResponseType.YES, Gtk.STOCK_SAVE, Gtk.ResponseType.APPLY)
+        dialog.set_default_size(150, 100)
+
+        label = Gtk.Label()
+        label.set_text(f"{tab_name} is not saved")
+        label.set_justify(Gtk.Justification.LEFT)
+
+        box_dialog = dialog.get_content_area()
+        box_dialog.add(label)
+        box_dialog.show_all()
+
+        result = dialog.run()
+        dialog.destroy()
+
+        return result
 
     def remove_tab(self, _id):
-        if _id >= 0:
-            self.note.remove_page(_id)
-            self.show_all()
+        if _id < 0:
+            return False
+        
+        widget = self.note.get_nth_page(_id)
+        if widget.has_changes_to_save():
+            result = self._popup(widget.get_tab_name())
+            if result == Gtk.ResponseType.CANCEL:
+                return False
+            elif result == Gtk.ResponseType.APPLY:  # save
+                # if widget.has_file_path_name():
+                if not widget.save():
+                    if  not self._save_dialog(widget):
+                        return False      
+        self.note.remove_page(_id)
+        self.show_all()
 
     def remove_current_tab(self, *args):
         _id = self.note.get_current_page()
@@ -143,10 +173,12 @@ class MainWindow(Gtk.ApplicationWindow):
         result = dialog.run()
         if result ==  Gtk.ResponseType.OK:
             file_path = (dialog.get_filename())
+            dialog.destroy()
             if not(file_path.lower().endswith('.xml')):
                 file_path = f'{file_path}.xml'
-            widget.save(file_path)
+            return widget.save(file_path)
         dialog.destroy()
+        return False
 
     def on_save_automaton(self, action, param=None):
         widget = self.get_current_tab_widget()
@@ -212,8 +244,7 @@ class MainWindow(Gtk.ApplicationWindow):
         self.add_tab(simulator, "Simulator")
 
     def on_close_tab(self, action, param):
-        # TODO: check if needs saving
-        self.remove_tab(self.note.get_current_page())
+       self.remove_current_tab()
 
     def on_tool_change(self, toolpallet, tool_id):
         for page_num in range(self.note.get_n_pages()):
