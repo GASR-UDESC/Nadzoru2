@@ -1,6 +1,7 @@
 import sys
 import gi
 import os
+import logging
 from gi.repository import Gdk, Gio, Gtk
 
 from machine.automaton import Automaton
@@ -37,8 +38,8 @@ class MainWindow(Gtk.ApplicationWindow):
         self.note.set_scrollable(True)
         self.note.set_show_border(True)
 
-        self.note.connect('create-window', self.nootbook_create_window)
-        self.note.connect('page-removed', self.notebook_page_removed)
+        self.note.connect('create-window', self.on_notebook_create_window)
+        self.note.connect('page-removed', self.on_notebook_page_removed)
         self.toolpallet.connect('nadzoru-tool-change', self.on_tool_change)
 
         self._create_action('new-automaton', self.on_new_automaton)
@@ -55,7 +56,8 @@ class MainWindow(Gtk.ApplicationWindow):
         self.toolpallet.add_button('file', label="Save", icon_name='gtk-save-as', callback=self.on_save_as_automaton)
         self.toolpallet.add_button('file', label="Open", icon_name='gtk-open', callback=self.on_open_automaton)
 
-    def nootbook_create_window(self,notebook,widget,x,y): #is widget a automaton Editor?? is  Notebook a page??
+    def on_notebook_create_window(self,notebook,widget,x,y): #is widget a automaton Editor?? is  Notebook a page??
+        logging.debug("")
         # handler for dropping outside of current window
         new_window = self.props.application.add_window()
 
@@ -69,10 +71,12 @@ class MainWindow(Gtk.ApplicationWindow):
         return new_window.note
 
 
-    def notebook_page_removed(self, notebook, child, page):
+    def on_notebook_page_removed(self, notebook, child, page):
+        logging.debug("")
         #destroy the sub window after the notebook is empty
         if notebook.get_n_pages() == 0:
             self.destroy()
+        return True
 
     # def sub_window_destroyed (self, window, cur_notebook, dest_notebook):
         # if the sub window gets destroyed, push pages back to the main window
@@ -90,10 +94,12 @@ class MainWindow(Gtk.ApplicationWindow):
         self.add_action(action)
 
     def do_delete_event(self, event):
+        logging.debug("")
         # TODO: how to proper integrate with application?
         # closing window: move all tabs (or unsaved tabs) to other window
         # ... but if last window, perform the check save/discard
-        return self.props.application.validade_quit()
+        #~ return self.props.application.validade_quit()
+        return False  # Execute the default handler
 
     def get_image(self, name):
         try:
@@ -109,7 +115,7 @@ class MainWindow(Gtk.ApplicationWindow):
         self.note.set_tab_detachable(widget, True)
 
         return note
-    
+
     def _popup(self, tab_name):
         dialog = Gtk.Dialog("Nadzoru 2", self)
         dialog.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_DISCARD, Gtk.ResponseType.YES, Gtk.STOCK_SAVE, Gtk.ResponseType.APPLY)
@@ -131,7 +137,7 @@ class MainWindow(Gtk.ApplicationWindow):
     def remove_tab(self, _id):
         if _id < 0:
             return False
-        
+
         widget = self.note.get_nth_page(_id)
         if widget.has_changes_to_save():
             result = self._popup(widget.get_tab_name())
@@ -141,9 +147,8 @@ class MainWindow(Gtk.ApplicationWindow):
                 # if widget.has_file_path_name():
                 if not widget.save():
                     if  not self._save_dialog(widget):
-                        return False      
+                        return False
         self.note.remove_page(_id)
-        self.show_all()
 
     def remove_current_tab(self, *args):
         _id = self.note.get_current_page()
@@ -181,6 +186,7 @@ class MainWindow(Gtk.ApplicationWindow):
         return False
 
     def on_save_automaton(self, action, param=None):
+        logging.debug("")
         widget = self.get_current_tab_widget()
         if (widget is None) or type(widget) != AutomatonEditor:
             return
@@ -195,6 +201,7 @@ class MainWindow(Gtk.ApplicationWindow):
         self.set_tab_label_color(widget, '#000')
 
     def on_new_automaton(self, action, param=None):
+        logging.debug("")
         automaton = Automaton()
         self.props.application.elements.append(automaton)
         editor = AutomatonEditor(automaton)
@@ -202,6 +209,7 @@ class MainWindow(Gtk.ApplicationWindow):
         self.add_tab(editor, editor.automaton.get_file_name())
 
     def on_open_automaton(self, action, param=None):
+        logging.debug("")
         dialog = Gtk.FileChooserDialog("Choose file", self, Gtk.FileChooserAction.OPEN,
             ("_Cancel", Gtk.ResponseType.CANCEL, "_Open", Gtk.ResponseType.ACCEPT, "_Edit", Gtk.ResponseType.OK))
         dialog.set_property('select-multiple', True)
@@ -224,6 +232,7 @@ class MainWindow(Gtk.ApplicationWindow):
         dialog.destroy()
 
     def on_save_as_automaton(self, action, param=None):
+        logging.debug("")
         widget = self.get_current_tab_widget()
         if (widget is None) or type(widget) != AutomatonEditor:
             return
@@ -233,9 +242,10 @@ class MainWindow(Gtk.ApplicationWindow):
         self.set_tab_label_color(widget, '#000')
 
     def on_edit_automaton(self, action, param):
-        print("You opened in editor automata", self)
+        logging.debug("")
 
     def on_simulate_automaton(self, action, param):
+        logging.debug("")
         # TODO: open dialog to select from self.props.application.elements
         from test_automata import automata_01  # For testing
         automaton = Automaton()
@@ -244,15 +254,18 @@ class MainWindow(Gtk.ApplicationWindow):
         self.add_tab(simulator, "Simulator")
 
     def on_close_tab(self, action, param):
-       self.remove_current_tab()
+        logging.debug("")
+        self.remove_current_tab()
 
     def on_tool_change(self, toolpallet, tool_id):
+        logging.debug("")
         for page_num in range(self.note.get_n_pages()):
             widget = self.note.get_nth_page(page_num)
             if type(widget) == AutomatonEditor:
                 widget.reset_selection()
 
     def on_import_ides(self, action, param):
+        logging.debug("")
         dialog = Gtk.FileChooserDialog("Choose file", self, Gtk.FileChooserAction.OPEN,
             ("_Cancel", Gtk.ResponseType.CANCEL, "_Open", Gtk.ResponseType.ACCEPT, "_Edit", Gtk.ResponseType.OK))
         dialog.set_property('select-multiple', True)
@@ -270,6 +283,7 @@ class MainWindow(Gtk.ApplicationWindow):
         dialog.destroy()
 
     def on_export_ides(self, action, param):
+        logging.debug("")
         dialog = Gtk.FileChooserDialog("Choose File", self, Gtk.FileChooserAction.SAVE,
             ("_Cancel", Gtk.ResponseType.CANCEL, "_Export", Gtk.ResponseType.OK))
         result = dialog.run()
