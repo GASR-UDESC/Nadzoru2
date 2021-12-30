@@ -25,28 +25,6 @@ class Application(Gtk.Application):
         new_window = MainWindow(application=self, title=title)
         return new_window
 
-    # def rm_window(self, window):
-
-    #     for note in window.note:
-    #         if note.get_tab_label_color() == vermelho:
-    #             #pergunta
-    #         pass
-    #     windows = self.get_windows()
-    #     if len(windows) == 1:
-    #         self.validade_quit()
-    #     else:
-    #         for note in window.note:
-    #             if windows[0] != window:
-    #                 windows[0].append_page(note)
-    #             else:
-    #                 windows[1].append_page(note)
-    #         window.destroy()
-
-        # IF NOT LAST WINDOW:
-            # move all tabs from window to another (different) window in the list
-        # else
-            # close all tabs (which should ask to save)
-
     def do_startup(self):
         Gtk.Application.do_startup(self)
 
@@ -81,11 +59,12 @@ class Application(Gtk.Application):
             # For each window build a dialog
                 # For each tab (page) of the windows that is NOT saved (use PageMixin methods to query if saved) add to a list of things to be saved
                     # ask: cancel, discard, save with the text of the list to be saved (label of the tab?)
-        
-
 
     def on_quit(self, action, param):
-        self.validade_quit()
+        pass
+        # for window in self.get_windows():
+        #     window.on_close_window(action, param)
+        
 
     def on_new_window(self, action, param):
         window = self.add_window()
