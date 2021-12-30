@@ -33,7 +33,6 @@ class MainWindow(Gtk.ApplicationWindow):
         self.set_default_size(1000, 800)
         self.set_position(Gtk.WindowPosition.CENTER)
 
-        # self.note.popup_enable()
         self.note.popup_disable()
         self.note.set_scrollable(True)
         self.note.set_show_border(True)
@@ -62,7 +61,7 @@ class MainWindow(Gtk.ApplicationWindow):
         new_window = self.props.application.add_window()
 
         # new_window.connect('destroy', self.sub_window_destroyed, new_notebook, notebook)
-        #~ new_window.set_transient_for(self)  # this creates a bug: window 'self' will always be behind new_window
+        # new_window.set_transient_for(self)  # this creates a bug: window 'self' will always be behind new_window
         # new_window.set_destroy_with_parent(True)
         # new_window.set_size_request(1000, 1000)
         new_window.move(x, y)
@@ -73,20 +72,9 @@ class MainWindow(Gtk.ApplicationWindow):
 
     def on_notebook_page_removed(self, notebook, child, page):
         logging.debug("")
-        #destroy the sub window after the notebook is empty
         if notebook.get_n_pages() == 0:
             self.destroy()
         return True
-
-    # def sub_window_destroyed (self, window, cur_notebook, dest_notebook):
-        # if the sub window gets destroyed, push pages back to the main window
-        # detach the notebook pages in reverse sequence to avoid index errors
-        # for page_num in reversed(range(cur_notebook.get_n_pages())):
-        #     widget = cur_notebook.get_nth_page(page_num)
-        #     tab_label = cur_notebook.get_tab_label(widget)
-        #     cur_notebook.detach_tab(widget)
-        #     dest_notebook.append_page(widget, tab_label)
-        #     dest_notebook.set_tab_detachable(widget, True)
 
     def _create_action(self, action_name, callback):
         action = Gio.SimpleAction.new(action_name, None)
@@ -98,7 +86,7 @@ class MainWindow(Gtk.ApplicationWindow):
         while self.note.get_n_pages() > 0:
             if self.remove_tab(0) == False:
                 return True  # Cancel default handler (do NOT close window)
-        return False  # Do not execute the default handler, on_notebook_page_removed will trigger self.destroy()
+        return False  # Execute the default handler, on_notebook_page_removed will trigger self.destroy() but it doesn't seem to be a problem. Must return False to close a window without tabs
 
     def get_image(self, name):
         try:
