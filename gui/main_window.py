@@ -95,11 +95,10 @@ class MainWindow(Gtk.ApplicationWindow):
 
     def do_delete_event(self, event):
         logging.debug("")
-        # TODO: how to proper integrate with application?
-        # closing window: move all tabs (or unsaved tabs) to other window
-        # ... but if last window, perform the check save/discard
-        #~ return self.props.application.validade_quit()
-        return False  # Execute the default handler
+        while self.note.get_n_pages() > 0:
+            if self.remove_tab(0) == False:
+                return True  # Cancel default handler (do NOT close window)
+        return False  # Do not execute the default handler, on_notebook_page_removed will trigger self.destroy()
 
     def get_image(self, name):
         try:
@@ -138,6 +137,8 @@ class MainWindow(Gtk.ApplicationWindow):
         if _id < 0:
             return False
 
+        self.note.set_current_page(_id)
+
         widget = self.note.get_nth_page(_id)
         if widget.has_changes_to_save():
             result = self._popup(widget.get_tab_name())
@@ -149,6 +150,7 @@ class MainWindow(Gtk.ApplicationWindow):
                     if  not self._save_dialog(widget):
                         return False
         self.note.remove_page(_id)
+        return True
 
     def remove_current_tab(self, *args):
         _id = self.note.get_current_page()
