@@ -86,18 +86,11 @@ class Application(Gtk.Application):
         self.activate()
         return True
 
-    def validade_quit(self):
-        logging.debug("[init]")
-        # TODO: This must no be used from MainWindow.do_delete_event. This is only the main app quit!
-            # For each window build a dialog
-                # For each tab (page) of the windows that is NOT saved (use PageMixin methods to query if saved) add to a list of things to be saved
-                    # ask: cancel, discard, save with the text of the list to be saved (label of the tab?)
-        
-
-
     def on_quit(self, action, param):
         logging.debug("")
-        self.validade_quit()
+        for window in self.get_windows():
+            window.emit('delete-event', None)
+        self.quit()  # TODO: Abort quit in case of cancel in any window verification dialog
 
     def on_new_window(self, action, param):
         logging.debug("")
