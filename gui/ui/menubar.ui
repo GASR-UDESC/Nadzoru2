@@ -2,7 +2,7 @@
 <interface>
     <menu id="menubar">
         <submenu>
-            <attribute name="label">file</attribute>
+            <attribute name="label">File</attribute>
             <section>
                 <item>
                     <attribute name="action">app.quit</attribute>
@@ -21,7 +21,7 @@
             </section>
         </submenu>
         <submenu>
-            <attribute name="label">automata</attribute>
+            <attribute name="label">Automata</attribute>
             <section>
                 <item>
                     <attribute name="action">win.new-automaton</attribute>
@@ -46,26 +46,6 @@
                     <attribute name="label" translatable="yes">Save As</attribute>
                     <attribute name="icon">gtk-save-as</attribute>
                     <attribute name="accel">&lt;Primary&gt;&lt;Shift&gt;s</attribute>
-                </item>
-            </section>
-            <section>
-                <item>
-                    <attribute name="action">win.edit-automaton</attribute>
-                    <attribute name="label" translatable="yes">_Edit</attribute>
-                    <attribute name="icon">gtk-edit</attribute>
-                    <attribute name="accel">&lt;Primary&gt;e</attribute>
-                </item>
-                <item>
-                    <attribute name="action">win.simulate-automaton</attribute>
-                    <attribute name="label" translatable="yes">Simulate</attribute>
-                    <attribute name="icon">gtk-execute</attribute>
-                    <attribute name="accel">&lt;Primary&gt;&lt;Alt&gt;s</attribute>
-                </item>
-                <item>
-                    <attribute name="action">win.close-tab</attribute>
-                    <attribute name="label" translatable="yes">_Close Current Tab</attribute>
-                    <attribute name="icon">gtk-close</attribute>
-                    <attribute name="accel">&lt;Primary&gt;w</attribute>
                 </item>
             </section>
             <section>
@@ -112,6 +92,40 @@
                        </item>
                     </section>
                 </submenu>
+            </section>
+            <section>
+                <item>
+                    <attribute name="action">win.edit-automaton</attribute>
+                    <attribute name="label" translatable="yes">_Edit</attribute>
+                    <attribute name="icon">gtk-edit</attribute>
+                    <attribute name="accel">&lt;Primary&gt;e</attribute>
+                </item>
+                <item>
+                    <attribute name="action">win.simulate-automaton</attribute>
+                    <attribute name="label" translatable="yes">_Simulate</attribute>
+                    <attribute name="icon">gtk-jump-to</attribute>
+                    <attribute name="accel">&lt;Primary&gt;&lt;Alt&gt;s</attribute>
+                </item>
+                <item>
+                    <attribute name="action">win.operation-automaton</attribute>
+                    <attribute name="label" translatable="yes">_Operations</attribute>
+                    <attribute name="icon">gtk-execute</attribute>
+                    <attribute name="accel">&lt;Primary&gt;&lt;Alt&gt;o</attribute>
+                </item>
+                <item>
+                    <attribute name="action">win.script-operation-automaton</attribute>
+                    <attribute name="label" translatable="yes">Script _Operations</attribute>
+                    <attribute name="icon">gtk-indent</attribute>
+                    <attribute name="accel">&lt;Primary&gt;&lt;Shift&gt;o</attribute>
+                </item>
+            </section>
+            <section>
+                <item>
+                    <attribute name="action">win.close-tab</attribute>
+                    <attribute name="label" translatable="yes">_Close Current Tab</attribute>
+                    <attribute name="icon">gtk-close</attribute>
+                    <attribute name="accel">&lt;Primary&gt;w</attribute>
+                </item>
             </section>
         </submenu>
     </menu>
