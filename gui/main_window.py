@@ -81,12 +81,18 @@ class MainWindow(Gtk.ApplicationWindow):
         action.connect("activate", callback)
         self.add_action(action)
 
-    def do_delete_event(self, event):
-        logging.debug("")
+    def close_tabs(self):
         while self.note.get_n_pages() > 0:
             if self.remove_tab(0) == False:
-                return True  # Cancel default handler (do NOT close window)
-        return False  # Execute the default handler, on_notebook_page_removed will trigger self.destroy() but it doesn't seem to be a problem. Must return False to close a window without tabs
+                return False  # at least one tab cancel
+        return True  # was able to close all tabs
+
+    def do_delete_event(self, event):
+        logging.debug("")
+        if self.close_tabs() == False:
+            return True  # Cancel default handler (do NOT close window)
+        else:
+            return False  # Execute the default handler, on_notebook_page_removed will trigger self.destroy() but it doesn't seem to be a problem. Must return False to close a window without tabs
 
     def get_image(self, name):
         try:

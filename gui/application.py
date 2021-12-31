@@ -89,8 +89,9 @@ class Application(Gtk.Application):
     def on_quit(self, action, param):
         logging.debug("")
         for window in self.get_windows():
-            window.emit('delete-event', None)
-        self.quit()  # TODO: Abort quit in case of cancel in any window verification dialog
+            if window.close_tabs() == False:
+                return  # Abort quitting
+        self.quit()
 
     def on_new_window(self, action, param):
         logging.debug("")
