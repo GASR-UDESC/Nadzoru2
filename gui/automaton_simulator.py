@@ -12,6 +12,7 @@ from gi.repository import GLib, Gio, Gtk
 
 #~ import gui
 from renderer import AutomatonRenderer
+from gui.base import PageMixin
 
 
 class ListBoxRowWithData(Gtk.ListBoxRow):
@@ -23,7 +24,7 @@ class ListBoxRowWithData(Gtk.ListBoxRow):
 def listbox_sort_func(row_1, row_2, data, notify_destroy):
         return row_1.transition.event.name.lower() > row_2.transition.event.name.lower()
 
-class AutomatonSimulator(Gtk.Box):
+class AutomatonSimulator(PageMixin, Gtk.Box):
     def __init__(self, automaton, *args, **kwargs):
         if 'spacing' not in kwargs:
             kwargs['spacing'] = 2
@@ -75,7 +76,7 @@ class AutomatonSimulator(Gtk.Box):
         self.reset_list_box()
 
     def on_draw(self, wid, cr):
-        self.renderer.draw_partial(cr, self.current_state, forward_deep=self.forward_depth, backward_deep=self.backward_depth)
+        self.renderer.draw_partial(cr, highlight_state=self.current_state, forward_deep=self.forward_depth, backward_deep=self.backward_depth)
 
     def spin_event(self, event):
         self.forward_depth = self.forward_depth_spin.get_value_as_int()

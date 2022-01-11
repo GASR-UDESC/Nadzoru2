@@ -4,20 +4,21 @@ import gi
 from gi.repository import GLib, Gio, Gtk, GObject
 
 from renderer import AutomatonRenderer
+from gui.base import PageMixin
 
 
-class AutomatonEditor(Gtk.Box):
-    def __init__(self, automaton, application, *args, **kwargs):
+class AutomatonEditor(PageMixin, Gtk.Box):
+    def __init__(self, automaton, *args, **kwargs):
         if 'spacing' not in kwargs:
             kwargs['spacing'] = 2
         super().__init__(*args, **kwargs)
 
         self.automaton = automaton
-        self.application = application
         self.selected_state = None
         self.selected_transitions = None
+        self.tool_change_handler_id = None
 
-        self.paned = Gtk.Paned()
+        self.paned = Gtk.Paned(wide_handle=True)
         self.scrolled = Gtk.ScrolledWindow.new()
         self.automaton_render = AutomatonRenderer(self.automaton)
 
@@ -30,9 +31,7 @@ class AutomatonEditor(Gtk.Box):
         self.automaton_render.connect("draw", self.on_draw)
         self.automaton_render.connect("motion-notify-event", self.on_motion_notify)
         self.automaton_render.connect("button-press-event", self.on_button_press)
-        #self.automaton_render.connect("button-release-event", self.on_button_release)
-
-        self.application.window.toolpallet.connect('nadzoru-tool-change', self.on_tool_change)
+        # self.automaton_render.connect("button-release-event", self.on_button_release)
 
     def build_treeview(self):
         self.liststore = Gtk.ListStore(str, bool, bool, object)
@@ -63,22 +62,18 @@ class AutomatonEditor(Gtk.Box):
         column_toggle_2 = Gtk.TreeViewColumn("Observable", renderer_toggle_2, active=2)
         self.treeview.append_column(column_toggle_2)
 
-        #~ self.selected_row = self.treeview.get_selection()
-        #~ self.selected_row.connect("changed", self.item_selected)
-
         self.treeview_box.pack_start(self.treeview, True, True, 0)
 
         #Add and Delete Cell buttons
 
-        self.add_button = Gtk.Button(label = 'Add Cell')
+        self.add_button = Gtk.Button(label = 'Add Event')
         self.add_button.connect("clicked", self.event_add)
         self.treeview_box.pack_start(self.add_button, False, False, 0)
 
-        self.delete_button = Gtk.Button(label = 'Delete Cell')
-        self.delete_button.connect("clicked", self.delete_cell)
+        self.delete_button = Gtk.Button(label = 'Remove Event')
+        self.delete_button.connect("clicked", self.event_remove)
         self.treeview_box.pack_start(self.delete_button, False, False, 0)
-        self.paned.set_position(600) # Value can be any value, just to make it smaller than the minimum
-        self.paned.pack2(self.treeview_box, True, False)
+        self.paned.pack2(self.treeview_box, False, False)
 
         self.update_treeview()
 
@@ -98,69 +93,91 @@ class AutomatonEditor(Gtk.Box):
         event = self.liststore[path][3]
         self.automaton.event_rename(event, event_name)
         self.update_treeview()
-        self.emit('nadzoru-editor-change', None)
+        self.trigger_change()
 
     def renderer_toggle_controllable(self, widget, path):
         event = self.liststore[path][3]
         event.controllable = not event.controllable
         self.update_treeview()
-        self.emit('nadzoru-editor-change', None)
+        self.trigger_change()
 
     def renderer_toggle_observable(self, widget, path):
         event = self.liststore[path][3]
         event.observable = not event.observable
         self.update_treeview()
-        self.emit('nadzoru-editor-change', None)
+        self.trigger_change()
 
     def event_add(self, widget):
         self.automaton.event_add(name="new Event")
         self.update_treeview()
-        self.emit('nadzoru-editor-change', None)
+        self.trigger_change()
 
-    def delete_cell(self, widget):
-        _, tree_iter = self.treeview.get_selection().get_selected()
-        if tree_iter is None:
-            return
-
-        event = self.liststore.get(tree_iter, 3)[0]
-        self.automaton.event_remove(event)
+    def event_remove(self, widget):
+        _, tree_path_list = self.treeview_selection.get_selected_rows()
+        for tree_path in tree_path_list:
+            tree_iter = self.liststore.get_iter(tree_path)
+            event = self.liststore.get(tree_iter, 3)[0]
+            self.automaton.event_remove(event)
         self.update_treeview()
         self.automaton_render.queue_draw()
+        self.trigger_change()
+
+    def save(self, file_path_name=None):
+        status = self.automaton.save(file_path_name)
+        if status == True:
+            self._changes_to_save = False
+        return status
+
+    def has_file_path_name(self):
+        return self.automaton.get_file_path_name() is not None
+
+    def trigger_change(self):
+        self._changes_to_save = True
         self.emit('nadzoru-editor-change', None)
+
+    def reset_selection(self):
+        self.selected_state = None
+        self.selected_transitions = None
+        self.automaton_render.queue_draw()
+
+    def get_tab_name(self):
+        return self.automaton.get_file_name()
 
     def on_draw(self, automaton_render, cr):
         self.automaton_render.draw(cr, highlight_state=self.selected_state, highlight_transitions=self.selected_transitions)
 
     def on_motion_notify(self, automaton_render, event):
+        window = self.get_ancestor_window()
         x, y = event.get_coords()
-        tool_name = self.application.window.toolpallet.get_selected_tool()
+        tool_name = window.toolpallet.get_selected_tool()
 
         if tool_name == 'move':
             if not self.selected_state is None:
                 self.selected_state.x = x
                 self.selected_state.y = y
                 self.automaton_render.queue_draw()
-                self.emit('nadzoru-editor-change', None)
+                self.trigger_change()
 
     def on_button_press(self, automaton_render, event):
+        window = self.get_ancestor_window()
         x, y = event.get_coords()
-        tool_name = self.application.window.toolpallet.get_selected_tool()
+        tool_name = window.toolpallet.get_selected_tool()
         state = self.automaton_render.get_state_at(x, y)
 
         if tool_name == 'state_add':
             state = self.automaton.state_add(None, x=x, y=y)
             self.selected_state = state
-            self.emit('nadzoru-editor-change', None)
+            self.trigger_change()
         elif tool_name == 'state_initial':
             if state is not None:
                 self.automaton.initial_state = state
                 self.selected_state = state
-                self.emit('nadzoru-editor-change', None)
+                self.trigger_change()
         elif tool_name == 'state_marked':
             if state is not None:
                 state.marked = not state.marked
                 self.selected_state = state
-                self.emit('nadzoru-editor-change', None)
+                self.trigger_change()
         elif tool_name == 'transition_add':
             if state is None:
                 self.selected_state = None
@@ -179,17 +196,17 @@ class AutomatonEditor(Gtk.Box):
                     if added_transition:
                         #  only if add at least one transition, reset 'selected_state'
                         self.selected_state = None
-                        self.emit('nadzoru-editor-change', None)
+                        self.trigger_change()
         elif tool_name == 'move':
             self.selected_state = state
         elif tool_name == 'delete':
             transitions = self.automaton_render.get_transition_at(x, y)
             if state is not None:
                 self.automaton.state_remove(state)
-                self.emit('nadzoru-editor-change', None)
+                self.trigger_change()
             for trans in transitions:
                 self.automaton.transition_remove(trans)
-            self.emit('nadzoru-editor-change', None)
+            self.trigger_change()
         elif tool_name == 'edit':
             transitions = self.automaton_render.get_transition_at(x, y)
             if state is not None:
@@ -201,16 +218,6 @@ class AutomatonEditor(Gtk.Box):
             else:
                 self.selected_transitions = None
         self.automaton_render.queue_draw()
-
-    def on_tool_change(self, toolpallet, tool_id):
-        self.selected_state = None
-        self.automaton_render.queue_draw()
-
-    #~ _, tree_iter = self.treeview.get_selection().get_selected()
-    #~ if not tree_iter is None:
-        #~ selected_event = self.liststore.get(tree_iter, 3)[0]
-        #~ self.automaton.transition_add(self.selected_state, state, selected_event)
-        #~ self.selected_state = None
 
 
 GObject.signal_new('nadzoru-editor-change', AutomatonEditor, GObject.SIGNAL_RUN_LAST, GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT,))

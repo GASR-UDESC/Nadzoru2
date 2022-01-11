@@ -9,7 +9,6 @@ import os
 import sys
 from random import seed
 from random import randint
-from enum import Enum
 from xml.dom.minidom import parse
 import re
 
@@ -108,6 +107,7 @@ class Event(Base):
 
 class EventSet(Base):  # TODO
     pass
+
 
 class TransitionLayout:
     def __init__(self):
@@ -370,20 +370,19 @@ class Automaton(Base):
         return event
 
     def event_remove(self, event):
-        try:
-            self.events.delete(event)
-        except:
-            return False  # event doesn't exists in ser
+        if event not in self.events:
+            return False
+        for transition in list(event.transitions):  # list is a copy, avoiding Set changed size during iteration
+            self.transition_remove(transition)
+        self.events.remove(event)
         return True
 
     def event_remove_by_name(self, event_name):
         event = self.event_get_by_name(event_name)
         if event is None:
             return False
-        self.event_remove(event)
-        for transition in event.transitions:
-            self.transition_remove(transition)
-        return True
+        return self.event_remove(event)
+
 
     def event_rename(self, event, new_event_name):
         if event.name == new_event_name:
@@ -485,6 +484,7 @@ class Automaton(Base):
             self._initial_state = value
 
     def transition_add(self, from_state, to_state, event, *args, **kwargs):
+        # TODO: check if from_state, to_state, and event belong to self
         t = self.transition_class(from_state, to_state, event, *args, **kwargs)
         from_state.transition_out_add(t)
         to_state.transition_in_add(t)
@@ -497,6 +497,10 @@ class Automaton(Base):
         transition.from_state.transition_out_remove(transition)
         transition.to_state.transition_in_remove(transition)
 
+    def state_rename_sequential(self):
+        for _id, state in enumerate(self.states):
+            state.name = str(_id)
+
     # Editor specific methods
 
     # These should be calculated by the renderer
@@ -506,32 +510,42 @@ class Automaton(Base):
     def transition_get_at(self, x, y):
         pass
 
-        file = open(file_path_name,'w')
-        file.write('<?xml version="1.0" encoding="UTF-8"?>\n')
-        file.write('<model version="2.1" type="FSA" id="Untitled">\n')
-        file.write('<data>\n')
+    def save(self, file_path_name=None):
+        if file_path_name is None:
+            if self._file_path_name is None:
+                return False
+            file_path_name = self._file_path_name
+        else:
+            self.set_file_path_name(file_path_name)
 
-        state_id_map = dict()
-        event_id_map = dict()
+        f = open(file_path_name,'w')
+        f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
+        f.write('<model version="0.0" type="FSA" id="Untitled">\n')
+        f.write('<data>\n')
 
-        for _id, state in enumerate(self.states):
-            state_id_map[state] = _id
+        state_to_id_map = dict()
+        event_to_id_map = dict()
+
+        for state_id, state in enumerate(self.states):
+            state_to_id_map[state] = state_id
             initial = state == self.initial_state
-            file.write(f'\t<state id="{_id}" name="{state.name}" initial ="{initial}" marked="{state.marked}" x="{state.x}" y="{state.y}" />\n')
+            f.write(f'\t<state id="{state_id}" name="{state.name}" initial ="{initial}" marked="{state.marked}" x="{state.x}" y="{state.y}" />\n')
 
-        for _id, event in enumerate(self.events):
-            event_id_map[event.name] = _id
-            file.write(f'\t<event id="{_id}" name="{event.name}" controllable="{event.controllable}" observable="{event.observable}"/>\n')
+        for event_id, event in enumerate(self.events):
+            event_to_id_map[event] = event_id
+            f.write(f'\t<event id="{event_id}" name="{event.name}" controllable="{event.controllable}" observable="{event.observable}"/>\n')
 
         for source_state in self.states:
             for transition in source_state.out_transitions:
-                source_id = state_id_map[transition.from_state]
-                target_id = state_id_map[transition.to_state]
-                event_id = event_id_map[transition.event]
-                file.write(f'\t<transition source="{source_id}" target="{target_id}" event="{event_id}"/>\n')
+                source_state_id = state_to_id_map[transition.from_state]
+                target_state_id = state_to_id_map[transition.to_state]
+                event_id = event_to_id_map[transition.event]
+                f.write(f'\t<transition source="{source_state_id}" target="{target_state_id}" event="{event_id}"/>\n')
 
-        file.write('</data>\n')
-        file.write("</model>\n")
+        f.write('</data>\n')
+        f.write("</model>\n")
+
+        return True
 
     def load(self, file_path_name):
         self.set_file_path_name(file_path_name)
@@ -540,43 +554,43 @@ class Automaton(Base):
             return (_str.lower() in ['true'])
 
         xml = parse(file_path_name).documentElement
-        data = xml.getElementsByTagName('data')[0]
+        data_tag = xml.getElementsByTagName('data')[0]
 
-        states = data.getElementsByTagName('state')
-        events = data.getElementsByTagName('event')
-        transitions = data.getElementsByTagName('transition')
+        state_tags = data_tag.getElementsByTagName('state')
+        event_tags = data_tag.getElementsByTagName('event')
+        transition_tags = data_tag.getElementsByTagName('transition')
 
-        stateDict = dict()
-        eventDict = dict()
+        id_to_state_map = dict()
+        id_to_event_map = dict()
 
-        for state in states:
-            _id = state.getAttribute('id')
-            name = state.getAttribute('name')
-            is_marked = str2bool(state.getAttribute('marked'))
-            is_initial = str2bool(state.getAttribute('initial'))
-            x = state.getAttribute('x')
-            y = state.getAttribute('y')
+        for state_tag in state_tags:
+            state_id = state_tag.getAttribute('id')
+            name = state_tag.getAttribute('name')
+            is_marked = str2bool(state_tag.getAttribute('marked'))
+            is_initial = str2bool(state_tag.getAttribute('initial'))
+            x = state_tag.getAttribute('x')
+            y = state_tag.getAttribute('y')
 
-            s = self.state_add(name, marked=is_marked, initial=is_initial, x=x, y=y)
-            stateDict[_id] = s
+            state = self.state_add(name, marked=is_marked, initial=is_initial, x=x, y=y)
+            id_to_state_map[state_id] = state
 
-        for event in events:
-            _id = event.getAttribute('id')
-            name = event.getAttribute('name')
-            is_observable = str2bool(event.getAttribute('observable'))
-            is_controllable = str2bool(event.getAttribute('controllable'))
+        for event_tag in event_tags:
+            event_id = event_tag.getAttribute('id')
+            name = event_tag.getAttribute('name')
+            is_observable = str2bool(event_tag.getAttribute('observable'))
+            is_controllable = str2bool(event_tag.getAttribute('controllable'))
 
-            ev = self.event_add(name, observable=is_observable, controllable=is_controllable)
-            eventDict[_id] = ev
+            event = self.event_add(name, observable=is_observable, controllable=is_controllable)
+            id_to_event_map[event_id] = event
 
-        for transition in transitions:
-            tEvent = transition.getAttribute('event')
-            tSource = transition.getAttribute('source')
-            tTarget = transition.getAttribute('target')
-            ev = eventDict[tEvent]
-            ss = stateDict[tSource]
-            st = stateDict[tTarget]
-            self.transition_add(ss, st, ev)
+        for transition_tag in transition_tags:
+            event_id = transition_tag.getAttribute('event')
+            source_state_id = transition_tag.getAttribute('source')
+            target_state_id = transition_tag.getAttribute('target')
+            event = id_to_event_map[event_id]
+            source_state = id_to_state_map[source_state_id]
+            target_state = id_to_state_map[target_state_id]
+            self.transition_add(source_state, target_state, event)
 
         return self
 
@@ -585,110 +599,108 @@ class Automaton(Base):
         self.set_file_path_name(None)  # check rule
 
         xml = parse(file_path_name).documentElement
-        data = xml.getElementsByTagName('data')[0]
+        data_tag = xml.getElementsByTagName('data')[0]
 
-        states = data.getElementsByTagName('state')
-        events = data.getElementsByTagName('event')
-        transitions = data.getElementsByTagName('transition')
+        state_tags = data_tag.getElementsByTagName('state')
+        event_tags = data_tag.getElementsByTagName('event')
+        transition_tags = data_tag.getElementsByTagName('transition')
 
-        meta = xml.getElementsByTagName('meta')[0]
-        meta_states = meta.getElementsByTagName('state')
+        meta_tag = xml.getElementsByTagName('meta')[0]
+        meta_state_tags = meta_tag.getElementsByTagName('state')
 
-        stateDict = dict()
-        eventDict = dict()
+        id_to_state_map = dict()
+        id_to_event_map = dict()
 
-        for state in states:
-            name = state.getElementsByTagName('name')[0].childNodes[0].data
-            _id = state.getAttribute('id')
+        for state_tag in state_tags:
+            name = state_tag.getElementsByTagName('name')[0].childNodes[0].data
+            state_id = state_tag.getAttribute('id')
 
             # getElementsByTagName: returns a list of all descendant elements (not direct children only) with the specified tag name
             # bool of a list returns False if empty list, True otherwise
-            is_initial = bool(state.getElementsByTagName('initial'))
-            is_marked = bool(state.getElementsByTagName('marked'))
+            is_initial = bool(state_tag.getElementsByTagName('initial'))
+            is_marked = bool(state_tag.getElementsByTagName('marked'))
 
             s = self.state_add(name, marked=is_marked, initial=is_initial)
-            stateDict[_id] = s
+            id_to_state_map[state_id] = s
 
-        for state in meta_states:  # layout
-            _id = state.getAttribute('id')
-            circle = state.getElementsByTagName("circle")[0]
-            x = int(float(circle.getAttribute('x')))
-            y = int(float(circle.getAttribute('y')))
-            stateDict[_id].x = x
-            stateDict[_id].y = y
+        for meta_state_tag in meta_state_tags:  # layout
+            state_id = meta_state_tag.getAttribute('id')
+            circle_tag = meta_state_tag.getElementsByTagName("circle")[0]
+            x = int(float(circle_tag.getAttribute('x')))
+            y = int(float(circle_tag.getAttribute('y')))
+            id_to_state_map[state_id].x = x
+            id_to_state_map[state_id].y = y
 
-        for event in events:
-            name = event.getElementsByTagName('name')[0].childNodes[0].data
-            _id = event.getAttribute('id')
-            is_observable = bool(event.getElementsByTagName('observable'))
-            is_controllable = bool(event.getElementsByTagName('controllable'))
-            ev = self.event_add(name, observable=is_observable, controllable=is_controllable)
-            eventDict[_id] = ev
+        for event_tag in event_tags:
+            event_name = event_tag.getElementsByTagName('name')[0].childNodes[0].data
+            event_id = event_tag.getAttribute('id')
+            is_observable = bool(event_tag.getElementsByTagName('observable'))
+            is_controllable = bool(event_tag.getElementsByTagName('controllable'))
+            event = self.event_add(event_name, observable=is_observable, controllable=is_controllable)
+            id_to_event_map[event_id] = event
 
-        for transition in transitions:
-            tEvent = transition.getAttribute('event')
-            tSource = transition.getAttribute('source')
-            tTarget = transition.getAttribute('target')
-            ev = eventDict[tEvent]
-            ss = stateDict[tSource]
-            st = stateDict[tTarget]
-            self.transition_add(ss, st, ev)
+        for transition_tag in transition_tags:
+            event_id = transition_tag.getAttribute('event')
+            source_state_id = transition_tag.getAttribute('source')
+            target_state_id = transition_tag.getAttribute('target')
+            event = id_to_event_map[event_id]
+            source_state = id_to_state_map[source_state_id]
+            target_state = id_to_state_map[target_state_id]
+            self.transition_add(source_state, target_state, event)
 
         return self
 
     def ides_export(self, file_path_name):
-        file = open(file_path_name,'w')
-        file.write('<?xml version="1.0" encoding="UTF-8"?>\n')
-        file.write('<model version="2.1" type="FSA" id="Untitled">\n')
-        file.write('<data>\n')
+        f = open(file_path_name,'w')
+        f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
+        f.write('<model version="2.1" type="FSA" id="Untitled">\n')
+        f.write('<data>\n')
 
         state_id_map = dict()
         event_id_map = dict()
 
-        for _id, state in enumerate(self.states):
-                state_id_map[state] = _id
+        for state_id, state in enumerate(self.states):
+                state_id_map[state] = state_id
                 initial = state == self.initial_state
                 if initial:
-                   file.write(f'\t<state id="{_id+1}">\n \t\t<properties>\n \t\t\t<initial />\n \t\t\t<marked />\n \t\t</properties>\n \t\t<name>{_id+1}</name>\n \t</state>\n')
+                   f.write(f'\t<state id="{state_id+1}">\n \t\t<properties>\n \t\t\t<initial />\n \t\t\t<marked />\n \t\t</properties>\n \t\t<name>{state_id+1}</name>\n \t</state>\n')
                 else:
-                   file.write(f'\t<state id="{_id+1}">\n \t\t<properties>\n \t\t\t<marked />\n \t\t</properties>\n \t\t<name>{_id+1}</name>\n \t</state>\n')
+                   f.write(f'\t<state id="{state_id+1}">\n \t\t<properties>\n \t\t\t<marked />\n \t\t</properties>\n \t\t<name>{state_id+1}</name>\n \t</state>\n')
 
-        for _id, event in enumerate(self.events):
-            event_id_map[event.name] = _id
+        for event_id, event in enumerate(self.events):
+            event_id_map[event] = event_id
             if event.controllable == True:
-               file.write(f'\t<event id="{_id+1}">\n \t\t<properties>\n \t\t\t<controllable />\n \t\t\t<observable />\n \t\t</properties>\n \t\t<name>{event.name}</name>\n \t</event>\n')
+               f.write(f'\t<event id="{event_id+1}">\n \t\t<properties>\n \t\t\t<controllable />\n \t\t\t<observable />\n \t\t</properties>\n \t\t<name>{event.name}</name>\n \t</event>\n')
             else:
-               file.write(f'\t<event id="{_id+1}">\n \t\t<properties>\n \t\t\t<observable />\n \t\t</properties>\n \t\t<name>{event.name}</name>\n \t</event>\n')
+               f.write(f'\t<event id="{event_id+1}">\n \t\t<properties>\n \t\t\t<observable />\n \t\t</properties>\n \t\t<name>{event.name}</name>\n \t</event>\n')
 
         for source_state in self.states:
-            for transition in source_state.out_transitions:
-                state_id_map[state] = _id
+            for transition_id, transition in enumerate(source_state.out_transitions):
                 source_id = state_id_map[transition.from_state]
                 target_id = state_id_map[transition.to_state]
                 event_id = event_id_map[transition.event]
-                file.write(f'\t<transition id="{_id+1}" source="{source_id}" target="{target_id}" event="{event_id}">\n \t</transition>\n')
+                f.write(f'\t<transition id="{transition_id+1}" source="{source_id}" target="{target_id}" event="{event_id}">\n \t</transition>\n')
 
-        file.write('</data>\n')
-        file.write('<meta tag="layout" version="2.1">\n')
+        f.write('</data>\n')
+        f.write('<meta tag="layout" version="2.1">\n')
         meta_id_map=dict()
-        for _id, state in enumerate(self.states):
-                state_id_map[state] = _id
-                initial = state == self.initial_state
-                file.write(f'\t<state id="{_id+1}">\n \t\t<circle x="{state.x}" y="{state.y}" />\n \t</state>\n')
+        for state in self.states:
+            state_id = state_id_map[state]
+            initial = state == self.initial_state
+            f.write(f'\t<state id="{state_id+1}">\n \t\t<circle r="18.0" x="{state.x}" y="{state.y}" />\n \t</state>\n')
 
-        file.write('</meta>\n')
-        file.write("</model>\n")
-        pass
+        f.write('</meta>\n')
+        f.write("</model>\n")
 
     def grail_import(self, file_path_name, ncont_name):
         self.set_file_path_name(None)  # check rule
 
-        file = open(file_path_name, 'r')
+        f = open(file_path_name, 'r')
         ncont = open(ncont_name, 'r')
         initial_state_name = None
 
-        stateDict = dict()
-        eventDict = dict()
+        state_name_to_state_map = dict()
+        event_name_to_event_map = dict()
         marked_states = set()
         uncontrollable_events = set()
         state_indexes = [0, 2]
@@ -697,15 +709,15 @@ class Automaton(Base):
             if re.search(r'(START)', line) == None and re.search(r'(FINAL)', line) == None:
                 uncontrollable_events.add(re.split(r' ', line)[1].strip('\n'))
 
-        for line in file:
+        for line in f:
             if re.search(r'(FINAL)', line) != None:
                 l = re.split(r' ', line)
                 marked_states.add(l[0])
             elif re.search(r'(START)', line) != None:
                 initial_state_name = re.split(r' ', line)[2].strip('\n')
 
-        file = open(file_path_name, 'r')
-        for line in file:
+        f = open(file_path_name, 'r')
+        for line in f:
             if re.search(r'(FINAL)', line) is not None:
                 break
             elif re.search(r'(START)', line) is not None:
@@ -716,42 +728,45 @@ class Automaton(Base):
                     state = set()
                     s = l[each].strip('\n')
                     state.add(s)
-                    if s not in stateDict.keys():
+                    if s not in state_name_to_state_map.keys():
                         init = False
                         markd = False
                         if initial_state_name == s:
                             init = True
                         if state.issubset(marked_states):
                             markd = True
-                        stateDict[s] = self.state_add(s, marked=markd, initial=init)
-                if l[1] not in eventDict.keys():
+                        state_name_to_state_map[s] = self.state_add(s, marked=markd, initial=init)
+                if l[1] not in event_name_to_event_map.keys():
                     ev_name = set()
                     ev_name.add(l[1])
                     controllable = True
                     if ev_name.issubset(uncontrollable_events):
                         controllable = False
-                    eventDict[l[1]] = self.event_add(l[1], controllable, True)
-                self.transition_add(stateDict[l[0].strip('\n')], stateDict[l[2].strip('\n')], eventDict[l[1]])
+                    event_name_to_event_map[l[1]] = self.event_add(l[1], controllable, True)
+                self.transition_add(state_name_to_state_map[l[0].strip('\n')], state_name_to_state_map[l[2].strip('\n')], event_name_to_event_map[l[1]])
         return self
 
+    def grail_export(self, file_path_name):
+        pass
+
     def tct_import(self, file_path_name):
-        file = open(file_path_name, 'r')
+        f = open(file_path_name, 'r')
         initial_state_name = None
 
-        stateDict = dict()
-        eventDict = dict()
+        state_name_to_state_map = dict()
+        event_name_to_event_map = dict()
         marked_states = set()
         state_indexes = [0, 2]
 
-        for line in file:
+        for line in f:
             if re.search(r'(FINAL)', line) != None:
                 l = re.split(r' ', line)
                 marked_states.add(l[0])
             elif re.search(r'(START)', line) != None:
                 initial_state_name = re.split(r' ', line)[2].strip('\n')
 
-        file = open(file_path_name, 'r')
-        for line in file:
+        f = open(file_path_name, 'r')
+        for line in f:
             if re.search(r'(FINAL)', line) is not None:
                 break
             elif re.search(r'(START)', line) is not None:
@@ -759,25 +774,22 @@ class Automaton(Base):
             elif initial_state_name is not None:
                 l = re.split(r' ', line)
                 for each in state_indexes:
-                    state = l[each].strip('\n')
-                    if state not in stateDict.keys():
+                    state_name = l[each].strip('\n')
+                    if state_name not in state_name_to_state_map.keys():
                         init = False
                         markd = False
-                        if initial_state_name == state:
+                        if initial_state_name == state_name:
                             init = True
-                        if marked_states.issubset(state):
+                        if marked_states.issubset(state_name):
                             markd = True
-                        stateDict[state] = self.state_add(state, marked=markd, initial=init)
-                if l[1] not in eventDict.keys():
+                        state_name_to_state_map[state_name] = self.state_add(state_name, marked=markd, initial=init)
+                if l[1] not in event_name_to_event_map.keys():
                     controllable = True
                     if not l[1]%2:
                         controllable = False
-                    eventDict[l[1]] = self.event_add(l[1], controllable, True)
-                self.transition_add(stateDict[l[0].strip('\n')], stateDict[l[2].strip('\n')], eventDict[l[1]])
+                    event_name_to_event_map[l[1]] = self.event_add(l[1], controllable, True)
+                self.transition_add(state_name_to_state_map[l[0].strip('\n')], state_name_to_state_map[l[2].strip('\n')], event_name_to_event_map[l[1]])
         return self
-
-    def tct_import(self, file_path_name):
-        pass
 
     def tct_export(self, file_path_name):
         pass
@@ -978,24 +990,34 @@ class Automaton(Base):
     def projection(self, *args):
         pass
 
-    def univocal(G, R):
+    def univocal(G, R, return_status=False):
         equivalent_events, event_map = G.check_equivalent_event_set(R)
         if not equivalent_events:
             raise Exception   # TODO: custom error that can be catch by application
 
         univocal_map = {R.initial_state: G.initial_state} # [state in R] to [state in G]
-        state_stack = [(G.initial_state, R.initial_state)]
+        state_stack = [(R.initial_state, G.initial_state)]
+        status = True
 
         while len(state_stack) > 0:
-            s_g, s_r = state_stack.pop()
+            s_r, s_g = state_stack.pop()
             for trans_r in s_r.out_transitions:
+                t_g = s_g.get_target_from_event_name(event_name)
                 if trans_r.to_state not in univocal_map:
                     event_name = trans_r.event.name
                     t_r = trans_r.to_state
-                    t_g = s_g.get_target_from_event_name(event_name)
                     univocal_map[t_r] = t_g
-                    state_stack.append((t_g, t_r))
-        return univocal_map
+                    if t_g is not None:
+                        state_stack.append((t_r, t_g))
+                    else:
+                        status = False
+                else:
+                    if univocal_map[trans_r.to_state] == t_g:
+                        status = False
+        if return_status:
+            return univocal_map, status
+        else:
+            return univocal_map
 
     def bad_states(G, R):
         univocal_map = G.univocal(R)
@@ -1300,9 +1322,9 @@ class Automaton(Base):
         return True
 
     def supervisor_reduction(self, G, criteria):
-
-        # dict[supervisor_state] = plant_state
-        univ_map = G.univocal(self)
+        univ_map, univocal_status = G.univocal(self, return_status=True)
+        if univocal_status == False:
+            print('G is not univocal for self')
         control_cover_dict = dict()
         control_cover_state = set()
         state_stack = list()

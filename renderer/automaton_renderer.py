@@ -448,15 +448,15 @@ class AutomatonRenderer(Gtk.DrawingArea):
 
         return states
 
-    def draw_partial(self, cr, current_state, forward_deep=1, backward_deep=0, highlight_state=None):
+    def draw_partial(self, cr, highlight_state=None, highlight_transitions=None, forward_deep=1, backward_deep=0):
         self.cache_reset()
 
         state_radius = dict()
-        show_states = self.get_connected_states(current_state, forward_deep=forward_deep, backward_deep=backward_deep)
+        show_states = self.get_connected_states(highlight_state, forward_deep=forward_deep, backward_deep=backward_deep)
 
         for state in show_states:
             c = (0, 0, 0)
-            if state == current_state:
+            if state == highlight_state:
                 radius = self.draw_state(cr, state, arc_color=(1, 0, 0))
             else:
                 radius = self.draw_state(cr, state, arc_color=(0, 0, 0))
@@ -485,7 +485,6 @@ class AutomatonRenderer(Gtk.DrawingArea):
                 arc_center = self.cache_get('transitions', trans, 'arc_center')
                 start_angle = self.cache_get('transitions', trans, 'start_angle')
                 end_angle = self.cache_get('transitions', trans, 'end_angle')
-                print(arc_radius, arc_center, start_angle, end_angle, trans)
                 sqd_dist = (x - arc_center.x)**2 + (y - arc_center.y)**2
 
                 if (arc_radius - a)**2 < sqd_dist < (arc_radius + a)**2:                    # checks if cursor is between transition's arc radius

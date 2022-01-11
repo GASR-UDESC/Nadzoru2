@@ -1,4 +1,5 @@
 import gi
+import logging
 from gi.repository import GLib, Gio, Gtk, GObject
 
 
@@ -72,6 +73,7 @@ class ToolPalette(Gtk.ToolPalette):
             self.emit('nadzoru-tool-change', self.get_selected_tool())
 
     def on_toggled(self, btn):
+        logging.debug("")
         if btn.get_active() and self.tool != btn:
             if self.tool is not None:
                 self.tool.set_active(False)
