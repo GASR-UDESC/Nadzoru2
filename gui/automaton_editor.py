@@ -26,17 +26,21 @@ class AutomatonEditor(PageMixin, Gtk.Box):
         self.paned.pack1(self.scrolled, True, False)
         self.scrolled.add(self.automaton_render)
 
-        self.build_treeview()
+        self.build_right_hand_space()
 
         self.automaton_render.connect("draw", self.on_draw)
         self.automaton_render.connect("motion-notify-event", self.on_motion_notify)
         self.automaton_render.connect("button-press-event", self.on_button_press)
         # self.automaton_render.connect("button-release-event", self.on_button_release)
-
-    def build_treeview(self):
-        self.liststore = Gtk.ListStore(str, bool, bool, object)
-
+        
+    def build_right_hand_space(self):
+        self.rhs_box = Gtk.Box(orientation = Gtk.Orientation.VERTICAL, spacing=0)
         self.treeview_box = Gtk.Box(orientation = Gtk.Orientation.VERTICAL)
+        self.rhs_listbox = Gtk.ListBox()
+        self.frame_listbox = Gtk.Frame.new("Properties")
+
+        # Building the treeview
+        self.liststore = Gtk.ListStore(str, bool, bool, object)
 
         self.treeview = Gtk.TreeView(model=self.liststore)
         self.treeview_selection  = self.treeview.get_selection()
@@ -44,11 +48,10 @@ class AutomatonEditor(PageMixin, Gtk.Box):
 
         renderer_editabletext = Gtk.CellRendererText()
         renderer_editabletext.set_property("editable", True)
+        renderer_editabletext.connect("edited", self.text_edited)
 
         column_editabletext = Gtk.TreeViewColumn("Event", renderer_editabletext, text=0)
         self.treeview.append_column(column_editabletext)
-
-        renderer_editabletext.connect("edited", self.text_edited)
 
         # Toggle 1
         renderer_toggle_1 = Gtk.CellRendererToggle()
@@ -64,8 +67,7 @@ class AutomatonEditor(PageMixin, Gtk.Box):
 
         self.treeview_box.pack_start(self.treeview, True, True, 0)
 
-        #Add and Delete Cell buttons
-
+        # Add and Delete Cell buttons
         self.add_button = Gtk.Button(label = 'Add Event')
         self.add_button.connect("clicked", self.event_add)
         self.treeview_box.pack_start(self.add_button, False, False, 0)
@@ -73,8 +75,10 @@ class AutomatonEditor(PageMixin, Gtk.Box):
         self.delete_button = Gtk.Button(label = 'Remove Event')
         self.delete_button.connect("clicked", self.event_remove)
         self.treeview_box.pack_start(self.delete_button, False, False, 0)
-        self.paned.pack2(self.treeview_box, False, False)
-
+        
+        self.rhs_box.pack_start(self.treeview_box, True, True, 0)
+        self.paned.pack2(self.rhs_box, False, False)
+        
         self.update_treeview()
 
     def update_treeview(self):
@@ -88,6 +92,7 @@ class AutomatonEditor(PageMixin, Gtk.Box):
 
         for row in rows:
             self.liststore.append(row)
+
 
     def text_edited(self, widget, path, event_name):
         event = self.liststore[path][3]
@@ -122,6 +127,107 @@ class AutomatonEditor(PageMixin, Gtk.Box):
         self.automaton_render.queue_draw()
         self.trigger_change()
 
+    def update_properties_box(self):
+        self.frame_listbox.destroy()
+        self.rhs_listbox = Gtk.ListBox(margin=5)
+        self.rhs_listbox.set_selection_mode(Gtk.SelectionMode.NONE)
+
+        if self.selected_state is not None:
+            self.prop_list = [['Name', self.selected_state.name],
+                              ['Marked', self.selected_state.marked],
+                              ['X', self.selected_state.x],
+                              ['Y', self.selected_state.y]]
+
+            self.frame_listbox = Gtk.Frame.new("Properties")
+            self.frame_listbox.add(self.rhs_listbox)
+
+            for prop in self.prop_list:
+                row = Gtk.ListBoxRow()
+                hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
+                row.add(hbox)
+
+                column1 = Gtk.Label(label=prop[0], xalign=0)
+
+                if type(prop[1]) == bool:
+                    column2 = Gtk.CheckButton()
+                    column2.set_active(prop[1])
+                    column2.connect("toggled", self.prop_edited)
+                
+                elif type(prop[1]) == str or int:
+                    column2 = Gtk.Entry()
+                    column2.connect("activate", self.prop_edited)
+                    column2.set_alignment(1)
+                    column2.set_text(str(prop[1]))
+                    column2.set_width_chars(10)
+                    column2.set_has_frame(False)
+                
+                hbox.pack_start(column1, True, True, 0)
+                hbox.pack_start(column2, False, False, 0)
+                self.rhs_listbox.add(row)
+            
+            self.rhs_box.pack_end(self.frame_listbox, False, False, 0)
+            
+        elif self.selected_transitions is not None:
+            self.prop_list = list()
+            self.frame_listbox = Gtk.Frame.new("Properties")
+            self.frame_listbox.add(self.rhs_listbox)
+
+            for transitions in self.selected_transitions:
+                self.prop_list.append(['Transition', str(transitions)])
+            self.prop_list.append(['Factor', 2.0])
+            self.prop_list.append(['Sense of rotation', 'CCW'])
+            
+            for prop in self.prop_list:
+                row = Gtk.ListBoxRow()
+                hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=50)
+                row.add(hbox)
+
+                column1 = Gtk.Label(label=prop[0], xalign=0)
+
+                if type(prop[1]) == bool:
+                    column2 = Gtk.CheckButton()
+                    column2.set_active(prop[1])
+                    column2.connect("toggled", self.prop_edited)
+                
+                elif type(prop[1]) == str or int:
+                    column2 = Gtk.Label(label=str(prop[1]), xalign=1)
+                
+                hbox.pack_start(column1, True, True, 0)
+                hbox.pack_start(column2, False, False, 0)
+                self.rhs_listbox.add(row)
+                
+            self.rhs_box.pack_end(self.frame_listbox, False, False, 0)
+
+        else:
+            self.frame_listbox.destroy()
+
+        self.rhs_box.show_all()
+
+
+    def prop_edited(self, widget):
+        # Find out which row has been changed
+        for listboxrow in self.rhs_listbox:
+            for widgets in listboxrow:
+                if widgets.get_children()[1] == widget:
+                    row_changed = listboxrow.get_index()
+                    label = widgets.get_children()[0].get_text()
+                    if type(widget) is Gtk.Entry:
+                        new_text = (widgets.get_children()[1].get_text())
+                        
+        # Apply changes to selected object
+        if type(widget) is Gtk.CheckButton:
+            self.selected_state.marked = not self.selected_state.marked
+        if type(widget) is Gtk.Entry:
+            #self.selected_state.name = new_text
+            self.prop_list[row_changed][1] = new_text
+            #print(self.prop_list)
+            self.selected_state.name = self.prop_list[0][1]
+            self.selected_state.x = self.prop_list[2][1]
+            self.selected_state.y = self.prop_list[3][1]
+
+        self.update_properties_box()
+        self.trigger_change()
+
     def save(self, file_path_name=None):
         status = self.automaton.save(file_path_name)
         if status == True:
@@ -138,6 +244,7 @@ class AutomatonEditor(PageMixin, Gtk.Box):
     def reset_selection(self):
         self.selected_state = None
         self.selected_transitions = None
+        self.update_properties_box()
         self.automaton_render.queue_draw()
 
     def get_tab_name(self):
@@ -150,13 +257,16 @@ class AutomatonEditor(PageMixin, Gtk.Box):
         window = self.get_ancestor_window()
         x, y = event.get_coords()
         tool_name = window.toolpallet.get_selected_tool()
+        #
 
         if tool_name == 'move':
             if not self.selected_state is None:
                 self.selected_state.x = x
                 self.selected_state.y = y
                 self.automaton_render.queue_draw()
+                self.update_properties_box()
                 self.trigger_change()
+                
 
     def on_button_press(self, automaton_render, event):
         window = self.get_ancestor_window()
@@ -217,7 +327,8 @@ class AutomatonEditor(PageMixin, Gtk.Box):
                 self.selected_transitions = transitions
             else:
                 self.selected_transitions = None
+            
+        self.update_properties_box()  
         self.automaton_render.queue_draw()
-
 
 GObject.signal_new('nadzoru-editor-change', AutomatonEditor, GObject.SIGNAL_RUN_LAST, GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT,))
