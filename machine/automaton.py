@@ -110,6 +110,10 @@ class EventSet(Base):  # TODO
 
 
 class TransitionLayout:
+    properties = [{'label': "Factor", 'property': 'render_factor', 'gtk_control': 'spinbutton'},
+                  {'label': "Angle", 'property': 'render_angle', 'gtk_control': 'spinbutton'},
+                  {'label': "CCW", 'property': 'ccw', 'gtk_control': 'checkbutton'}]
+
     def __init__(self):
         self.render_angle = 0.0
         self.render_factor = 1.0
@@ -142,6 +146,11 @@ class TransitionLayout:
 
 
 class State(Base):
+    properties = [{'label': "Name", 'property': 'name', 'gtk_control': 'entry'},
+                  {'label': "Marked", 'property': 'marked', 'gtk_control': 'checkbutton'},
+                  {'label': "X", 'property': 'x', 'gtk_control': 'spinbutton'},
+                  {'label': "Y", 'property': 'y', 'gtk_control': 'spinbutton'}]
+                  
     def __init__(self, name=None, marked=False, x=0, y=0, quantity=None, *args, **kwargs):
         if name is None:
             if quantity is not None:

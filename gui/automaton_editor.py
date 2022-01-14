@@ -28,16 +28,16 @@ class AutomatonEditor(PageMixin, Gtk.Box):
 
         self.build_right_hand_space()
 
-        self.automaton_render.connect("draw", self.on_draw)
-        self.automaton_render.connect("motion-notify-event", self.on_motion_notify)
-        self.automaton_render.connect("button-press-event", self.on_button_press)
+        self.automaton_render.connect('draw', self.on_draw)
+        self.automaton_render.connect('motion-notify-event', self.on_motion_notify)
+        self.automaton_render.connect('button-press-event', self.on_button_press)
         # self.automaton_render.connect("button-release-event", self.on_button_release)
         
     def build_right_hand_space(self):
         self.rhs_box = Gtk.Box(orientation = Gtk.Orientation.VERTICAL, spacing=0)
         self.treeview_box = Gtk.Box(orientation = Gtk.Orientation.VERTICAL)
         self.rhs_listbox = Gtk.ListBox()
-        self.frame_listbox = Gtk.Frame.new('Properties')
+        self.frame_listbox = Gtk.Frame()
 
         # Building the treeview
         self.liststore = Gtk.ListStore(str, bool, bool, object)
@@ -47,33 +47,33 @@ class AutomatonEditor(PageMixin, Gtk.Box):
         self.treeview_selection.set_mode(Gtk.SelectionMode.MULTIPLE)
 
         renderer_editabletext = Gtk.CellRendererText()
-        renderer_editabletext.set_property("editable", True)
-        renderer_editabletext.connect("edited", self.text_edited)
+        renderer_editabletext.set_property('editable', True)
+        renderer_editabletext.connect('edited', self.text_edited)
 
         column_editabletext = Gtk.TreeViewColumn("Event", renderer_editabletext, text=0)
         self.treeview.append_column(column_editabletext)
 
         # Toggle 1
         renderer_toggle_1 = Gtk.CellRendererToggle()
-        renderer_toggle_1.connect("toggled", self.renderer_toggle_controllable)
-        column_toggle_1 = Gtk.TreeViewColumn("Controllable", renderer_toggle_1, active=1)
+        renderer_toggle_1.connect('toggled', self.renderer_toggle_controllable)
+        column_toggle_1 = Gtk.TreeViewColumn('Controllable', renderer_toggle_1, active=1)
         self.treeview.append_column(column_toggle_1)
 
         # Toggle 2
         renderer_toggle_2 = Gtk.CellRendererToggle()
-        renderer_toggle_2.connect("toggled", self.renderer_toggle_observable)
+        renderer_toggle_2.connect('toggled', self.renderer_toggle_observable)
         column_toggle_2 = Gtk.TreeViewColumn("Observable", renderer_toggle_2, active=2)
         self.treeview.append_column(column_toggle_2)
 
         self.treeview_box.pack_start(self.treeview, True, True, 0)
 
         # Add and Delete Cell buttons
-        self.add_button = Gtk.Button(label = 'Add Event')
-        self.add_button.connect("clicked", self.event_add)
+        self.add_button = Gtk.Button(label = "Add Event")
+        self.add_button.connect('clicked', self.event_add)
         self.treeview_box.pack_start(self.add_button, False, False, 0)
 
-        self.delete_button = Gtk.Button(label = 'Remove Event')
-        self.delete_button.connect("clicked", self.event_remove)
+        self.delete_button = Gtk.Button(label = "Remove Event")
+        self.delete_button.connect('clicked', self.event_remove)
         self.treeview_box.pack_start(self.delete_button, False, False, 0)
         
         self.rhs_box.pack_start(self.treeview_box, True, True, 0)
@@ -92,7 +92,6 @@ class AutomatonEditor(PageMixin, Gtk.Box):
 
         for row in rows:
             self.liststore.append(row)
-
 
     def text_edited(self, widget, path, event_name):
         event = self.liststore[path][3]
@@ -128,102 +127,63 @@ class AutomatonEditor(PageMixin, Gtk.Box):
         self.trigger_change()
 
     def update_properties_box(self):
+        self.frame_listbox.destroy()
         if self.selected_state is not None:
-            self.frame_listbox.destroy()
+            selected_object = self.selected_state
+        else:
+            selected_object = None
+        #    selected_object = self.selected_transitions
+        
+        if selected_object is not None:
             self.rhs_listbox = Gtk.ListBox(margin=5)
             self.rhs_listbox.set_selection_mode(Gtk.SelectionMode.NONE)
-            self.prop_list = [['Name', self.selected_state.name],
-                              ['Marked', self.selected_state.marked],
-                              ['X', self.selected_state.x],
-                              ['Y', self.selected_state.y]]
 
             self.frame_listbox = Gtk.Frame.new("Properties")
             self.frame_listbox.add(self.rhs_listbox)
+            self.rhs_box.pack_end(self.frame_listbox, False, False, 0)
 
-            for prop in self.prop_list:
+            for prop in selected_object.properties:
                 row = Gtk.ListBoxRow()
                 hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
                 row.add(hbox)
+                self.rhs_listbox.add(row)
 
-                column1 = Gtk.Label(label=prop[0], xalign=0)
+                column1 = Gtk.Label(label=prop['label'], xalign=0)
+                value = getattr(selected_object, prop['property'])
+                # attr_type = type(value)
 
-                if type(prop[1]) == bool:
-                    column2 = Gtk.CheckButton()
-                    column2.set_active(prop[1])
-                    column2.connect("toggled", self.prop_edited)
+                if prop['gtk_control'] == 'checkbutton':
+                    column2 = Gtk.CheckButton(active=value)
+                    column2.connect('toggled', self.prop_edited, None, prop, selected_object)
                 
-                elif type(prop[1]) == str or int:
-                    column2 = Gtk.Entry()
-                    column2.connect("activate", self.prop_edited)
-                    column2.set_alignment(1)
-                    column2.set_text(str(prop[1]))
-                    column2.set_width_chars(10)
-                    column2.set_has_frame(False)
+                elif prop['gtk_control'] == 'entry':
+                    column2 = Gtk.Entry(text=str(value), xalign=1, width_chars=10, has_frame=False)
+                    column2.connect('activate', self.prop_edited, None, prop, selected_object)
                 
+                elif prop['gtk_control'] == 'switch':
+                    column2 = Gtk.Switch(active=value)
+                    column2.connect('notify::active', self.prop_edited, prop, selected_object)
+                
+                elif prop['gtk_control'] == 'spinbutton':
+                    adjustment = Gtk.Adjustment(value=value, lower=0, upper=1500, step_increment=1, page_increment=100)
+                    column2 = Gtk.SpinButton(adjustment=adjustment, width_chars=4)
+                    column2.connect('value-changed', self.prop_edited, None, prop, selected_object)
+
                 hbox.pack_start(column1, True, True, 0)
                 hbox.pack_start(column2, False, False, 0)
-                self.rhs_listbox.add(row)
-            
-            self.rhs_box.pack_end(self.frame_listbox, False, False, 0)
-            
-        elif self.selected_transitions is not None:
-            self.frame_listbox.destroy()
-            self.rhs_listbox = Gtk.ListBox(margin=5)
-            self.rhs_listbox.set_selection_mode(Gtk.SelectionMode.NONE)
-            self.prop_list = list()
-            self.frame_listbox = Gtk.Frame.new('Properties')
-            self.frame_listbox.add(self.rhs_listbox)
-
-            for transitions in self.selected_transitions:
-                self.prop_list.append(['Transition', str(transitions)])
-            self.prop_list.append(['Factor', 2.0])
-            self.prop_list.append(['Sense of rotation', 'CCW'])
-            
-            for prop in self.prop_list:
-                row = Gtk.ListBoxRow()
-                hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=50)
-                row.add(hbox)
-
-                column1 = Gtk.Label(label=prop[0], xalign=0)
-
-                if type(prop[1]) == bool:
-                    column2 = Gtk.CheckButton()
-                    column2.set_active(prop[1])
-                    column2.connect("toggled", self.prop_edited)
-                
-                elif type(prop[1]) == str or int:
-                    column2 = Gtk.Label(label=str(prop[1]), xalign=1)
-                
-                hbox.pack_start(column1, True, True, 0)
-                hbox.pack_start(column2, False, False, 0)
-                self.rhs_listbox.add(row)
-                
-            self.rhs_box.pack_end(self.frame_listbox, False, False, 0)
-
-        else:
-            self.frame_listbox.destroy()
 
         self.rhs_box.show_all()
 
-
-    def prop_edited(self, widget):
-        # Find out which row has been changed
-        for listboxrow in self.rhs_listbox:
-            for widgets in listboxrow:
-                if widgets.get_children()[1] == widget:
-                    row_changed = listboxrow.get_index()
-                    label = widgets.get_children()[0].get_text()
-                    if type(widget) is Gtk.Entry:
-                        new_text = (widgets.get_children()[1].get_text())
-                        
+    def prop_edited(self, widget, gparam, prop, object):    
         # Apply changes to selected object
-        if type(widget) is Gtk.CheckButton:
-            self.selected_state.marked = not self.selected_state.marked
-        if type(widget) is Gtk.Entry:
-            self.prop_list[row_changed][1] = new_text
-            self.selected_state.name = self.prop_list[0][1]
-            self.selected_state.x = self.prop_list[2][1]
-            self.selected_state.y = self.prop_list[3][1]
+        if prop['gtk_control'] == 'checkbutton':
+            setattr(object, prop['property'], widget.get_active())
+        elif prop['gtk_control'] == 'entry':
+            setattr(object, prop['property'], widget.get_text())
+        elif prop['gtk_control'] == 'switch':
+            setattr(object, prop['property'], widget.get_active())
+        elif prop['gtk_control'] == 'spinbutton':
+            setattr(object, prop['property'], widget.get_value_as_int())
 
         self.update_properties_box()
         self.trigger_change()
