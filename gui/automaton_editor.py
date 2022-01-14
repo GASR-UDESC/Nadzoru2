@@ -37,7 +37,7 @@ class AutomatonEditor(PageMixin, Gtk.Box):
         self.rhs_box = Gtk.Box(orientation = Gtk.Orientation.VERTICAL, spacing=0)
         self.treeview_box = Gtk.Box(orientation = Gtk.Orientation.VERTICAL)
         self.rhs_listbox = Gtk.ListBox()
-        self.frame_listbox = Gtk.Frame.new("Properties")
+        self.frame_listbox = Gtk.Frame.new('Properties')
 
         # Building the treeview
         self.liststore = Gtk.ListStore(str, bool, bool, object)
@@ -128,11 +128,10 @@ class AutomatonEditor(PageMixin, Gtk.Box):
         self.trigger_change()
 
     def update_properties_box(self):
-        self.frame_listbox.destroy()
-        self.rhs_listbox = Gtk.ListBox(margin=5)
-        self.rhs_listbox.set_selection_mode(Gtk.SelectionMode.NONE)
-
         if self.selected_state is not None:
+            self.frame_listbox.destroy()
+            self.rhs_listbox = Gtk.ListBox(margin=5)
+            self.rhs_listbox.set_selection_mode(Gtk.SelectionMode.NONE)
             self.prop_list = [['Name', self.selected_state.name],
                               ['Marked', self.selected_state.marked],
                               ['X', self.selected_state.x],
@@ -168,8 +167,11 @@ class AutomatonEditor(PageMixin, Gtk.Box):
             self.rhs_box.pack_end(self.frame_listbox, False, False, 0)
             
         elif self.selected_transitions is not None:
+            self.frame_listbox.destroy()
+            self.rhs_listbox = Gtk.ListBox(margin=5)
+            self.rhs_listbox.set_selection_mode(Gtk.SelectionMode.NONE)
             self.prop_list = list()
-            self.frame_listbox = Gtk.Frame.new("Properties")
+            self.frame_listbox = Gtk.Frame.new('Properties')
             self.frame_listbox.add(self.rhs_listbox)
 
             for transitions in self.selected_transitions:
@@ -218,9 +220,7 @@ class AutomatonEditor(PageMixin, Gtk.Box):
         if type(widget) is Gtk.CheckButton:
             self.selected_state.marked = not self.selected_state.marked
         if type(widget) is Gtk.Entry:
-            #self.selected_state.name = new_text
             self.prop_list[row_changed][1] = new_text
-            #print(self.prop_list)
             self.selected_state.name = self.prop_list[0][1]
             self.selected_state.x = self.prop_list[2][1]
             self.selected_state.y = self.prop_list[3][1]
@@ -257,7 +257,6 @@ class AutomatonEditor(PageMixin, Gtk.Box):
         window = self.get_ancestor_window()
         x, y = event.get_coords()
         tool_name = window.toolpallet.get_selected_tool()
-        #
 
         if tool_name == 'move':
             if not self.selected_state is None:
