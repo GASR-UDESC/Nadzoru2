@@ -151,8 +151,8 @@ class State(Base):
                   {'label': "Marked", 'property': 'marked', 'gtk_control': 'checkbutton'},
                   {'label': "X", 'property': 'x', 'gtk_control': 'spinbutton'},
                   {'label': "Y", 'property': 'y', 'gtk_control': 'spinbutton'}]
-                  
-    def __init__(self, name=None, marked=False, x=0, y=0, quantity=None, *args, **kwargs):
+
+    def __init__(self, name=None, marked=False, x=0, y=0, quantity=None, diagnozer_type=StateType.NORMAL, diagnozer_bad=False *args, **kwargs):
         if name is None:
             if quantity is not None:
                 name = str(quantity + 1)
@@ -160,8 +160,8 @@ class State(Base):
                 name = '?'
         self.name = name
         self.marked = marked
-        self.type = stype
-        self.bad = bad
+        self.diagnozer_type = diagnozer_type
+        self.diagnozer_bad = diagnozer_bad
         self.x = x
         self.y = y
         self.in_transitions = set()
@@ -1648,8 +1648,8 @@ class Automaton(Base):
         for ev_name, event in self.events.items():
             if not event.observable:
                 R = Automaton()
-                N = R.state_add('N', initial=True, marked=False, type=StateType.NORMAL, bad=False)
-                Y = R.state_add('F', initial=False, marked=False, type=StateType.CERTAIN, bad=False)
+                N = R.state_add('N', initial=True, marked=False, diagnozer_type=StateType.NORMAL, diagnozer_bad=False)
+                Y = R.state_add('F', initial=False, marked=False, diagnozer_type=StateType.CERTAIN, diagnozer_bad=False)
                 f = R.event_add(ev_name, controllable = False, observable = False)
                 R.transition_add(N, Y, f)
                 R.transition_add(Y, Y, f)
@@ -1684,7 +1684,7 @@ class Automaton(Base):
                 s = state_stack.pop()
                 for transition in s.out_transitions:
                     if transition.to_state not in reachable_states:
-                        if transition.to_state.type == StateType.CERTAIN:
+                        if transition.to_state.diagnozer_type == StateType.CERTAIN:
                             loop_reaches_certain = True
                         state_stack.append(transition.to_state)
                         reachable_states.append(transition.to_state)
@@ -1694,7 +1694,7 @@ class Automaton(Base):
 
 
         for state in self.states:
-            if state.type == StateType.UNCERTAIN or state.type == StateType.CERTAIN:
+            if state.diagnozer_type == StateType.UNCERTAIN or state.diagnozer_type == StateType.CERTAIN:
                 state.marked = True
             else:
                 state.marked = False
@@ -1703,7 +1703,7 @@ class Automaton(Base):
         loop_reaches_certain_state = False
         has_loop = False
         for state in coac.states:
-            if state.type == StateType.UNCERTAIN:
+            if state.diagnozer_type == StateType.UNCERTAIN:
                 has_loop, loop_reaches_certain_state = detect_loop(state)
 
         if has_loop and loop_reaches_certain_state:
@@ -1718,17 +1718,17 @@ class Automaton(Base):
     def is_safe_diagnosable(self):
 
         for state in self.states:
-            if state.bad:
+            if state.diagnozer_bad:
                 state.marked = True
             else:
                 state.marked = False
 
         coac = self.coaccessible()
         for state in coac.states:
-            if state.bad:
-                if state.type == StateType.CERTAIN:
+            if state.diagnozer_bad:
+                if state.diagnozer_type == StateType.CERTAIN:
                     for t in state.in_transitions:
-                        if t.from_state.type == StateType.UNCERTAIN:
+                        if t.from_state.diagnozer_type == StateType.UNCERTAIN:
                             return False
                 else:
                     return False
