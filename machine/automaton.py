@@ -9,6 +9,7 @@ import os
 import sys
 from random import seed
 from random import randint
+from enum import Enum
 from xml.dom.minidom import parse
 import re
 
@@ -1094,76 +1095,61 @@ class Automaton(Base):
     def empty_closure(self):
         pass
 
-    def determinize(self, copy=False):
+    def determinize(self):
 
-        det_automaton = Automaton()
-        det_automaton.state_add(self.initial_state.name, initial=True, marked=self.initial_state.marked)
-
-        created_states_dict = dict()
-        created_states_dict[det_automaton.initial_state.name] = det_automaton.initial_state
-
+        state_map = dict()
         state_stack = list()
-        state_stack.append(det_automaton.initial_state.name)
+        state_list = list()
 
-        events_dict = dict()
-
-        original_automaton_dict = dict()
-        for state in self.states:
-            original_automaton_dict[state.name] = state
-
-        def get_transition_function(state, transition_function):
-            for transition in original_automaton_dict[state.name].out_transitions:
-                if transition.event in transition_function:
-                    if not isinstance(transition_function[transition.event], list):
-                        if transition_function[transition.event] != transition.to_state:
-                            transition_function[transition.event] = [transition_function[transition.event]]
-                            transition_function[transition.event].append(transition.to_state)
-                else:
-                    transition_function[transition.event] = transition.to_state
+        def get_transition_function(list_of_states):
+            transition_function = dict()
+            for state in list_of_states:
+                for transition in state.out_transitions:
+                    if transition.event not in transition_function.keys():
+                        transition_function[transition.event] = list()
+                    transition_function[transition.event].append(transition.to_state)
             return transition_function
 
-        def determinize_state(state, from_state):
-            transition_function = dict()
-            if type(state) == frozenset:
-                for each in state:
-                    transition_function = get_transition_function(each, transition_function)
+        def state_add(state_list, initial=False):
+            if len(state_list) > 1:
+                new_transitions_map = dict()
+                target_state_tuple = tuple(state_list)
+                marked = functools.reduce(lambda val, s: val and s.marked, target_state_tuple, True)
+                state_name = ",".join(state.name for state in target_state_tuple)
+                s = self.state_add(state_name, initial=initial, marked=marked)
+                for item in state_list:
+                    new_transitions_map[item] = s
             else:
-                transition_function = get_transition_function(state, transition_function)
-            for key in transition_function.keys():
-                if not isinstance(transition_function[key], list):
-                    try:
-                        next_state = created_states_dict[transition_function[key].name]
-                    except KeyError:
-                        next_state = det_automaton.state_add(transition_function[key].name, marked=transition_function[key].marked)
-                        created_states_dict[next_state.name] = next_state
-                        state_stack.append(next_state.name)
-                else:
-                    frozen_set = frozenset(each for each in transition_function[key])
-                    try:
-                        # state already exists
-                        next_state = created_states_dict[frozen_set]
-                    except KeyError:
-                        # create state
-                        state_tuple = tuple(each for each in transition_function[key])
-                        state_name = ",".join(each.name for each in state_tuple)
-                        next_state = det_automaton.state_add(state_name, marked=True)
-                        created_states_dict[frozen_set] = next_state
-                        state_stack.append(frozen_set)
-                try:
-                    if events_dict[key.name]:
-                        pass
-                except KeyError:
-                    events_dict[key.name] = det_automaton.event_add(key.name, key.controllable, key.observable)
-                det_automaton.transition_add(from_state, next_state, key)
+                s = state_list[0]
+            state_stack.append(s)
+            state_map[s] = state_list
+            return s
 
-        while len(state_stack) != 0:
-            state = state_stack.pop(0)
-            if type(state) == frozenset:
-                determinize_state(state, created_states_dict[state])
-            else:
-                determinize_state(created_states_dict[state], created_states_dict[state])
+        state_list.append(self.initial_state)
+        state_map[self.initial_state] = state_list
+        state_stack.append(self.initial_state)
 
-        return det_automaton
+        while len(state_stack) > 0:
+            state = state_stack.pop()
+            tf = get_transition_function(state_map[state])
+            for event in tf.keys():
+                state_list = list()
+                for target_state in tf[event]:
+                    if target_state not in state_list:
+                        state_list.append(target_state)
+                if state_list not in state_map.values():
+                    state_add(state_list, False)
+
+        #for removable in new_transitions_map.keys():
+        #    for transition in removable.in_transitions:
+        #        if transition.event.observable:
+        #            self.transition_add(transition.from_state, new_transitions_map[removable], transition.event)
+        #    for transition in removable.out_transitions:
+        #        if transition.event.observable:
+        #            self.transition_add(new_transitions_map[removable], transition.to_state, transition.event)
+        #    self.state_remove(removable)
+
+        return self
 
     def complement(self, copy=False):
         pass
