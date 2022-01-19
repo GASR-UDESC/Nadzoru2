@@ -152,7 +152,7 @@ class State(Base):
                   {'label': "X", 'property': 'x', 'gtk_control': 'spinbutton'},
                   {'label': "Y", 'property': 'y', 'gtk_control': 'spinbutton'}]
 
-    def __init__(self, name=None, marked=False, x=0, y=0, quantity=None, diagnozer_type=StateType.NORMAL, diagnozer_bad=False *args, **kwargs):
+    def __init__(self, name=None, marked=False, x=0, y=0, quantity=None, diagnozer_type=StateType.NORMAL, diagnozer_bad=False, *args, **kwargs):
         if name is None:
             if quantity is not None:
                 name = str(quantity + 1)
