@@ -147,7 +147,12 @@ class StateType(Enum):
     CERTAIN = 3
 
 class State(Base):
-    def __init__(self, name=None, marked=False, stype=StateType.NORMAL, bad=False, x=0, y=0, quantity=None, *args, **kwargs):
+    properties = [{'label': "Name", 'property': 'name', 'gtk_control': 'entry'},
+                  {'label': "Marked", 'property': 'marked', 'gtk_control': 'checkbutton'},
+                  {'label': "X", 'property': 'x', 'gtk_control': 'spinbutton'},
+                  {'label': "Y", 'property': 'y', 'gtk_control': 'spinbutton'}]
+                  
+    def __init__(self, name=None, marked=False, x=0, y=0, quantity=None, *args, **kwargs):
         if name is None:
             if quantity is not None:
                 name = str(quantity + 1)
@@ -1411,7 +1416,6 @@ class Automaton(Base):
             return var
 
         def b_min_dependancies_criteria(aggregation_indexes, states):
-
             pass
 
         def c_target_state_intersection_criteria(aggregation_indexes, states):

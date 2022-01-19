@@ -271,11 +271,11 @@ class AutomatonRenderer(Gtk.DrawingArea):
         cr.fill()
 
     def draw_state_transitions(self, cr, from_state, states_radius, factor=1.0, ccw=True, selected_transitions=None):
-        transitions = dict()
+        arcs = dict()
         for trans in from_state.out_transitions:
-            if trans.to_state not in transitions:
-                transitions[trans.to_state] = list()
-            transitions[trans.to_state].append(trans)
+            if trans.to_state not in arcs:
+                arcs[trans.to_state] = list()
+            arcs[trans.to_state].append(trans)
 
         for to_state, layout in from_state.transition_layouts.items():
             if to_state not in states_radius:
@@ -324,7 +324,7 @@ class AutomatonRenderer(Gtk.DrawingArea):
             # Write the events names
             texts  = list()
             colors = list()
-            for i, transition in enumerate(transitions[to_state]):
+            for i, transition in enumerate(arcs[to_state]):
                 if i > 0:
                     texts.append(", ")
                     colors.append('K')
@@ -345,7 +345,7 @@ class AutomatonRenderer(Gtk.DrawingArea):
             # Draw arc and arrow
             arc_color = (0, 0, 0)
             if selected_transitions is not None:
-                for trans in transitions[to_state]:
+                for trans in arcs[to_state]:
                     if trans in selected_transitions:
                         arc_color = (1, 0, 0)
                         break
@@ -355,7 +355,7 @@ class AutomatonRenderer(Gtk.DrawingArea):
                 cr.arc(Vc.x, Vc.y, r, Acs + Ads, Ace - Ade - Aae)
                 Varrow = Point2D.from_rad_angle(Ace - Ade).set_length(r).add(Vc)
                 Varrowend = Point2D.from_rad_angle(Ace - Ade - Aae).set_length(r).add(Vc)
-                for trans in transitions[to_state]:
+                for trans in arcs[to_state]:
                     self.cache_set(r, 'transitions', trans, 'arc_radius')
                     self.cache_set(Vc, 'transitions', trans, 'arc_center')
                     self.cache_set(Acs + Ads, 'transitions', trans, 'start_angle')
@@ -364,7 +364,7 @@ class AutomatonRenderer(Gtk.DrawingArea):
                 cr.arc(Vc.x, Vc.y, r, Ace + Ade + Aae, Acs - Ads)
                 Varrow = Point2D.from_rad_angle(Ace + Ade).set_length(r).add(Vc)
                 Varrowend = Point2D.from_rad_angle(Ace + Ade + Aae).set_length(r).add(Vc)
-                for trans in transitions[to_state]:
+                for trans in arcs[to_state]:
                     self.cache_set(r, 'transitions', trans, 'arc_radius')
                     self.cache_set(Vc, 'transitions', trans, 'arc_center')
                     self.cache_set(Ace + Ade, 'transitions', trans, 'start_angle')
@@ -414,7 +414,7 @@ class AutomatonRenderer(Gtk.DrawingArea):
 
         for state in self.automaton.states:
             self.draw_state_transitions(cr, state, state_radius, ccw=True, factor=2.0, selected_transitions=highlight_transitions)
-
+            
     def get_connected_states(self, state, forward_deep, backward_deep):
         states = [state]
 

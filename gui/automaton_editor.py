@@ -26,55 +26,59 @@ class AutomatonEditor(PageMixin, Gtk.Box):
         self.paned.pack1(self.scrolled, True, False)
         self.scrolled.add(self.automaton_render)
 
-        self.build_treeview()
+        self.build_right_hand_space()
 
-        self.automaton_render.connect("draw", self.on_draw)
-        self.automaton_render.connect("motion-notify-event", self.on_motion_notify)
-        self.automaton_render.connect("button-press-event", self.on_button_press)
+        self.automaton_render.connect('draw', self.on_draw)
+        self.automaton_render.connect('motion-notify-event', self.on_motion_notify)
+        self.automaton_render.connect('button-press-event', self.on_button_press)
         # self.automaton_render.connect("button-release-event", self.on_button_release)
-
-    def build_treeview(self):
-        self.liststore = Gtk.ListStore(str, bool, bool, object)
-
+        
+    def build_right_hand_space(self):
+        self.rhs_box = Gtk.Box(orientation = Gtk.Orientation.VERTICAL, spacing=0)
         self.treeview_box = Gtk.Box(orientation = Gtk.Orientation.VERTICAL)
+        self.rhs_listbox = Gtk.ListBox()
+        self.frame_listbox = Gtk.Frame()
+
+        # Building the treeview
+        self.liststore = Gtk.ListStore(str, bool, bool, object)
 
         self.treeview = Gtk.TreeView(model=self.liststore)
         self.treeview_selection  = self.treeview.get_selection()
         self.treeview_selection.set_mode(Gtk.SelectionMode.MULTIPLE)
 
         renderer_editabletext = Gtk.CellRendererText()
-        renderer_editabletext.set_property("editable", True)
+        renderer_editabletext.set_property('editable', True)
+        renderer_editabletext.connect('edited', self.text_edited)
 
         column_editabletext = Gtk.TreeViewColumn("Event", renderer_editabletext, text=0)
         self.treeview.append_column(column_editabletext)
 
-        renderer_editabletext.connect("edited", self.text_edited)
-
         # Toggle 1
         renderer_toggle_1 = Gtk.CellRendererToggle()
-        renderer_toggle_1.connect("toggled", self.renderer_toggle_controllable)
-        column_toggle_1 = Gtk.TreeViewColumn("Controllable", renderer_toggle_1, active=1)
+        renderer_toggle_1.connect('toggled', self.renderer_toggle_controllable)
+        column_toggle_1 = Gtk.TreeViewColumn('Controllable', renderer_toggle_1, active=1)
         self.treeview.append_column(column_toggle_1)
 
         # Toggle 2
         renderer_toggle_2 = Gtk.CellRendererToggle()
-        renderer_toggle_2.connect("toggled", self.renderer_toggle_observable)
+        renderer_toggle_2.connect('toggled', self.renderer_toggle_observable)
         column_toggle_2 = Gtk.TreeViewColumn("Observable", renderer_toggle_2, active=2)
         self.treeview.append_column(column_toggle_2)
 
         self.treeview_box.pack_start(self.treeview, True, True, 0)
 
-        #Add and Delete Cell buttons
-
-        self.add_button = Gtk.Button(label = 'Add Event')
-        self.add_button.connect("clicked", self.event_add)
+        # Add and Delete Cell buttons
+        self.add_button = Gtk.Button(label = "Add Event")
+        self.add_button.connect('clicked', self.event_add)
         self.treeview_box.pack_start(self.add_button, False, False, 0)
 
-        self.delete_button = Gtk.Button(label = 'Remove Event')
-        self.delete_button.connect("clicked", self.event_remove)
+        self.delete_button = Gtk.Button(label = "Remove Event")
+        self.delete_button.connect('clicked', self.event_remove)
         self.treeview_box.pack_start(self.delete_button, False, False, 0)
-        self.paned.pack2(self.treeview_box, False, False)
-
+        
+        self.rhs_box.pack_start(self.treeview_box, True, True, 0)
+        self.paned.pack2(self.rhs_box, False, False)
+        
         self.update_treeview()
 
     def update_treeview(self):
@@ -122,6 +126,68 @@ class AutomatonEditor(PageMixin, Gtk.Box):
         self.automaton_render.queue_draw()
         self.trigger_change()
 
+    def update_properties_box(self):
+        self.frame_listbox.destroy()
+        if self.selected_state is not None:
+            selected_object = self.selected_state
+        else:
+            selected_object = None
+        #    selected_object = self.selected_transitions
+        
+        if selected_object is not None:
+            self.rhs_listbox = Gtk.ListBox(margin=5)
+            self.rhs_listbox.set_selection_mode(Gtk.SelectionMode.NONE)
+
+            self.frame_listbox = Gtk.Frame.new("Properties")
+            self.frame_listbox.add(self.rhs_listbox)
+            self.rhs_box.pack_end(self.frame_listbox, False, False, 0)
+
+            for prop in selected_object.properties:
+                row = Gtk.ListBoxRow()
+                hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
+                row.add(hbox)
+                self.rhs_listbox.add(row)
+
+                column1 = Gtk.Label(label=prop['label'], xalign=0)
+                value = getattr(selected_object, prop['property'])
+                # attr_type = type(value)
+
+                if prop['gtk_control'] == 'checkbutton':
+                    column2 = Gtk.CheckButton(active=value)
+                    column2.connect('toggled', self.prop_edited, None, prop, selected_object)
+                
+                elif prop['gtk_control'] == 'entry':
+                    column2 = Gtk.Entry(text=str(value), xalign=1, width_chars=10, has_frame=False)
+                    column2.connect('activate', self.prop_edited, None, prop, selected_object)
+                
+                elif prop['gtk_control'] == 'switch':
+                    column2 = Gtk.Switch(active=value)
+                    column2.connect('notify::active', self.prop_edited, prop, selected_object)
+                
+                elif prop['gtk_control'] == 'spinbutton':
+                    adjustment = Gtk.Adjustment(value=value, lower=0, upper=1500, step_increment=1, page_increment=100)
+                    column2 = Gtk.SpinButton(adjustment=adjustment, width_chars=4)
+                    column2.connect('value-changed', self.prop_edited, None, prop, selected_object)
+
+                hbox.pack_start(column1, True, True, 0)
+                hbox.pack_start(column2, False, False, 0)
+
+        self.rhs_box.show_all()
+
+    def prop_edited(self, widget, gparam, prop, object):    
+        # Apply changes to selected object
+        if prop['gtk_control'] == 'checkbutton':
+            setattr(object, prop['property'], widget.get_active())
+        elif prop['gtk_control'] == 'entry':
+            setattr(object, prop['property'], widget.get_text())
+        elif prop['gtk_control'] == 'switch':
+            setattr(object, prop['property'], widget.get_active())
+        elif prop['gtk_control'] == 'spinbutton':
+            setattr(object, prop['property'], widget.get_value_as_int())
+
+        self.update_properties_box()
+        self.trigger_change()
+
     def save(self, file_path_name=None):
         status = self.automaton.save(file_path_name)
         if status == True:
@@ -138,6 +204,7 @@ class AutomatonEditor(PageMixin, Gtk.Box):
     def reset_selection(self):
         self.selected_state = None
         self.selected_transitions = None
+        self.update_properties_box()
         self.automaton_render.queue_draw()
 
     def get_tab_name(self):
@@ -156,7 +223,9 @@ class AutomatonEditor(PageMixin, Gtk.Box):
                 self.selected_state.x = x
                 self.selected_state.y = y
                 self.automaton_render.queue_draw()
+                self.update_properties_box()
                 self.trigger_change()
+                
 
     def on_button_press(self, automaton_render, event):
         window = self.get_ancestor_window()
@@ -217,7 +286,8 @@ class AutomatonEditor(PageMixin, Gtk.Box):
                 self.selected_transitions = transitions
             else:
                 self.selected_transitions = None
+            
+        self.update_properties_box()  
         self.automaton_render.queue_draw()
-
 
 GObject.signal_new('nadzoru-editor-change', AutomatonEditor, GObject.SIGNAL_RUN_LAST, GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT,))
