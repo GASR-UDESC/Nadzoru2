@@ -9,6 +9,7 @@ import os
 import sys
 from random import seed
 from random import randint
+from enum import Enum
 from xml.dom.minidom import parse
 import re
 
@@ -110,10 +111,6 @@ class EventSet(Base):  # TODO
 
 
 class TransitionLayout:
-    properties = [{'label': "Factor", 'property': 'render_factor', 'gtk_control': 'spinbutton'},
-                  {'label': "Angle", 'property': 'render_angle', 'gtk_control': 'spinbutton'},
-                  {'label': "CCW", 'property': 'ccw', 'gtk_control': 'checkbutton'}]
-
     def __init__(self):
         self.render_angle = 0.0
         self.render_factor = 1.0
@@ -144,14 +141,18 @@ class TransitionLayout:
     def render_factor(self, value):
         self._render_factor = int(value)
 
+class StateType(Enum):
+    NORMAL = 1
+    UNCERTAIN = 2
+    CERTAIN = 3
 
 class State(Base):
     properties = [{'label': "Name", 'property': 'name', 'gtk_control': 'entry'},
                   {'label': "Marked", 'property': 'marked', 'gtk_control': 'checkbutton'},
                   {'label': "X", 'property': 'x', 'gtk_control': 'spinbutton'},
                   {'label': "Y", 'property': 'y', 'gtk_control': 'spinbutton'}]
-                  
-    def __init__(self, name=None, marked=False, x=0, y=0, quantity=None, *args, **kwargs):
+
+    def __init__(self, name=None, marked=False, x=0, y=0, quantity=None, diagnozer_type=StateType.NORMAL, diagnozer_bad=False, *args, **kwargs):
         if name is None:
             if quantity is not None:
                 name = str(quantity + 1)
@@ -159,6 +160,8 @@ class State(Base):
                 name = '?'
         self.name = name
         self.marked = marked
+        self.diagnozer_type = diagnozer_type
+        self.diagnozer_bad = diagnozer_bad
         self.x = x
         self.y = y
         self.in_transitions = set()
@@ -505,6 +508,13 @@ class Automaton(Base):
             state.name = str(_id)
 
     # Editor specific methods
+
+    # These should be calculated by the renderer
+    def state_get_at(self, x, y):
+        pass
+
+    def transition_get_at(self, x, y):
+        pass
 
     def save(self, file_path_name=None):
         if file_path_name is None:
@@ -1090,73 +1100,61 @@ class Automaton(Base):
     def empty_closure(self):
         pass
 
-    def determinize(self, copy=False):
+    def determinize(self):
 
-        det_automaton = Automaton()
-        det_automaton.state_add(self.initial_state.name, initial=True, marked=self.initial_state.marked)
-
-        created_states_dict = dict()
-        created_states_dict[det_automaton.initial_state.name] = det_automaton.initial_state
-
+        state_map = dict()
         state_stack = list()
-        state_stack.append(det_automaton.initial_state.name)
+        state_list = list()
 
-        events_set = set()
-
-        original_automaton_dict = dict()
-        for state in self.states:
-            original_automaton_dict[state.name] = state
-
-        def get_transition_function(state, transition_function):
-            for transition in original_automaton_dict[state.name].out_transitions:
-                if transition.event in transition_function:
-                    if not isinstance(transition_function[transition.event], list):
-                        if transition_function[transition.event] != transition.to_state:
-                            transition_function[transition.event] = [transition_function[transition.event]]
-                            transition_function[transition.event].append(transition.to_state)
-                else:
-                    transition_function[transition.event] = transition.to_state
+        def get_transition_function(list_of_states):
+            transition_function = dict()
+            for state in list_of_states:
+                for transition in state.out_transitions:
+                    if transition.event not in transition_function.keys():
+                        transition_function[transition.event] = list()
+                    transition_function[transition.event].append(transition.to_state)
             return transition_function
 
-        def determinize_state(state, from_state):
-            transition_function = dict()
-            if type(state) == frozenset:
-                for each in state:
-                    transition_function = get_transition_function(each, transition_function)
+        def state_add(state_list, initial=False):
+            if len(state_list) > 1:
+                new_transitions_map = dict()
+                target_state_tuple = tuple(state_list)
+                marked = functools.reduce(lambda val, s: val and s.marked, target_state_tuple, True)
+                state_name = ",".join(state.name for state in target_state_tuple)
+                s = self.state_add(state_name, initial=initial, marked=marked)
+                for item in state_list:
+                    new_transitions_map[item] = s
             else:
-                transition_function = get_transition_function(state, transition_function)
-            for key in transition_function.keys():
-                if not isinstance(transition_function[key], list):
-                    try:
-                        next_state = created_states_dict[transition_function[key].name]
-                    except KeyError:
-                        next_state = det_automaton.state_add(transition_function[key].name, marked=transition_function[key].marked)
-                        created_states_dict[next_state.name] = next_state
-                        state_stack.append(next_state.name)
-                else:
-                    frozen_set = frozenset(each for each in transition_function[key])
-                    try:
-                        # state already exists
-                        next_state = created_states_dict[frozen_set]
-                    except KeyError:
-                        # create state
-                        state_tuple = tuple(each for each in transition_function[key])
-                        state_name = ",".join(each.name for each in state_tuple)
-                        next_state = det_automaton.state_add(state_name, marked=True)
-                        created_states_dict[frozen_set] = next_state
-                        state_stack.append(frozen_set)
-                if key not in events_set:
-                    events_set.add(det_automaton.event_add(key.name, key.controllable, key.observable))
-                det_automaton.transition_add(from_state, next_state, key)
+                s = state_list[0]
+            state_stack.append(s)
+            state_map[s] = state_list
+            return s
 
-        while len(state_stack) != 0:
-            state = state_stack.pop(0)
-            if type(state) == frozenset:
-                determinize_state(state, created_states_dict[state])
-            else:
-                determinize_state(created_states_dict[state], created_states_dict[state])
+        state_list.append(self.initial_state)
+        state_map[self.initial_state] = state_list
+        state_stack.append(self.initial_state)
 
-        return det_automaton
+        while len(state_stack) > 0:
+            state = state_stack.pop()
+            tf = get_transition_function(state_map[state])
+            for event in tf.keys():
+                state_list = list()
+                for target_state in tf[event]:
+                    if target_state not in state_list:
+                        state_list.append(target_state)
+                if state_list not in state_map.values():
+                    state_add(state_list, False)
+
+        #for removable in new_transitions_map.keys():
+        #    for transition in removable.in_transitions:
+        #        if transition.event.observable:
+        #            self.transition_add(transition.from_state, new_transitions_map[removable], transition.event)
+        #    for transition in removable.out_transitions:
+        #        if transition.event.observable:
+        #            self.transition_add(new_transitions_map[removable], transition.to_state, transition.event)
+        #    self.state_remove(removable)
+
+        return self
 
     def complement(self, copy=False):
         pass
@@ -1583,3 +1581,156 @@ class Automaton(Base):
                         break
 
         return (Sr)
+
+    def observer(self):
+
+        state_map = dict()
+        state_stack = list()
+        state_list = list()
+        new_transitions_map = dict()
+
+        def get_transition_function(list_of_states):
+            transition_function = dict()
+            for state in list_of_states:
+                for transition in state.out_transitions:
+                    if transition.event not in transition_function.keys():
+                        transition_function[transition.event] = list()
+                    transition_function[transition.event].append(transition.to_state)
+            return transition_function
+
+        def state_add(state_list, initial=False):
+            if len(state_list) > 1:
+                target_state_tuple = tuple(state_list)
+                marked = functools.reduce(lambda val, s: val and s.marked, target_state_tuple, True)
+                state_name = ",".join(state.name for state in target_state_tuple)
+                s = self.state_add(state_name, initial=initial, marked=marked)
+                for item in state_list:
+                    new_transitions_map[item] = s
+            else:
+                s = state_list[0]
+            state_stack.append(s)
+            state_map[s] = state_list
+            return s
+
+        state_list.append(self.initial_state)
+        state_map[self.initial_state] = state_list
+        state_stack.append(self.initial_state)
+
+        while len(state_stack) > 0:
+            state = state_stack.pop()
+            tf = get_transition_function(state_map[state])
+            for event in tf.keys():
+                state_list = list()
+                if event.observable is False:
+                    for s in state_map[state]:
+                        state_list.append(s)
+                for target_state in tf[event]:
+                    if target_state not in state_list:
+                        state_list.append(target_state)
+                if state_list not in state_map.values():
+                    state_add(state_list, False)
+
+        for removable in new_transitions_map.keys():
+            for transition in removable.in_transitions:
+                if transition.event.observable:
+                    self.transition_add(transition.from_state, new_transitions_map[removable], transition.event)
+            for transition in removable.out_transitions:
+                if transition.event.observable:
+                    self.transition_add(new_transitions_map[removable], transition.to_state, transition.event)
+            self.state_remove(removable)
+
+        return self
+
+    def diag_label(self):
+
+        S = self.copy()
+
+        for ev_name, event in self.events.items():
+            if not event.observable:
+                R = Automaton()
+                N = R.state_add('N', initial=True, marked=False, diagnozer_type=StateType.NORMAL, diagnozer_bad=False)
+                Y = R.state_add('F', initial=False, marked=False, diagnozer_type=StateType.CERTAIN, diagnozer_bad=False)
+                f = R.event_add(ev_name, controllable = False, observable = False)
+                R.transition_add(N, Y, f)
+                R.transition_add(Y, Y, f)
+                S = S.synchronization(R)
+
+        return S
+
+    def diagnoser(self):
+
+        diag = self.diag_label().observer()
+
+        return diag
+
+    def safe_diag_label(self, ev, forbidden_string):
+        #TODO
+        pass
+
+    def safe_diagnoser(self, rotulador):
+
+        safe_diag = self.diag_label().synchronization(rotulador).observer()
+
+        return safe_diag
+
+    def is_diagnosable(self):
+
+        def detect_loop(state):
+            reachable_states = list()
+            state_stack = list()
+            state_stack.append(state)
+            loop_reaches_certain = False
+            while len(state_stack) != 0:
+                s = state_stack.pop()
+                for transition in s.out_transitions:
+                    if transition.to_state not in reachable_states:
+                        if transition.to_state.diagnozer_type == StateType.CERTAIN:
+                            loop_reaches_certain = True
+                        state_stack.append(transition.to_state)
+                        reachable_states.append(transition.to_state)
+                    else:
+                        return True, loop_reaches_certain
+            return False, loop_reaches_certain
+
+
+        for state in self.states:
+            if state.diagnozer_type == StateType.UNCERTAIN or state.diagnozer_type == StateType.CERTAIN:
+                state.marked = True
+            else:
+                state.marked = False
+
+        coac = self.coaccessible()
+        loop_reaches_certain_state = False
+        has_loop = False
+        for state in coac.states:
+            if state.diagnozer_type == StateType.UNCERTAIN:
+                has_loop, loop_reaches_certain_state = detect_loop(state)
+
+        if has_loop and loop_reaches_certain_state:
+            return'maybe'
+        elif has_loop and not loop_reaches_certain_state:
+            return False
+        elif not has_loop and not loop_reaches_certain_state:
+            return False
+        else:
+            return True
+
+    def is_safe_diagnosable(self):
+
+        for state in self.states:
+            if state.diagnozer_bad:
+                state.marked = True
+            else:
+                state.marked = False
+
+        coac = self.coaccessible()
+        for state in coac.states:
+            if state.diagnozer_bad:
+                if state.diagnozer_type == StateType.CERTAIN:
+                    for t in state.in_transitions:
+                        if t.from_state.diagnozer_type == StateType.UNCERTAIN:
+                            return False
+                else:
+                    return False
+
+        return True
