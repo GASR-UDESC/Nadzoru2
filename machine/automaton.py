@@ -152,7 +152,7 @@ class State(Base):
                   {'label': "X", 'property': 'x', 'gtk_control': 'spinbutton'},
                   {'label': "Y", 'property': 'y', 'gtk_control': 'spinbutton'}]
 
-    def __init__(self, name=None, marked=False, x=0, y=0, quantity=None, diagnozer_type=StateType.NORMAL, diagnozer_bad=False, *args, **kwargs):
+    def __init__(self, name=None, marked=False, x=0, y=0, quantity=None, diagnoser_type=StateType.NORMAL, diagnoser_bad=False, *args, **kwargs):
         if name is None:
             if quantity is not None:
                 name = str(quantity + 1)
@@ -160,8 +160,8 @@ class State(Base):
                 name = '?'
         self.name = name
         self.marked = marked
-        self.diagnozer_type = diagnozer_type
-        self.diagnozer_bad = diagnozer_bad
+        self.diagnoser_type = diagnoser_type
+        self.diagnoser_bad = diagnoser_bad
         self.x = x
         self.y = y
         self.in_transitions = set()
@@ -1582,12 +1582,13 @@ class Automaton(Base):
 
         return (Sr)
 
-    def observer(self):
 
+    def observer(self):
+        #ToDo: Discutir alcance não observável
         state_map = dict()
         state_stack = list()
         state_list = list()
-        new_transitions_map = dict()
+        remap_and_remove = dict()
 
         def get_transition_function(list_of_states):
             transition_function = dict()
@@ -1598,14 +1599,31 @@ class Automaton(Base):
                     transition_function[transition.event].append(transition.to_state)
             return transition_function
 
-        def state_add(state_list, initial=False):
+        def get_state_type(s_list): #Todo: Is there an easier way?
+            normal_counter = 0
+            certain_counter = 0
+            for state in s_list:
+                if state.diagnoser_type == StateType.NORMAL:
+                    normal_counter += 1
+                elif state.diagnoser_type == StateType.CERTAIN:
+                    certain_counter += 1
+            if normal_counter == len(s_list):
+                return StateType.NORMAL
+            elif certain_counter == len(s_list):
+                return StateType.CERTAIN
+            else:
+                return StateType.UNCERTAIN
+
+        def merge_states(state_list):
             if len(state_list) > 1:
                 target_state_tuple = tuple(state_list)
+                initial = functools.reduce(lambda val, s: val and s.initial, target_state_tuple, True)
                 marked = functools.reduce(lambda val, s: val and s.marked, target_state_tuple, True)
+                bad = functools.reduce(lambda val, s: val and s.diagnoser_bad, target_state_tuple, True)
                 state_name = ",".join(state.name for state in target_state_tuple)
-                s = self.state_add(state_name, initial=initial, marked=marked)
+                s = self.state_add(state_name, initial=initial, marked=marked, diagnoser_type=get_state_type(state_list), diagnoser_bad=bad)
                 for item in state_list:
-                    new_transitions_map[item] = s
+                    remap_and_remove[item] = s
             else:
                 s = state_list[0]
             state_stack.append(s)
@@ -1628,38 +1646,41 @@ class Automaton(Base):
                     if target_state not in state_list:
                         state_list.append(target_state)
                 if state_list not in state_map.values():
-                    state_add(state_list, False)
+                    merge_states(state_list)
 
-        for removable in new_transitions_map.keys():
+        for removable in remap_and_remove.keys():
             for transition in removable.in_transitions:
                 if transition.event.observable:
-                    self.transition_add(transition.from_state, new_transitions_map[removable], transition.event)
+                    self.transition_add(transition.from_state, remap_and_remove[removable], transition.event)
             for transition in removable.out_transitions:
                 if transition.event.observable:
-                    self.transition_add(new_transitions_map[removable], transition.to_state, transition.event)
+                    self.transition_add(remap_and_remove[removable], transition.to_state, transition.event)
             self.state_remove(removable)
 
         return self
 
-    def diag_label(self):
-
+    def labeller(self, fault_events):
+        #this funtion receives a list of fault events.
+        #one event only means that the faults are treated separately
+        #two or more fault events means that the faults are treated together
+        #ToDo: Do we need to create a copy?
         S = self.copy()
 
-        for ev_name, event in self.events.items():
-            if not event.observable:
-                R = Automaton()
-                N = R.state_add('N', initial=True, marked=False, diagnozer_type=StateType.NORMAL, diagnozer_bad=False)
-                Y = R.state_add('F', initial=False, marked=False, diagnozer_type=StateType.CERTAIN, diagnozer_bad=False)
-                f = R.event_add(ev_name, controllable = False, observable = False)
-                R.transition_add(N, Y, f)
-                R.transition_add(Y, Y, f)
-                S = S.synchronization(R)
+        R = Automaton()
+        N = R.state_add('N', initial=True, marked=False, diagnoser_type=StateType.NORMAL, diagnoser_bad=False)
+        Y = R.state_add('F', initial=False, marked=False, diagnoser_type=StateType.CERTAIN, diagnoser_bad=False)
+        for event in fault_events:
+            f = R.event_add(event.name, event.controllable, event.observable)
+            R.transition_add(N, Y, f)
+            R.transition_add(Y, Y, f)
+
+        S = S.synchronization(R)
 
         return S
 
-    def diagnoser(self):
+    def diagnoser(self, fault_events):
 
-        diag = self.diag_label().observer()
+        diag = self.labeller(fault_events).observer()
 
         return diag
 
@@ -1684,7 +1705,7 @@ class Automaton(Base):
                 s = state_stack.pop()
                 for transition in s.out_transitions:
                     if transition.to_state not in reachable_states:
-                        if transition.to_state.diagnozer_type == StateType.CERTAIN:
+                        if transition.to_state.diagnoser_type == StateType.CERTAIN:
                             loop_reaches_certain = True
                         state_stack.append(transition.to_state)
                         reachable_states.append(transition.to_state)
@@ -1694,7 +1715,7 @@ class Automaton(Base):
 
 
         for state in self.states:
-            if state.diagnozer_type == StateType.UNCERTAIN or state.diagnozer_type == StateType.CERTAIN:
+            if state.diagnoser_type == StateType.UNCERTAIN or state.diagnoser_type == StateType.CERTAIN:
                 state.marked = True
             else:
                 state.marked = False
@@ -1703,7 +1724,7 @@ class Automaton(Base):
         loop_reaches_certain_state = False
         has_loop = False
         for state in coac.states:
-            if state.diagnozer_type == StateType.UNCERTAIN:
+            if state.diagnoser_type == StateType.UNCERTAIN:
                 has_loop, loop_reaches_certain_state = detect_loop(state)
 
         if has_loop and loop_reaches_certain_state:
@@ -1718,17 +1739,17 @@ class Automaton(Base):
     def is_safe_diagnosable(self):
 
         for state in self.states:
-            if state.diagnozer_bad:
+            if state.diagnoser_bad:
                 state.marked = True
             else:
                 state.marked = False
 
         coac = self.coaccessible()
         for state in coac.states:
-            if state.diagnozer_bad:
-                if state.diagnozer_type == StateType.CERTAIN:
+            if state.diagnoser_bad:
+                if state.diagnoser_type == StateType.CERTAIN:
                     for t in state.in_transitions:
-                        if t.from_state.diagnozer_type == StateType.UNCERTAIN:
+                        if t.from_state.diagnoser_type == StateType.UNCERTAIN:
                             return False
                 else:
                     return False
