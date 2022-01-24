@@ -6,30 +6,24 @@ from gi.repository import Gtk
 # import gi
 # from gi.repository import GLib, Gio, Gtk, GObject
 
-# from renderer import AutomatonRenderer
-# from gui.base import PageMixin
-# from machine.automaton import Automaton
+from gui.base import PageMixin
+from machine.automaton import Automaton
 
-class AutomatonOperation(Gtk.Box): # PageMixin 
-
-    
-
-    def __init__(self, *args, **kwargs): #automaton
+class AutomatonOperation(PageMixin, Gtk.Box): 
+    def __init__(self, *args, **kwargs):
         if 'spacing' not in kwargs:
             kwargs['spacing'] = 2
         super().__init__(*args, **kwargs)
 
-        #super().__init__(title="titulo")
-
-        self.principal_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
-        self.add(self.principal_box)
-        self.principal_box.connect("button-press-event", self.selected_row_operation)
+        self.main_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
+        self.add(self.main_box)
+        self.main_box.connect("button-press-event", self.selected_row_operation)
 
         self.left_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         self.right_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
 
-        self.principal_box.pack_start(self.left_box, False, False, 0)
-        self.principal_box.pack_start(self.right_box, True, True, 0)
+        self.main_box.pack_start(self.left_box, False, False, 0)
+        self.main_box.pack_start(self.right_box, True, True, 0)
 
         self.attribute_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         self.state_box =Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0) 
