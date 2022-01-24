@@ -1,4 +1,5 @@
 import gi
+#~ gi.require_version("Gtk", "3.0")  # TEST
 import logging
 from gi.repository import GLib, Gio, Gtk, GObject
 
@@ -37,6 +38,13 @@ class PropertyBox(Gtk.ListBox):
         widget.connect('value-changed', self.prop_edited, None, data, callback)
         self._add_row(label, widget)
 
+    def add_combobox(self, label, value, options, data=None, callback=None):
+        ### options = [("Label", Object), ("Label", Object)]
+        pass
+
+    def add_chooser(self, label, value, options, data=None, callback=None):
+        pass
+
     def prop_edited(self, widget, gparam, data, callback):
         if type(widget) == Gtk.CheckButton:
             value = widget.get_active()
@@ -61,7 +69,6 @@ GObject.signal_new('nadzoru-property-change',
     (GObject.TYPE_PYOBJECT, GObject.TYPE_PYOBJECT,))
 
 #~ if __name__ == '__main__':
-    #~ gi.require_version("Gtk", "3.0")  # TEST
     #~ def cbk(prop, *args, **kwargs):
         #~ print(args)
         #~ print(kwargs)
@@ -73,6 +80,8 @@ GObject.signal_new('nadzoru-property-change',
     #~ prop.add_entry("Valor de y", 200, 'y')
     #~ prop.add_spinbutton("Valor do fator", 1, 'fator')
     #~ prop.connect('nadzoru-property-change', cbk)
+    #~ prop.add_combobox("Automata", 2, options=[("first", 1), ("second", 2), ("third", 3)], 'g')
+    #~ prop.add_chooser("Automata", [1,3], options=[("first", 1), ("second", 2), ("third", 3)], 'g')
 
     #~ def rebuild(*args, **kwargs):
         #~ prop.clear()
