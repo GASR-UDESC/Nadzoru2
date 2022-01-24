@@ -22,10 +22,14 @@ class PropertyBox(Gtk.ListBox):
         hbox.pack_start(widget, False, False, 0)
 
     def add_checkbutton(self, label, value, data=None, callback=None):
-        pass
+        widget = Gtk.CheckButton(active=value)
+        widget.connect('toggled', self.prop_edited, None, data, callback)
+        self._add_row(label, widget)
 
     def add_switch(self, label, value, data=None, callback=None):
-        pass
+        widget = Gtk.Switch(active=value)
+        widget.connect('notify::active', self.prop_edited, data, callback)
+        self._add_row(label, widget)
 
     def add_entry(self, label, value, data=None, callback=None):
         widget = Gtk.Entry(text=str(value), xalign=1, width_chars=10, has_frame=False)

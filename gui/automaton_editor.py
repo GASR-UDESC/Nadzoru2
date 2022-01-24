@@ -23,7 +23,8 @@ class AutomatonEditor(PageMixin, Gtk.Box):
         self.scrolled = Gtk.ScrolledWindow.new()
         self.automaton_render = AutomatonRenderer(self.automaton)
         self.sidebox = Gtk.Box(orientation = Gtk.Orientation.VERTICAL)
-        self.frame_props = Gtk.Frame.new("Properties")
+        self.frame_props = Gtk.Frame(label="Properties", visible=False, no_show_all=True)
+
         self.propbox = PropertyBox()
 
         self.pack_start(self.paned, True, True, 0)
@@ -133,6 +134,7 @@ class AutomatonEditor(PageMixin, Gtk.Box):
             # return self.selected_arc
 
     def update_properties_box(self):
+        self.frame_props.hide()
         self.propbox.clear()
         selected_object = self._get_selected_object()
 
@@ -149,14 +151,14 @@ class AutomatonEditor(PageMixin, Gtk.Box):
                     self.propbox.add_switch(label_text, value, property_name)
                 elif prop['gtk_control'] == 'spinbutton':
                     self.propbox.add_spinbutton(label_text, value, property_name)
-
-        self.propbox.show_all()
+            self.propbox.show_all()
+            self.frame_props.show()
 
     def prop_edited(self, propbox, value, data):
         selected_object = self._get_selected_object()
         if selected_object is not None:
             setattr(selected_object, data, value)
-            #~ self.update_properties_box() # Needed?
+            self.automaton_render.queue_draw()
             self.trigger_change()
 
     def save(self, file_path_name=None):
