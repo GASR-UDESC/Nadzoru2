@@ -8,72 +8,111 @@ from gi.repository import Gtk
 
 from gui.base import PageMixin
 from machine.automaton import Automaton
+from gui.property_box import PropertyBox
 
-class AutomatonOperation(PageMixin, Gtk.Box): 
-    def __init__(self, *args, **kwargs):
+class AutomatonOperation(PageMixin, Gtk.Box):
+
+    def __init__(self, automata, *args, **kwargs):
         if 'spacing' not in kwargs:
             kwargs['spacing'] = 2
         super().__init__(*args, **kwargs)
+        self.automata = automata
+        self.set_orientation(Gtk.Orientation.HORIZONTAL)
 
-        self.main_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
-        self.add(self.main_box)
-        self.main_box.connect("button-press-event", self.selected_row_operation)
+        self.operations = [
+            {
+                'label': "SUPC", 'Fn': 'Automaton.sup_c()', 'params':[
+                    {'label': "G", 'type': 'combobox'},
+                    {'label': "K", 'type': 'combobox'},
+                    {'label': "Result", 'type': 'entry'}]},
+            {
+                'label': "SYNC", 'Fn': 'Automaton.synchronization()', 'params':[
+                    {'label': "Automaton", 'type': 'chooser'},
+                    {'label': "Result", 'type': 'entry'}]
+            }
 
-        self.left_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-        self.right_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        ]
+        #tree View # left column
+        self.liststore = Gtk.ListStore(str, str, object)
+        self.treeview = Gtk.TreeView(model=self.liststore, headers_visible=False)
+        self.selected_row = self.treeview.get_selection()
+        self.selected_row.connect("changed", self.item_selected)
+        self.cell = Gtk.CellRendererText()
+        self.column = Gtk.TreeViewColumn('Operation', self.cell, text=0)
+        self.treeview.append_column(self.column)
+        self.pack_start(self.treeview, True, True, 0)
+        self.update_treeview()
 
-        self.main_box.pack_start(self.left_box, False, False, 0)
-        self.main_box.pack_start(self.right_box, True, True, 0)
+        self.right = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        self.pack_start(self.right, True, True,0)
 
-        self.attribute_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-        self.state_box =Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0) 
+        #execute button
+        self.execute_button = Gtk.Button(label = 'EXECUTE')
+        self.execute_button.connect('clicked', self.execute)
+        self.right.pack_end(self.execute_button, True,True,0)
 
-        self.right_box.pack_start(self.attribute_box, True, True, 0)
-        self.right_box.pack_start(self.state_box, False, False, 0)  
+        #property BOX
+        self.property_box = PropertyBox()
+        self.right.pack_start(self.property_box,True, True,0)
+       
 
-        self.list_box_selected_automata = Gtk.ListBox()
-        self.list_box_button = Gtk.ListBox()
-        self.list_box_unselected_automata = Gtk.ListBox()
-
-        self.list_box_operation = Gtk.ListBox(selection_mode=Gtk.SelectionMode.SINGLE)
-        self.left_box.pack_start(self.list_box_operation, False, False, 0)
-
-        row = Gtk.ListBoxRow()
-        self.list_box_operation.add(row)
-        column = Gtk.Label(label="SUPC", xalign=0)
-        row.add(column)
-
-        row = Gtk.ListBoxRow()
-        self.list_box_operation.add(row)
-        column = Gtk.Label(label="SINC", xalign=0)
-        row.add(column)
+    def execute(self, widget):
+        print("Executed")
+        pass
 
 
-    def selected_row_operation(self,wiget,event):
+
+    def update_treeview(self):
+        for op in self.operations:
+            row = [op['label'], op['Fn'],op['params']]
+            self.liststore.append(row)
+
+
+    def item_selected(self,selection):
+        model, row = selection.get_selected()
+        if row is not None:
+            self.creation_property_operation(str(model[row][0]),model[row][2])
+            
+
+    def creation_property_operation(self, operation_name,params):
+        open_automata=[]
+        self.property_box.clear()
+        
+        for automato in self.automata:
+            open_automata.append((automato.get_file_name(), automato))
+            
+
+        for obj in params:
+            if obj['type'] == 'combobox':
+                self.property_box.add_combobox(obj['label'],open_automata)
+            elif obj['type'] == 'entry':
+                self.property_box.add_entry(obj['label'],"untitled")
+            elif obj['type'] == 'chooser':
+                self.property_box.add_chooser(obj['label'],[1,3],options=open_automata)
+            
+        
+
+    def selected_row_operation(self,widget,event):
+        print(self.operation_box.prop_edited())
 
         print(self.list_box_operation.get_selected_row().get_child().get_text())
         return self.list_box_operation.get_selected_row().get_child().get_text()
 
 
-    
-        
-
-
-
 #     class Operation():
-#         operation = [
-#             {
-#                 'label': "SUPC", 'Fn': Automaton.sup_c(), 'params':[
-#                     {'label': "G", 'type': 'combobox'},
-#                     {'label': "K", 'type': 'combobox'},
-#                     {'label': "Result", 'type': 'label'}]},
-#             {
-#                 'label': "SYNC", 'Fn': Automaton.synchronization(), 'params':[
-#                     {'label': "Automaton", 'type': 'mult'},
-#                     {'label': "Result", 'type': 'label'}]
-#             }
+        # operation = [
+        #     {
+        #         'label': "SUPC", 'Fn': Automaton.sup_c(), 'params':[
+        #             {'label': "G", 'type': 'combobox'},
+        #             {'label': "K", 'type': 'combobox'},
+        #             {'label': "Result", 'type': 'label'}]},
+        #     {
+        #         'label': "SYNC", 'Fn': Automaton.synchronization(), 'params':[
+        #             {'label': "Automaton", 'type': 'mult'},
+        #             {'label': "Result", 'type': 'label'}]
+        #     }
 
-#         ]
+        # ]
 
 
 #         def __init__(self,method, label):
@@ -99,9 +138,9 @@ class AutomatonOperation(PageMixin, Gtk.Box):
 #         return op
 
             
-# if __name__ == '__main__':
-#     a = AutomatonOperation()
-#     a.connect("delete-event", Gtk.main_quit)
-#     a.show_all()
-#     Gtk.main()
+if __name__ == '__main__':
+    a = AutomatonOperation()
+    a.connect("delete-event", Gtk.main_quit)
+    a.show_all()
+    Gtk.main()
 

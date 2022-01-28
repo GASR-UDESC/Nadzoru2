@@ -294,6 +294,6 @@ class MainWindow(Gtk.ApplicationWindow):
         self.remove_current_tab()
 
     def on_operation(self,action, param):
-        operation = AutomatonOperation()
+        operation = AutomatonOperation(self.props.application.elements)
         self.add_tab(operation,'Operation')
 
