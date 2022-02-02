@@ -21,14 +21,14 @@ class AutomatonOperation(PageMixin, Gtk.Box):
 
         self.operations = [
             {
-                'label': "SUPC", 'Fn': 'Automaton.sup_c()', 'params':[
-                    {'label': "G", 'type': 'combobox'},
-                    {'label': "K", 'type': 'combobox'},
-                    {'label': "Result", 'type': 'entry'}]},
+                'label': "SUPC", 'fn': Automaton.sup_c, 'params':[
+                    {'label': "G", 'type': 'combobox', 'name':'G'},
+                    {'label': "K", 'type': 'combobox','name': 'K'},
+                    {'label': "Result", 'type': 'entry', 'output':1}]},
             {
-                'label': "SYNC", 'Fn': 'Automaton.synchronization()', 'params':[
-                    {'label': "Automaton", 'type': 'chooser'},
-                    {'label': "Result", 'type': 'entry'}]
+                'label': "SYNC", 'fn': Automaton.synchronization, 'params':[
+                    {'label': "Automaton", 'type': 'chooser','name':'args'},
+                    {'label': "Result", 'type': 'entry', 'output':1}]
             }
 
         ]

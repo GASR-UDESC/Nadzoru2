@@ -51,10 +51,10 @@ class PropertyBox(Gtk.ListBox):
     def add_combobox(self, label, options,value=None, data=None, callback=None): 
         ### options = [("Label", Object), ("Label", Object)]
         widget = Gtk.ComboBoxText()
-        widget.set_entry_text_column(0)
+        #widget.set_entry_text_column(0)
         widget.connect('changed', self.prop_edited, None, data, callback)
         for option in options:
-            widget.append_text(option[0])#,option[1])
+            widget.append_text(option[0])
         self._add_row(label, widget)
 
     # def add_combobox(self, label, options,value=None, data=None, callback=None):  
@@ -82,9 +82,7 @@ class PropertyBox(Gtk.ListBox):
         unselected, selected = args
         self.prop_edited(chooser, None, data=None, callback=None, values=(unselected, selected))
 
-
     def prop_edited(self, widget, gparam, data, callback,values=None):
-
         if type(widget) == Gtk.CheckButton:
             value = widget.get_active()
         elif type(widget) == Gtk.Switch:
@@ -102,12 +100,10 @@ class PropertyBox(Gtk.ListBox):
             value = values
         else:
             value = None
-    
+
         self.emit('nadzoru-property-change', value, data)
         if callback is not None:
             callback(value, data)
-
-
 
 class Chooser(Gtk.Box):
     def __init__(self, *args, **kwargs):
