@@ -17,17 +17,19 @@ class AutomatonOperation(PageMixin, Gtk.Box):
             kwargs['spacing'] = 2
         super().__init__(*args, **kwargs)
         self.automata = automata
+        self.selected_op = None
+        self.arguments_op = dict()
         self.set_orientation(Gtk.Orientation.HORIZONTAL)
 
         self.operations = [
             {
                 'label': "SUPC", 'fn': Automaton.sup_c, 'params':[
                     {'label': "G", 'type': 'combobox', 'name':'G'},
-                    {'label': "K", 'type': 'combobox','name': 'K'},
+                    {'label': "K", 'type': 'combobox', 'name': 'R'},
                     {'label': "Result", 'type': 'entry', 'output':1}]},
             {
                 'label': "SYNC", 'fn': Automaton.synchronization, 'params':[
-                    {'label': "Automaton", 'type': 'chooser','name':'args'},
+                    {'label': "Automaton", 'type': 'chooser','name':'automaton_list'},
                     {'label': "Result", 'type': 'entry', 'output':1}]
             }
 
@@ -41,6 +43,8 @@ class AutomatonOperation(PageMixin, Gtk.Box):
         self.column = Gtk.TreeViewColumn('Operation', self.cell, text=0)
         self.treeview.append_column(self.column)
         self.pack_start(self.treeview, True, True, 0)
+        separator = Gtk.Separator(orientation=Gtk.Orientation.VERTICAL)
+        self.pack_start(separator, False, False, 0)
         self.update_treeview()
 
         self.right = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
@@ -49,30 +53,35 @@ class AutomatonOperation(PageMixin, Gtk.Box):
         #execute button
         self.execute_button = Gtk.Button(label = 'EXECUTE')
         self.execute_button.connect('clicked', self.execute)
-        self.right.pack_end(self.execute_button, True,True,0)
+        self.right.pack_end(self.execute_button, False, False, 0)
 
         #property BOX
         self.property_box = PropertyBox()
-        self.right.pack_start(self.property_box,True, True,0)
-       
+        self.property_box.connect('nadzoru-property-change', self.prop_edited)
+        self.right.pack_start(self.property_box, True, True,0)
+
+    def prop_edited(self, widget, value, property_name):
+        self.arguments_op.update({property_name : value})
 
     def execute(self, widget):
-        print("Executed")
+        # print(self.property_box.get_children()) # probably must check if user selected all necessary inputs
+        result = self.selected_op(**self.arguments_op) # result is an automaton
+        # result.save("/home/breno/Nadzoru2/resultado.xml") # set your path for testing
+        print(result)
+        
         pass
-
-
 
     def update_treeview(self):
         for op in self.operations:
-            row = [op['label'], op['fn'],op['params']]
+            row = [op['label'], op['fn'], op['params']]
             self.liststore.append(row)
 
-
-    def item_selected(self,selection):
+    def item_selected(self, selection):
         model, row = selection.get_selected()
         if row is not None:
+            self.arguments_op = dict()
             self.creation_property_operation(str(model[row][0]),model[row][2])
-            
+            self.selected_op = model[row][1]
 
     def creation_property_operation(self, operation_name,params):
         open_automata=[]
@@ -80,24 +89,14 @@ class AutomatonOperation(PageMixin, Gtk.Box):
         
         for automato in self.automata:
             open_automata.append((automato.get_file_name(), automato))
-            
 
         for obj in params:
             if obj['type'] == 'combobox':
-                self.property_box.add_combobox(obj['label'],open_automata)
+                self.property_box.add_combobox(obj['label'], open_automata, obj['name'])
             elif obj['type'] == 'entry':
-                self.property_box.add_entry(obj['label'],"untitled")
+                self.property_box.add_entry(obj['label'], "untitled") # , obj['output'])
             elif obj['type'] == 'chooser':
-                self.property_box.add_chooser(obj['label'],[1,3],options=open_automata)
-            
-        
-
-    def selected_row_operation(self,widget,event):
-        print(self.operation_box.prop_edited())
-
-        print(self.list_box_operation.get_selected_row().get_child().get_text())
-        return self.list_box_operation.get_selected_row().get_child().get_text()
-
+                self.property_box.add_chooser(obj['label'], [1,3], open_automata, data=obj['name'])
 
 #     class Operation():
         # operation = [

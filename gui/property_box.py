@@ -1,11 +1,7 @@
-from multiprocessing.sharedctypes import Value
-from typing import Tuple
 import gi
 gi.require_version("Gtk", "3.0")  # TEST
 import logging
 from gi.repository import GLib, Gio, Gtk, GObject
-# from matplotlib.widgets import Widget
-
 
 class PropertyBox(Gtk.ListBox):
     def __init__(self, *args, **kwargs):
@@ -29,30 +25,32 @@ class PropertyBox(Gtk.ListBox):
 
     def add_checkbutton(self, label, value, data=None, callback=None):
         widget = Gtk.CheckButton(active=value)
-        widget.connect('toggled', self.prop_edited, None, data, callback)
+        widget.connect('toggled', self.prop_edited, None, data, callback, None)
         self._add_row(label, widget)
 
     def add_switch(self, label, value, data=None, callback=None):
         widget = Gtk.Switch(active=value)
-        widget.connect('notify::active', self.prop_edited, data, callback)
+        widget.connect('notify::active', self.prop_edited, data, callback, None)
         self._add_row(label, widget)
 
     def add_entry(self, label, value, data=None, callback=None):
         widget = Gtk.Entry(text=str(value), xalign=1, width_chars=10, has_frame=False)
-        widget.connect('activate', self.prop_edited, None, data, callback)
+        widget.connect('activate', self.prop_edited, None, data, callback, None)
         self._add_row(label, widget)
 
     def add_spinbutton(self, label, value, data=None, callback=None, lower=0, upper=1000, step_increment=1, page_increment=100, width_chars=4):
         adjustment = Gtk.Adjustment(value=value, lower=lower, upper=upper, step_increment=step_increment, page_increment=page_increment)
         widget = Gtk.SpinButton(adjustment=adjustment, width_chars=width_chars)
-        widget.connect('value-changed', self.prop_edited, None, data, callback)
+        widget.connect('value-changed', self.prop_edited, None, data, callback, None)
         self._add_row(label, widget)
 
-    def add_combobox(self, label, options,value=None, data=None, callback=None): 
+    def add_combobox(self, label, options, value=None, data=None, callback=None): 
         ### options = [("Label", Object), ("Label", Object)]
         widget = Gtk.ComboBoxText()
         #widget.set_entry_text_column(0)
-        widget.connect('changed', self.prop_edited, None, data, callback)
+
+
+        widget.connect('changed', self.prop_edited, None, data, callback, options)
         for option in options:
             widget.append_text(option[0])
         self._add_row(label, widget)
@@ -74,15 +72,14 @@ class PropertyBox(Gtk.ListBox):
 
     def add_chooser(self, label, value, options, data=None, callback=None):
         widget = Chooser()
-        widget.add_chooser(label, value, options, data=None, callback=None)
+        widget.add_chooser(label, value, options, data, callback)
         widget.connect('nadzoru-chooser-change', self.chooser_changed)
         self._add_row(label, widget)
 
-    def chooser_changed(self, chooser, *args, **kwargs):
-        unselected, selected = args
-        self.prop_edited(chooser, None, data=None, callback=None, values=(unselected, selected))
+    def chooser_changed(self, chooser, selected, data):
+        self.prop_edited(chooser, None, data, None, selected)
 
-    def prop_edited(self, widget, gparam, data, callback,values=None):
+    def prop_edited(self, widget, gparam, data, callback, values):
         if type(widget) == Gtk.CheckButton:
             value = widget.get_active()
         elif type(widget) == Gtk.Switch:
@@ -94,8 +91,11 @@ class PropertyBox(Gtk.ListBox):
         elif  type(widget)== Gtk.ComboBoxText:
             tree_iter = widget.get_active_iter()
             if tree_iter is not None:
-                model = widget.get_model()
-                value = model[tree_iter][0]
+                #model = widget.get_model()
+                tree_indice = widget.get_active()
+                automaton = values[tree_indice][1]
+                value = automaton
+                
         elif type(widget) == Chooser:
             value = values
         else:
@@ -111,9 +111,12 @@ class Chooser(Gtk.Box):
         self.set_orientation(Gtk.Orientation.HORIZONTAL)
         self.selected = list()
         self.unselected = list()
+        self.data = None
+        self.property_name = None
 
     def add_chooser(self, label, value, options, data=None, callback=None):
         # self.options = options
+        self.property_name = data
         for obj_label, obj in options:
             self.unselected.append([obj_label, obj])
 
@@ -172,8 +175,10 @@ class Chooser(Gtk.Box):
         self.sel_ls.clear()
         for row in self.selected:
             self.sel_ls.append(row)
-
-        self.emit('nadzoru-chooser-change', self.unselected, self.selected)
+        selected_automatons = list()
+        for automaton_list in self.selected:
+            selected_automatons.append(automaton_list[1])
+        self.emit('nadzoru-chooser-change', selected_automatons, self.property_name)
         
 GObject.signal_new('nadzoru-chooser-change',
     Chooser,
