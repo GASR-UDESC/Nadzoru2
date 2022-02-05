@@ -33,7 +33,7 @@ class AutomatonOperation(PageMixin, Gtk.Box):
 
         ]
         #tree View # left column
-        self.liststore = Gtk.ListStore(str, str, object)
+        self.liststore = Gtk.ListStore(str, object, object)
         self.treeview = Gtk.TreeView(model=self.liststore, headers_visible=False)
         self.selected_row = self.treeview.get_selection()
         self.selected_row.connect("changed", self.item_selected)
@@ -64,7 +64,7 @@ class AutomatonOperation(PageMixin, Gtk.Box):
 
     def update_treeview(self):
         for op in self.operations:
-            row = [op['label'], op['Fn'],op['params']]
+            row = [op['label'], op['fn'],op['params']]
             self.liststore.append(row)
 
 

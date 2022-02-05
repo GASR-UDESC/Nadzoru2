@@ -4,7 +4,7 @@ import gi
 gi.require_version("Gtk", "3.0")  # TEST
 import logging
 from gi.repository import GLib, Gio, Gtk, GObject
-from matplotlib.widgets import Widget
+# from matplotlib.widgets import Widget
 
 
 class PropertyBox(Gtk.ListBox):
