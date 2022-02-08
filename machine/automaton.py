@@ -213,7 +213,7 @@ class State(Base):
 
     def transition_out_remove(self, transition):
         self.out_transitions.discard(transition)
-        self.transition_layouts[transition.to_state].dec_ref()
+        self.transition_layouts[transition.to_state]
         if self.transition_layouts[transition.to_state].ref_count == 0:
             del self.transition_layouts[transition.to_state]
 
@@ -1632,82 +1632,115 @@ class Automaton(Base):
 
         return (Sr)
 
+    def get_unobservable_range(self):
 
-    def observer(self):
-        #ToDo: Discutir alcance não observável
-        state_map = dict()
+        unobservable_range_dict = dict()
         state_stack = list()
-        state_list = list()
-        remap_and_remove = dict()
-
-        def get_transition_function(list_of_states):
-            transition_function = dict()
-            for state in list_of_states:
-                for transition in state.out_transitions:
-                    if transition.event not in transition_function.keys():
-                        transition_function[transition.event] = list()
-                    transition_function[transition.event].append(transition.to_state)
-            return transition_function
-
-        def get_state_type(s_list): #Todo: Is there an easier way?
-            normal_counter = 0
-            certain_counter = 0
-            for state in s_list:
-                if state.diagnoser_type == StateType.NORMAL:
-                    normal_counter += 1
-                elif state.diagnoser_type == StateType.CERTAIN:
-                    certain_counter += 1
-            if normal_counter == len(s_list):
-                return StateType.NORMAL
-            elif certain_counter == len(s_list):
-                return StateType.CERTAIN
-            else:
-                return StateType.UNCERTAIN
-
-        def merge_states(state_list):
-            if len(state_list) > 1:
-                target_state_tuple = tuple(state_list)
-                initial = functools.reduce(lambda val, s: val and s.initial, target_state_tuple, True)
-                marked = functools.reduce(lambda val, s: val and s.marked, target_state_tuple, True)
-                bad = functools.reduce(lambda val, s: val and s.diagnoser_bad, target_state_tuple, True)
-                state_name = ",".join(state.name for state in target_state_tuple)
-                s = self.state_add(state_name, initial=initial, marked=marked, diagnoser_type=get_state_type(state_list), diagnoser_bad=bad)
-                for item in state_list:
-                    remap_and_remove[item] = s
-            else:
-                s = state_list[0]
-            state_stack.append(s)
-            state_map[s] = state_list
-            return s
-
-        state_list.append(self.initial_state)
-        state_map[self.initial_state] = state_list
-        state_stack.append(self.initial_state)
+        for state in self.states:
+            state_stack.append(state)
 
         while len(state_stack) > 0:
             state = state_stack.pop()
-            tf = get_transition_function(state_map[state])
-            for event in tf.keys():
-                state_list = list()
-                if event.observable is False:
-                    for s in state_map[state]:
-                        state_list.append(s)
-                for target_state in tf[event]:
-                    if target_state not in state_list:
-                        state_list.append(target_state)
-                if state_list not in state_map.values():
-                    merge_states(state_list)
+            unobservable_range_dict[state] = list()
+            range_stack = list()
+            range_stack.append(state)
+            while len(range_stack) > 0:
+                s = range_stack.pop()
+                for transition in s.out_transitions:
+                    if transition.event.observable == False:
+                        if transition.to_state not in unobservable_range_dict[state]:
+                            unobservable_range_dict[state].append(transition.to_state)
+                            range_stack.append(transition.to_state)
 
-        for removable in remap_and_remove.keys():
-            for transition in removable.in_transitions:
-                if transition.event.observable:
-                    self.transition_add(transition.from_state, remap_and_remove[removable], transition.event)
-            for transition in removable.out_transitions:
-                if transition.event.observable:
-                    self.transition_add(remap_and_remove[removable], transition.to_state, transition.event)
-            self.state_remove(removable)
+        return unobservable_range_dict
 
-        return self
+    def get_transition_function(self, state):
+
+        transition_function = dict()
+
+        for transition in state.out_transitions:
+            transition_function[transition.event] = list()
+
+        for transition in state.out_transitions:
+            transition_function[transition.event].append(transition.to_state)
+
+        return transition_function
+
+    def observer(self):
+
+        observer = Automaton()
+        observer_event_dict = dict()
+        observer_state_dict = dict()
+
+        unobservable_range_dict = self.get_unobservable_range()
+        state_stack = list()
+        state_list = list()
+        state_list.append(self.initial_state)
+        state_stack.append(state_list)
+
+        def merge_states(state_list):
+
+            is_initial = False
+            normal_state_counter = 0
+            certain_state_counter = 0
+            uncertain_state_counter = 0
+            diag_type = StateType.NORMAL
+
+            state_tuple = tuple(state_list)
+            is_marked = functools.reduce(lambda val, s: val and s.marked, state_tuple, True)
+            if self.initial_state in state_list: is_initial = True
+            diag_bad = functools.reduce(lambda val, s: val and s.diagnoser_bad, state_tuple, True)
+            state_name = ",".join(state.name for state in state_tuple)
+            for state in state_list:
+                if state.diagnoser_type == StateType.NORMAL:
+                    normal_state_counter += 1
+                elif state.diagnoser_type == StateType.CERTAIN:
+                    certain_state_counter += 1
+                else:
+                    uncertain_state_counter += 1
+            if normal_state_counter < len(state_list):
+                if certain_state_counter < len(state_list):
+                    diag_type = StateType.UNCERTAIN
+                else:
+                    diag_type = StateType.CERTAIN
+            if state_name not in observer_state_dict.keys():
+                state_stack.append(state_list)  # adiciona estado de destino a stack
+                observer_state_dict[state_name] = observer.state_add(state_name, initial=is_initial, marked=is_marked, diagnoser_type=diag_type, diagnoser_bad=diag_bad)
+            return observer_state_dict[state_name]
+
+        while len(state_stack) > 0:
+            states_to_merge = list()
+            current_state = state_stack.pop()
+            for state in current_state:
+                if state not in states_to_merge:
+                    states_to_merge.append(state)
+                if len(unobservable_range_dict[state]) > 0:
+                    for each in unobservable_range_dict[state]:
+                        if each not in states_to_merge:
+                            states_to_merge.append(each)
+            out_state = merge_states(states_to_merge)
+            for event in self.events:
+                if event.observable:
+                    target_states = list()
+                    for state in states_to_merge:
+                        transition_function = self.get_transition_function(state)
+                        if event in transition_function.keys():
+                            for target in transition_function[event]:
+                                if target not in target_states:
+                                    target_states.append(target)
+                    for state in target_states:
+                        if len(unobservable_range_dict[state]) > 0:
+                            for each in unobservable_range_dict[state]:
+                                if each not in target_states:
+                                    target_states.append(each)
+                    if len(target_states) > 0:
+                        in_state = merge_states(target_states) #cria estado de destino
+                        if event.name not in observer_event_dict.keys(): #if not observer.has_event
+                            observer_event_dict[event.name] = observer.event_add(event.name, event.controllable, event.observable)
+                        if not out_state.out_transition_exists(in_state, observer_event_dict[event.name]):
+                            observer.transition_add(out_state, in_state, observer_event_dict[event.name]) #define as transicoes de out para in
+
+        return observer
 
     def labeller(self, fault_events):
         #this funtion receives a list of fault events.
