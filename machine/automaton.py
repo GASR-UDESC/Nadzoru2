@@ -1747,7 +1747,6 @@ class Automaton(Base):
         #one event only means that the faults are treated separately
         #two or more fault events means that the faults are treated together
         #ToDo: Do we need to create a copy?
-        L = Automaton()
 
         R = Automaton()
         N = R.state_add('N', initial=True, marked=False, diagnoser_type=StateType.NORMAL, diagnoser_bad=False)
@@ -1757,13 +1756,11 @@ class Automaton(Base):
             R.transition_add(N, Y, f)
             R.transition_add(Y, Y, f)
 
-        L = self.synchronization(R)
-
-        return L
+        return R
 
     def diagnoser(self, fault_events):
 
-        diag = self.labeller(fault_events).observer()
+        diag = self.synchronization(self.labeller(fault_events)).observer()
 
         return diag
 
@@ -1838,3 +1835,4 @@ class Automaton(Base):
                     return False
 
         return True
+
