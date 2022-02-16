@@ -21,17 +21,18 @@ class AutomatonOperation(PageMixin, Gtk.Box):
         self.selected_op = None
         self.arguments_op = dict()
         self.argumentslist_op = list()
+    
 
         self.operations = [
             {
                 'label': "SUPC", 'fn': Automaton.sup_c, 'params': [
                     {'label': "G", 'type': 'combobox', 'name': 'G'},
                     {'label': "K", 'type': 'combobox', 'name': 'R'},
-                    {'label': "Result", 'type': 'entry', 'output': 1}]},
+                    {'label': "Result", 'type': 'entry', 'name': 'output'}]},
             {
                 'label': "SYNC", 'fn': Automaton.synchronization, 'params': [
                     {'label': "Automaton", 'type': 'chooser', 'name': 'args'},
-                    {'label': "Result", 'type': 'entry', 'output': 1}]
+                    {'label': "Result", 'type': 'entry', 'name': 'output'}]
             }
 
         ]
@@ -62,17 +63,30 @@ class AutomatonOperation(PageMixin, Gtk.Box):
         self.right.pack_start(self.property_box, True, True, 0)
 
     def prop_edited(self, widget, value, property_name):
+        print(property_name)
         if property_name == 'args':
             self.argumentslist_op = value
         else:
             self.arguments_op.update({property_name: value})
+        if property_name == 'output':
+            self.result_name = value
 
         
     def execute(self, widget):
+        #print(self.arguments_op['output'])
+        if 'output' in self.arguments_op.keys():
+            if self.arguments_op['output'] == '':
+                result_name = 'Untitled'
+            else:
+                result_name = self.arguments_op['output']
+        else:
+            result_name = 'Untitled'
+            
+        print(result_name)
         # print(self.property_box.get_children()) # probably must check if user selected all necessary inputs
         result = self.selected_op(*self.argumentslist_op, **self.arguments_op)  # result is an automaton
-        # result.save("/home/breno/Nadzoru2/resultado.xml") # set your path for testing
-        print(result)
+        result.save(f"/home/krischanski/Nadzoru2/{self.result_name}.xml") # set your path for testing
+        # print(result)
 
     def update_treeview(self):
         for op in self.operations:
@@ -95,11 +109,12 @@ class AutomatonOperation(PageMixin, Gtk.Box):
 
         for obj in params:
             if obj['type'] == 'combobox':
-                self.property_box.add_combobox(obj['label'], open_automata, obj['name'])
+                self.property_box.add_combobox(obj['label'], open_automata, data=obj['name'])
             elif obj['type'] == 'entry':
-                self.property_box.add_entry(obj['label'], "untitled")  # , obj['output'])
+                self.property_box.add_entry(obj['label'], "untitled", data=obj['name'])
             elif obj['type'] == 'chooser':
                 self.property_box.add_chooser(obj['label'], [1, 3], open_automata, data=obj['name'])
+
 
 #     class Operation():
         # operation = [
