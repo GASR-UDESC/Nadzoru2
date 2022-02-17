@@ -142,6 +142,7 @@ class TransitionLayout:
         self._render_factor = int(value)
 
 class StateType(Enum):
+    NEUTRAL = 0
     NORMAL = 1
     UNCERTAIN = 2
     CERTAIN = 3
@@ -152,7 +153,7 @@ class State(Base):
                   {'label': "X", 'property': 'x', 'gtk_control': 'spinbutton'},
                   {'label': "Y", 'property': 'y', 'gtk_control': 'spinbutton'}]
 
-    def __init__(self, name=None, marked=False, x=0, y=0, quantity=None, diagnoser_type=StateType.NORMAL, diagnoser_bad=False, *args, **kwargs):
+    def __init__(self, name=None, marked=False, x=0, y=0, quantity=None, diagnoser_type=StateType.NEUTRAL, diagnoser_bad=False, *args, **kwargs):
         if name is None:
             if quantity is not None:
                 name = str(quantity + 1)
@@ -956,9 +957,23 @@ class Automaton(Base):
         state_map = dict()  # maps tuple of states (from args) to respective state in G
 
         def G_state_add(state_tuple, initial=False):
+            state_type_counter = dict()
+            for type in StateType: state_type_counter[type] = 0
+            diag_type = StateType.NEUTRAL
+
             marked = functools.reduce(lambda val, s: val and s.marked, state_tuple, True)
             state_name = ",".join(state.name for state in state_tuple)
-            s = G.state_add(state_name, initial=initial, marked=marked)
+            diag_bad = functools.reduce(lambda val, s: s.diagnoser_bad, state_tuple, True)
+            for state in state_tuple:
+                state_type_counter[state.diagnoser_type] += 1
+            if state_type_counter[StateType.NEUTRAL] < len(state_tuple):
+                if (state_type_counter[StateType.NEUTRAL] + state_type_counter[StateType.NORMAL]) == len(state_tuple): #only neutral and normal
+                    diag_type = StateType.NORMAL
+                elif (state_type_counter[StateType.NEUTRAL] + state_type_counter[StateType.CERTAIN]) == len(state_tuple): #only neutral and certain
+                    diag_type = StateType.CERTAIN
+                else:
+                    diag_type = StateType.UNCERTAIN
+            s = G.state_add(state_name, initial=initial, marked=marked, diagnoser_type=diag_type, diagnoser_bad=diag_bad)
             state_map[state_tuple] = s
             state_stack.append(state_tuple)
             return s
@@ -1758,9 +1773,9 @@ class Automaton(Base):
 
         return R
 
-    def diagnoser(self, fault_events):
+    def diagnoser(self, labeller):
 
-        diag = self.synchronization(self.labeller(fault_events)).observer()
+        diag = self.synchronization(labeller).observer()
 
         return diag
 
@@ -1836,3 +1851,34 @@ class Automaton(Base):
 
         return True
 
+    def string_detector(self):
+
+        in_transitions = dict()
+        visitor_counter = dict()
+        strings = dict()
+        state_stack = list()
+        state_path = list()
+        state_stack.append(self.initial_state)
+        strings[self.initial_state] = state_path
+
+        for state in self.states:
+            count = 0
+            for i_t in state.in_transitions: count+=1
+            in_transitions[state] = count
+            if state == self.initial_state: in_transitions[state] += 1
+            visitor_counter[state] = 0
+            strings[state] = list()
+
+        while len(state_stack) > 0:
+            s = state_stack.pop()
+            if visitor_counter[s] < in_transitions[s]:
+                visitor_counter[s] += 1
+                for transition in s.out_transitions:
+                    state_path = strings[s].copy()
+                    state_path.append(transition.event)
+                    strings[transition.to_state].append(state_path)
+                    state_stack.append(transition.to_state)
+
+        print(strings)
+
+        pass
