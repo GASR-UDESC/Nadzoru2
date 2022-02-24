@@ -109,6 +109,11 @@ class MainWindow(Gtk.ApplicationWindow):
                 return False  # at least one tab canceled
         return True  # was able to close all tabs
 
+    def add_tab_editor(self,automaton,label=None):
+        editor = AutomatonEditor(automaton)
+        editor.connect('nadzoru-editor-change', self.props.application.on_editor_change)
+        self.add_tab(editor, label)
+
     def get_current_tab_widget(self):
         _id = self.note.get_current_page()
         return self.note.get_nth_page(_id)
@@ -202,10 +207,9 @@ class MainWindow(Gtk.ApplicationWindow):
                     return
                 self.props.application.elements.append(automaton)
                 if result == Gtk.ResponseType.ACCEPT:
-                    editor = AutomatonEditor(automaton)
-                    editor.connect('nadzoru-editor-change', self.props.application.on_editor_change)
-                    self.add_tab(editor, file_name)
-        dialog.destroy()
+                    self.add_tab_editor(automaton,automaton.get_file_name)
+
+           
 
     def _save_dialog(self, widget):
         dialog = Gtk.FileChooserDialog("Choose file", self, Gtk.FileChooserAction.SAVE,

@@ -28,11 +28,13 @@ class AutomatonOperation(PageMixin, Gtk.Box):
                 'label': "SUPC", 'fn': Automaton.sup_c, 'params': [
                     {'label': "G", 'type': 'combobox', 'name': 'G'},
                     {'label': "K", 'type': 'combobox', 'name': 'R'},
-                    {'label': "Result", 'type': 'entry', 'name': 'output'}]},
+                    {'label': "Result", 'type': 'entry', 'name': 'output'},
+                    {'label': "Open result in new tab", 'type':'CheckButton','name':'open'}]},
             {
                 'label': "SYNC", 'fn': Automaton.synchronization, 'params': [
                     {'label': "Automaton", 'type': 'chooser', 'name': 'args'},
-                    {'label': "Result", 'type': 'entry', 'name': 'output'}]
+                    {'label': "Result", 'type': 'entry', 'name': 'output'},
+                    {'label': "Open result in new tab", 'type':'CheckButton','name':'open'}]
             }
 
         ]
@@ -73,6 +75,7 @@ class AutomatonOperation(PageMixin, Gtk.Box):
 
         
     def execute(self, widget):
+        print(self.arguments_op)
         #print(self.arguments_op['output'])
         if 'output' in self.arguments_op.keys():
             if self.arguments_op['output'] == '':
@@ -81,11 +84,13 @@ class AutomatonOperation(PageMixin, Gtk.Box):
                 result_name = self.arguments_op['output']
         else:
             result_name = 'Untitled'
+
+        print(self.arguments_op['open'])
             
         print(result_name)
         # print(self.property_box.get_children()) # probably must check if user selected all necessary inputs
-        result = self.selected_op(*self.argumentslist_op, **self.arguments_op)  # result is an automaton
-        result.save(f"/home/krischanski/Nadzoru2/{self.result_name}.xml") # set your path for testing
+        #result = self.selected_op(*self.argumentslist_op, **self.arguments_op)  # result is an automaton
+        #result.save(f"/home/krischanski/Nadzoru2/{self.result_name}.xml") # set your path for testing
         # print(result)
 
     def update_treeview(self):
@@ -114,6 +119,8 @@ class AutomatonOperation(PageMixin, Gtk.Box):
                 self.property_box.add_entry(obj['label'], "untitled", data=obj['name'])
             elif obj['type'] == 'chooser':
                 self.property_box.add_chooser(obj['label'], [1, 3], open_automata, data=obj['name'])
+            elif obj['type'] == 'CheckButton':
+                self.property_box.add_checkbutton(obj['label'],'toggled')
 
 
 #     class Operation():

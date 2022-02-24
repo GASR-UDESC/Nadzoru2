@@ -6,7 +6,7 @@ class PageMixin:
         super().__init__(*args, **kwargs)
         self._changes_to_save = False
 
-    def get_ancestor_window(self):
+    def get_ancestor_window(self): # use this to pegar a window # Perguntar se o usuario quer abrir o automato
         return self.get_ancestor(Gtk.Window)
 
     def has_changes_to_save(self):
