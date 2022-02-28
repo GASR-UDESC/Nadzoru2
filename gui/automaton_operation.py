@@ -18,6 +18,8 @@ class AutomatonOperation(PageMixin, Gtk.Box):
         super().__init__(*args, **kwargs)
         self.set_orientation(Gtk.Orientation.HORIZONTAL)
         self.automata = automata
+        self.result_name = 'untitled'
+        self.result_open = False
         self.selected_op = None
         self.arguments_op = dict()
         self.argumentslist_op = list()
@@ -29,16 +31,18 @@ class AutomatonOperation(PageMixin, Gtk.Box):
                     {'label': "G", 'type': 'combobox', 'name': 'G'},
                     {'label': "K", 'type': 'combobox', 'name': 'R'},
                     {'label': "Result", 'type': 'entry', 'name': 'output'},
-                    {'label': "Open result in new tab", 'type':'CheckButton','name':'open'}]},
+                    {'label': "Open result ", 'type':'CheckButton','name':'open'}
+                    ]},
             {
                 'label': "SYNC", 'fn': Automaton.synchronization, 'params': [
                     {'label': "Automaton", 'type': 'chooser', 'name': 'args'},
                     {'label': "Result", 'type': 'entry', 'name': 'output'},
-                    {'label': "Open result in new tab", 'type':'CheckButton','name':'open'}]
+                    {'label': "Open result ", 'type':'CheckButton','name':'open'}
+                    ]
             }
 
         ]
-        #tree View # left column
+        # tree View # left column
         self.liststore = Gtk.ListStore(str, object, object)
         self.treeview = Gtk.TreeView(model=self.liststore, headers_visible=False)
         self.selected_row = self.treeview.get_selection()
@@ -54,44 +58,42 @@ class AutomatonOperation(PageMixin, Gtk.Box):
         self.right = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         self.pack_start(self.right, True, True, 0)
 
-        #execute button
+        # execute button
         self.execute_button = Gtk.Button(label='EXECUTE')
         self.execute_button.connect('clicked', self.execute)
         self.right.pack_end(self.execute_button, False, False, 0)
 
-        #property BOX
+        # property BOX
         self.property_box = PropertyBox()
         self.property_box.connect('nadzoru-property-change', self.prop_edited)
         self.right.pack_start(self.property_box, True, True, 0)
 
     def prop_edited(self, widget, value, property_name):
         print(property_name)
-        if property_name == 'args':
+        if property_name == 'output':
+            self.result_name = value
+        elif property_name =='open':
+            self.result_open = value
+        elif property_name == 'args':
             self.argumentslist_op = value
         else:
             self.arguments_op.update({property_name: value})
-        if property_name == 'output':
-            self.result_name = value
-
-        
+ 
     def execute(self, widget):
-        print(self.arguments_op)
+        print(self.argumentslist_op)
         #print(self.arguments_op['output'])
-        if 'output' in self.arguments_op.keys():
-            if self.arguments_op['output'] == '':
-                result_name = 'Untitled'
-            else:
-                result_name = self.arguments_op['output']
-        else:
-            result_name = 'Untitled'
+        if self.result_name == '':
+            self.result_name == 'Untitled'
 
-        print(self.arguments_op['open'])
-            
-        print(result_name)
         # print(self.property_box.get_children()) # probably must check if user selected all necessary inputs
-        #result = self.selected_op(*self.argumentslist_op, **self.arguments_op)  # result is an automaton
-        #result.save(f"/home/krischanski/Nadzoru2/{self.result_name}.xml") # set your path for testing
-        # print(result)
+        result = self.selected_op(*self.argumentslist_op, **self.arguments_op)  # result is an automaton
+        print(result)
+        result.save(f"/home/krischanski/Nadzoru2/{self.result_name}.xml") # set your path for testing
+        
+        if not(self.result_open):
+            return
+        window = self.get_ancestor_window()
+        window.add_tab_editor(result,self.result_name)
 
     def update_treeview(self):
         for op in self.operations:
@@ -120,7 +122,7 @@ class AutomatonOperation(PageMixin, Gtk.Box):
             elif obj['type'] == 'chooser':
                 self.property_box.add_chooser(obj['label'], [1, 3], open_automata, data=obj['name'])
             elif obj['type'] == 'CheckButton':
-                self.property_box.add_checkbutton(obj['label'],'toggled')
+                self.property_box.add_checkbutton(obj['label'],self.result_open, data=obj['name'])
 
 
 #     class Operation():
