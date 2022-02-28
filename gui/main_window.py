@@ -111,8 +111,6 @@ class MainWindow(Gtk.ApplicationWindow):
 
     def add_tab_editor(self, automaton, label): 
         editor = AutomatonEditor(automaton)
-        print(type(editor))
-        label = str(label)
         editor.connect('nadzoru-editor-change', self.props.application.on_editor_change)
         self.add_tab(editor, label)
 
@@ -187,9 +185,7 @@ class MainWindow(Gtk.ApplicationWindow):
         logging.debug("")
         automaton = Automaton()
         self.props.application.elements.append(automaton)
-        editor = AutomatonEditor(automaton)
-        editor.connect('nadzoru-editor-change', self.props.application.on_editor_change)
-        self.add_tab(editor, editor.automaton.get_file_name())
+        self.add_tab_editor(automaton, 'Untitled')
 
     def on_open_automaton(self, action, param=None):
         logging.debug("")
@@ -265,9 +261,7 @@ class MainWindow(Gtk.ApplicationWindow):
                 automaton.ides_import(full_path_name)
                 self.props.application.elements.append(automaton)
                 if result == Gtk.ResponseType.OK:
-                    editor = AutomatonEditor(automaton)
-                    editor.connect('nadzoru-editor-change', self.props.application.on_editor_change)
-                    self.add_tab(editor, "{} *".format(file_name))
+                    self.automaton.get_file_name(automaton,f'{file_name} *')
         dialog.destroy()
 
     def on_export_ides(self, action, param):
