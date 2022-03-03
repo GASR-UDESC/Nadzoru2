@@ -1,4 +1,6 @@
+from sqlite3 import apilevel
 import gi
+
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 
@@ -80,22 +82,28 @@ class AutomatonOperation(PageMixin, Gtk.Box):
             self.arguments_op.update({property_name: value})
  
     def execute(self, widget):
-        print(self.argumentslist_op)
-        #print(self.arguments_op['output'])
-        if self.result_name == '':
-            self.result_name == 'Untitled'
+        if self.result_name == '' or 'Untitled':
+            list_name = []
+            for argument in self.argumentslist_op:
+                list_name.append(argument.get_name())
+            separator = ', '
+            self.result_name = f'{str(self.selected_op[0])} ({separator.join(list_name)})'
 
         # print(self.property_box.get_children()) # probably must check if user selected all necessary inputs
-        result = self.selected_op(*self.argumentslist_op, **self.arguments_op)  # result is an automaton
+        result = self.selected_op[1](*self.argumentslist_op, **self.arguments_op)  # result is an automaton
+        result.set_name(self.result_name)
         print(result)
-        result.save(f"/home/krischanski/Nadzoru2/{self.result_name}.xml") # set your path for testing
-        
+        #result.save(f"/home/krischanski/Nadzoru2/{self.result_name}.xml") # set your path for testing
+        window = self.get_ancestor_window()
+        window.props.application.elements.append(result)
         if not(self.result_open):
             return
-        window = self.get_ancestor_window()
-        window.add_tab_editor(result,self.result_name)
+        window.add_tab_editor(result,result.get_name())
+        window.set_tab_label_color(window.get_current_tab_widget(),'#F00')
+    
 
     def update_treeview(self):
+        print(self.automata)
         for op in self.operations:
             row = [op['label'], op['fn'], op['params']]
             self.liststore.append(row)
@@ -105,14 +113,14 @@ class AutomatonOperation(PageMixin, Gtk.Box):
         if row is not None:
             self.arguments_op = dict()
             self.creation_property_operation(str(model[row][0]), model[row][2])
-            self.selected_op = model[row][1]
+            self.selected_op = (model[row][0],model[row][1])
 
     def creation_property_operation(self, operation_name, params):
         open_automata = []
         self.property_box.clear()
 
         for automato in self.automata:
-            open_automata.append((automato.get_file_name(), automato))
+            open_automata.append((automato.get_name(), automato))
 
         for obj in params:
             if obj['type'] == 'combobox':

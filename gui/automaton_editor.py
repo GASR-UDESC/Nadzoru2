@@ -181,7 +181,7 @@ class AutomatonEditor(PageMixin, Gtk.Box):
         self.automaton_render.queue_draw()
 
     def get_tab_name(self):
-        return self.automaton.get_file_name()
+        return self.automaton.get_name()
 
     def on_draw(self, automaton_render, cr):
         self.automaton_render.draw(cr, highlight_state=self.selected_state, highlight_transitions=self.selected_transitions)
