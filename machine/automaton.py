@@ -1005,56 +1005,6 @@ class Automaton(Base):
                     G.transition_add(source_state, target_state, event)
         return G
 
-
-    # def synchronization(*args, output_univocal=False):
-    #     """ This function returns the accessible part of the synchronous composition. Instead of calculating all composed
-    #         states and then calculate the accessible part, we only add accessible states to the output."""
-
-    #     if len(args) < 2:
-    #         return
-
-    #     G = args[0].__class__()  # function output
-
-    #     G._merge_events(*args)
-
-    #     state_stack = list()
-    #     state_map = dict()  # maps tuple of states (from args) to respective state in G
-
-    #     def G_state_add(state_tuple, initial=False):
-    #         marked = functools.reduce(lambda val, s: val and s.marked, state_tuple, True)
-    #         state_name = ",".join(state.name for state in state_tuple)
-    #         s = G.state_add(state_name, initial=initial, marked=marked)
-    #         state_map[state_tuple] = s
-    #         state_stack.append(state_tuple)
-    #         return s
-
-    #     init_state_tuple = tuple(state.initial_state for state in args)
-    #     G_state_add(init_state_tuple, True)
-
-    #     while len(state_stack) != 0:
-    #         state_tuple = state_stack.pop()
-    #         source_state = state_map[state_tuple]
-    #         for event in G.events:
-    #             enabled = True
-    #             target_state_tuple = list()
-    #             for g, s in zip(args, state_tuple):
-    #                 if g.event_name_exists(event.name):
-    #                     target = s.get_target_from_event_name(event.name)
-    #                     if target is None:  # forbidden, so no transition with 'event'
-    #                         enabled = False
-    #                         break
-    #                     target_state_tuple.append(target)
-    #                 else:  # 'event' not in 'g', stay in s
-    #                     target_state_tuple.append(s)
-    #             if enabled:
-    #                 target_state_tuple = tuple(target_state_tuple)
-    #                 if target_state_tuple not in state_map:
-    #                     target_state = G_state_add(target_state_tuple, False)
-    #                 else:
-    #                     target_state = state_map[target_state_tuple]
-    #                 G.transition_add(source_state, target_state, event)
-    #     return G
-
     def product(self, *args):
         pass
 
