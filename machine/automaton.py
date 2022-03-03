@@ -363,9 +363,6 @@ class Automaton(Base):
 
     def set_file_path_name(self, file_path_name):
         self._file_path_name = file_path_name
-
-    def set_file_path_name(self, file_path_name):
-        self._file_path_name = file_path_name
         self._name = None 
 
     def set_name(self, name):

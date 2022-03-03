@@ -30,13 +30,13 @@ class AutomatonOperation(PageMixin, Gtk.Box):
                 'label': "SUPC", 'fn': Automaton.sup_c, 'params': [
                     {'label': "G", 'type': 'combobox', 'name': 'G'},
                     {'label': "K", 'type': 'combobox', 'name': 'R'},
-                    {'label': "Result", 'type': 'entry', 'name': 'output', 'default_value': "Untitled"},
+                    {'label': "Result", 'type': 'entry', 'name': 'output', 'default_value': ""},
                     {'label': "Open result ", 'type':'CheckButton','name':'open'}
                     ]},
             {
                 'label': "SYNC", 'fn': Automaton.synchronization, 'params': [
                     {'label': "Automaton", 'type': 'chooser', 'name': 'args'},
-                    {'label': "Result", 'type': 'entry', 'name': 'output', 'default_value': "Untitled"},
+                    {'label': "Result", 'type': 'entry', 'name': 'output', 'default_value': "", 'placeholder': "type a name" },
                     {'label': "Open result ", 'type':'CheckButton','name':'open'}
                     ]
             }
@@ -83,7 +83,7 @@ class AutomatonOperation(PageMixin, Gtk.Box):
             self.arguments_op.update({property_name: value})
 
     def execute(self, widget):
-        if self.result_name == '' or 'Untitled':
+        if self.result_name == '': 
             list_name = []
             for argument in self.argumentslist_op:
                 list_name.append(argument.get_name())
@@ -93,8 +93,6 @@ class AutomatonOperation(PageMixin, Gtk.Box):
         # print(self.property_box.get_children()) # probably must check if user selected all necessary inputs
         result = self.selected_op[1](*self.argumentslist_op, **self.arguments_op)  # result is an automaton
         result.set_name(self.result_name)
-        print(result)
-        #result.save(f"/home/krischanski/Nadzoru2/{self.result_name}.xml") # set your path for testing
         window = self.get_ancestor_window()
         window.props.application.elements.append(result)
         self.creation_property_operation(self.selected_op[0], self.selected_op[2]) # (op_label, op_params), updates window after adding automaton
@@ -132,7 +130,7 @@ class AutomatonOperation(PageMixin, Gtk.Box):
             if obj['type'] == 'combobox':
                 self.property_box.add_combobox(obj['label'], open_automata, data=obj['name'])
             elif obj['type'] == 'entry':
-                self.property_box.add_entry(obj['label'], obj['default_value'], data=obj['name'])
+                self.property_box.add_entry(obj['label'], obj['default_value'], data=obj['name'], placeholder=obj.get('placeholder', None))
             elif obj['type'] == 'chooser':
                 self.property_box.add_chooser(obj['label'], [], open_automata, data=obj['name']) # Check if list is really needed
             elif obj['type'] == 'CheckButton':
