@@ -667,19 +667,19 @@ class Automaton(Base):
         event_id_map = dict()
 
         for state_id, state in enumerate(self.states):
-                state_id_map[state] = state_id
-                initial = state == self.initial_state
-                if initial:
-                   f.write(f'\t<state id="{state_id+1}">\n \t\t<properties>\n \t\t\t<initial />\n \t\t\t<marked />\n \t\t</properties>\n \t\t<name>{state_id+1}</name>\n \t</state>\n')
-                else:
-                   f.write(f'\t<state id="{state_id+1}">\n \t\t<properties>\n \t\t\t<marked />\n \t\t</properties>\n \t\t<name>{state_id+1}</name>\n \t</state>\n')
+            state_id_map[state] = state_id
+            initial = state == self.initial_state
+            if initial:
+                f.write(f'\t<state id="{state_id+1}">\n \t\t<properties>\n \t\t\t<initial />\n \t\t\t<marked />\n \t\t</properties>\n \t\t<name>{state_id+1}</name>\n \t</state>\n')
+            else:
+                f.write(f'\t<state id="{state_id+1}">\n \t\t<properties>\n \t\t\t<marked />\n \t\t</properties>\n \t\t<name>{state_id+1}</name>\n \t</state>\n')
 
         for event_id, event in enumerate(self.events):
             event_id_map[event] = event_id
             if event.controllable == True:
-               f.write(f'\t<event id="{event_id+1}">\n \t\t<properties>\n \t\t\t<controllable />\n \t\t\t<observable />\n \t\t</properties>\n \t\t<name>{event.name}</name>\n \t</event>\n')
+                f.write(f'\t<event id="{event_id+1}">\n \t\t<properties>\n \t\t\t<controllable />\n \t\t\t<observable />\n \t\t</properties>\n \t\t<name>{event.name}</name>\n \t</event>\n')
             else:
-               f.write(f'\t<event id="{event_id+1}">\n \t\t<properties>\n \t\t\t<observable />\n \t\t</properties>\n \t\t<name>{event.name}</name>\n \t</event>\n')
+                f.write(f'\t<event id="{event_id+1}">\n \t\t<properties>\n \t\t\t<observable />\n \t\t</properties>\n \t\t<name>{event.name}</name>\n \t</event>\n')
 
         for source_state in self.states:
             for transition_id, transition in enumerate(source_state.out_transitions):
@@ -939,8 +939,8 @@ class Automaton(Base):
                     event_names.add(g_event.name)
                 else:
                     pass  # TODO (1) check if g_event and self.get_event_by_name(g_event.name) are equivallent (method in Event) - controlabilly, observabilitty
-                          #      (2) if not undo previously added events (from added_events)
-                          #      (3) raise Error ErrorMultiplePropetiesForEventName
+                    #      (2) if not undo previously added events (from added_events)
+                    #      (3) raise Error ErrorMultiplePropetiesForEventName
 
     def synchronization(*args, output_univocal=False):
         """ This function returns the accessible part of the synchronous composition. Instead of calculating all composed
@@ -1789,96 +1789,87 @@ class Automaton(Base):
 
         return safe_diag
 
-    def is_diagnosable(self):
+    def get_fb(self):
 
-        def detect_loop(state):
-            reachable_states = list()
-            state_stack = list()
-            state_stack.append(state)
-            loop_reaches_certain = False
-            while len(state_stack) != 0:
-                s = state_stack.pop()
-                for transition in s.out_transitions:
-                    if transition.to_state not in reachable_states:
-                        if transition.to_state.diagnoser_type == StateType.CERTAIN:
-                            loop_reaches_certain = True
-                        state_stack.append(transition.to_state)
-                        reachable_states.append(transition.to_state)
-                    else:
-                        return True, loop_reaches_certain
-            return False, loop_reaches_certain
-
+        fb = list()
+        bad_states = list()
+        bad_state_backward_reach = dict()
 
         for state in self.states:
-            if state.diagnoser_type == StateType.UNCERTAIN or state.diagnoser_type == StateType.CERTAIN:
-                state.marked = True
+            if state.diagnoser_bad:
+                bad_states.append(state)
+                bad_state_backward_reach[state] = list()
+                for transition in state.in_transitions:
+                    if transition.from_state != state:
+                        bad_state_backward_reach[state].append(transition.from_state)
+
+        for state in bad_states:
+            reach = len(bad_state_backward_reach[state])
+            bad_backward_reach = 0
+            for each in bad_state_backward_reach[state]:
+                if each.diagnoser_bad:
+                    bad_backward_reach += 1
+            if reach == bad_backward_reach:
+                break
             else:
-                state.marked = False
+                fb.append(state)
 
-        coac = self.coaccessible()
-        loop_reaches_certain_state = False
-        has_loop = False
-        for state in coac.states:
-            if state.diagnoser_type == StateType.UNCERTAIN:
-                has_loop, loop_reaches_certain_state = detect_loop(state)
+        return fb
 
-        if has_loop and loop_reaches_certain_state:
-            return'maybe'
-        elif has_loop and not loop_reaches_certain_state:
-            return False
-        elif not has_loop and not loop_reaches_certain_state:
-            return False
+    def state_has_diagnosis(self, state):
+
+        if state.diagnoser_type == StateType.CERTAIN:
+            return True
         else:
+            return False
+
+    def state_has_prognosis(self, state):
+
+        visited = dict()
+
+        for s in self.states:
+            visited[s] = False
+
+        def forward_recursive(self, state, visited):
+            if visited[s] == True and state.diagnoser_type == StateType.UNCERTAIN:
+                return False
+            elif state.diagnoser_type == StateType.CERTAIN:
+                return True
+            else:
+                visited[state] = True
+                for t in state.out_transitions:
+                    if not visited[t.to_state]:
+                        if not forward_recursive(self, t.to_state, visited):
+                            return False
+                    else:
+                        return False
             return True
 
-    def is_safe_diagnosable(self):
+        return forward_recursive(self, state, visited)
 
-        for state in self.states:
-            if state.diagnoser_bad:
-                state.marked = True
-            else:
-                state.marked = False
+    def is_safe_controllable(self):
 
-        coac = self.coaccessible()
-        for state in coac.states:
-            if state.diagnoser_bad:
-                if state.diagnoser_type == StateType.CERTAIN:
-                    for t in state.in_transitions:
-                        if t.from_state.diagnoser_type == StateType.UNCERTAIN:
-                            return False
-                else:
-                    return False
+        fb = self.get_fb()
+
+        def backward_recursive(self, state, visited):
+            visited[state] = True
+            if self.initial_state == state:
+                return False
+            for t in state.in_transitions:
+                if t.event.controllable:
+                    if self.state_has_diagnosis(t.from_state) or self.state_has_prognosis(t.from_state):
+                        return True
+                if not visited[t.from_state]:
+                    if not backward_recursive(self, t.from_state, visited):
+                        return False
+
+            return True
+
+        for bad_state in fb:
+            visited = dict()
+            for s in self.states:
+                visited[s] = False
+            if not backward_recursive(self, bad_state, visited):
+                return False
 
         return True
-
-    def string_detector(self):
-
-        in_transitions = dict()
-        visitor_counter = dict()
-        strings = dict()
-        state_stack = list()
-        state_path = list()
-        state_stack.append(self.initial_state)
-        strings[self.initial_state] = state_path
-
-        for state in self.states:
-            count = 0
-            for i_t in state.in_transitions: count+=1
-            in_transitions[state] = count
-            if state == self.initial_state: in_transitions[state] += 1
-            visitor_counter[state] = 0
-            strings[state] = list()
-
-        while len(state_stack) > 0:
-            s = state_stack.pop()
-            if visitor_counter[s] < in_transitions[s]:
-                visitor_counter[s] += 1
-                for transition in s.out_transitions:
-                    state_path = strings[s].copy()
-                    state_path.append(transition.event)
-                    strings[transition.to_state].append(state_path)
-                    state_stack.append(transition.to_state)
-
-        print(strings)
-
-        pass
