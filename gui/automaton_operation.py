@@ -20,7 +20,7 @@ class AutomatonOperation(PageMixin, Gtk.Box):
         super().__init__(*args, **kwargs)
         self.set_orientation(Gtk.Orientation.HORIZONTAL)
         self.automata = automata
-        self.result_name = "Untitled"
+        self.result_name = ""
         self.result_open = False
         self.selected_op = None
         self.clear_oparguments()
@@ -89,7 +89,6 @@ class AutomatonOperation(PageMixin, Gtk.Box):
                 list_name.append(argument.get_name())
             separator = ', '
             self.result_name = f'{str(self.selected_op[0])} ({separator.join(list_name)})'
-
         # print(self.property_box.get_children()) # probably must check if user selected all necessary inputs
         result = self.selected_op[1](*self.argumentslist_op, **self.arguments_op)  # result is an automaton
         result.set_name(self.result_name)
@@ -101,9 +100,6 @@ class AutomatonOperation(PageMixin, Gtk.Box):
         window.add_tab_editor(result,result.get_name())
         window.set_tab_label_color(window.get_current_tab_widget(),'#F00')
         
-        
-    
-
     def update_treeview(self):
         for op in self.operations:
             row = [op['label'], op['fn'], op['params']]
