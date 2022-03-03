@@ -20,30 +20,28 @@ class AutomatonOperation(PageMixin, Gtk.Box):
         super().__init__(*args, **kwargs)
         self.set_orientation(Gtk.Orientation.HORIZONTAL)
         self.automata = automata
-        self.result_name = 'untitled'
+        self.result_name = "Untitled"
         self.result_open = False
         self.selected_op = None
-        self.arguments_op = dict()
-        self.argumentslist_op = list()
-    
+        self.clear_oparguments()
 
         self.operations = [
             {
                 'label': "SUPC", 'fn': Automaton.sup_c, 'params': [
                     {'label': "G", 'type': 'combobox', 'name': 'G'},
                     {'label': "K", 'type': 'combobox', 'name': 'R'},
-                    {'label': "Result", 'type': 'entry', 'name': 'output'},
+                    {'label': "Result", 'type': 'entry', 'name': 'output', 'default_value': "Untitled"},
                     {'label': "Open result ", 'type':'CheckButton','name':'open'}
                     ]},
             {
                 'label': "SYNC", 'fn': Automaton.synchronization, 'params': [
                     {'label': "Automaton", 'type': 'chooser', 'name': 'args'},
-                    {'label': "Result", 'type': 'entry', 'name': 'output'},
+                    {'label': "Result", 'type': 'entry', 'name': 'output', 'default_value': "Untitled"},
                     {'label': "Open result ", 'type':'CheckButton','name':'open'}
                     ]
             }
-
         ]
+
         # tree View # left column
         self.liststore = Gtk.ListStore(str, object, object)
         self.treeview = Gtk.TreeView(model=self.liststore, headers_visible=False)
@@ -70,8 +68,11 @@ class AutomatonOperation(PageMixin, Gtk.Box):
         self.property_box.connect('nadzoru-property-change', self.prop_edited)
         self.right.pack_start(self.property_box, True, True, 0)
 
+    def clear_oparguments(self):
+        self.arguments_op = dict()
+        self.argumentslist_op = list()
+
     def prop_edited(self, widget, value, property_name):
-        print(property_name)
         if property_name == 'output':
             self.result_name = value
         elif property_name =='open':
@@ -80,7 +81,7 @@ class AutomatonOperation(PageMixin, Gtk.Box):
             self.argumentslist_op = value
         else:
             self.arguments_op.update({property_name: value})
- 
+
     def execute(self, widget):
         if self.result_name == '' or 'Untitled':
             list_name = []
@@ -96,14 +97,16 @@ class AutomatonOperation(PageMixin, Gtk.Box):
         #result.save(f"/home/krischanski/Nadzoru2/{self.result_name}.xml") # set your path for testing
         window = self.get_ancestor_window()
         window.props.application.elements.append(result)
+        self.creation_property_operation(self.selected_op[0], self.selected_op[2]) # (op_label, op_params), updates window after adding automaton
         if not(self.result_open):
             return
         window.add_tab_editor(result,result.get_name())
         window.set_tab_label_color(window.get_current_tab_widget(),'#F00')
+        
+        
     
 
     def update_treeview(self):
-        print(self.automata)
         for op in self.operations:
             row = [op['label'], op['fn'], op['params']]
             self.liststore.append(row)
@@ -111,9 +114,12 @@ class AutomatonOperation(PageMixin, Gtk.Box):
     def item_selected(self, selection):
         model, row = selection.get_selected()
         if row is not None:
-            self.arguments_op = dict()
-            self.creation_property_operation(str(model[row][0]), model[row][2])
-            self.selected_op = (model[row][0],model[row][1])
+            self.clear_oparguments()
+            op_params = model[row][2]
+            op_label = str(model[row][0])
+            op_fn = model[row][1]
+            self.creation_property_operation(op_label, op_params)
+            self.selected_op = (op_label, op_fn, op_params)
 
     def creation_property_operation(self, operation_name, params):
         open_automata = []
@@ -126,9 +132,9 @@ class AutomatonOperation(PageMixin, Gtk.Box):
             if obj['type'] == 'combobox':
                 self.property_box.add_combobox(obj['label'], open_automata, data=obj['name'])
             elif obj['type'] == 'entry':
-                self.property_box.add_entry(obj['label'], "untitled", data=obj['name'])
+                self.property_box.add_entry(obj['label'], obj['default_value'], data=obj['name'])
             elif obj['type'] == 'chooser':
-                self.property_box.add_chooser(obj['label'], [1, 3], open_automata, data=obj['name'])
+                self.property_box.add_chooser(obj['label'], [], open_automata, data=obj['name']) # Check if list is really needed
             elif obj['type'] == 'CheckButton':
                 self.property_box.add_checkbutton(obj['label'],self.result_open, data=obj['name'])
 

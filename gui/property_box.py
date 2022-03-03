@@ -93,8 +93,8 @@ class PropertyBox(Gtk.ListBox):
             if tree_iter is not None:
                 #model = widget.get_model()
                 tree_indice = widget.get_active()
-                automaton = values[tree_indice][1]
-                value = automaton
+                selected_value = values[tree_indice][1]
+                value = selected_value
                 
         elif type(widget) == Chooser:
             value = values
@@ -132,11 +132,11 @@ class Chooser(Gtk.Box):
 
         # create unselected treeview widget
         self.unsel_ls = Gtk.ListStore(str, object)
-        unsel_tv, unsel_selection = _create_treeview(self.unsel_ls, "Automaton")
+        unsel_tv, unsel_selection = _create_treeview(self.unsel_ls, "Unselected")
 
         # create selected treeview widget
         self.sel_ls = Gtk.ListStore(str, object)
-        sel_tv, sel_selection = _create_treeview(self.sel_ls, "Automaton")
+        sel_tv, sel_selection = _create_treeview(self.sel_ls, "Selected")
 
         # create buttons widget
         hbox_buttons = Gtk.Box(orientation = Gtk.Orientation.VERTICAL)
@@ -175,10 +175,10 @@ class Chooser(Gtk.Box):
         self.sel_ls.clear()
         for row in self.selected:
             self.sel_ls.append(row)
-        selected_automatons = list()
-        for automaton_list in self.selected:
-            selected_automatons.append(automaton_list[1])
-        self.emit('nadzoru-chooser-change', selected_automatons, self.property_name)
+        out_selected_list = list()
+        for _list in self.selected:
+            out_selected_list.append(_list[1])
+        self.emit('nadzoru-chooser-change', out_selected_list, self.property_name)
         
 GObject.signal_new('nadzoru-chooser-change',
     Chooser,
