@@ -329,6 +329,7 @@ class Automaton(Base):
 
         # editor related attributes
         self._file_path_name = None
+        self.name = None
 
         super().__init__(*args, **kwargs)
 
@@ -348,13 +349,25 @@ class Automaton(Base):
     def get_file_name(self):
         if self._file_path_name is not None:
             return os.path.basename(self._file_path_name)
-        return 'untitled'
-
+        return None
+        
     def get_file_path_name(self):
         return self._file_path_name
 
+    def get_name(self):
+        if self._file_path_name is not None:
+            return self.get_file_name()
+        elif self._name is not None:
+            return self._name
+        return 'untitled'
+
     def set_file_path_name(self, file_path_name):
         self._file_path_name = file_path_name
+        self._name = None 
+
+    def set_name(self, name):
+        if self._file_path_name is None:
+            self._name = name
 
     # ------------------------------------------------------------------------ #
     # -------------------------- Event manipulation -------------------------- #
