@@ -94,12 +94,17 @@
                 </submenu>
             </section>
             <section>
-                <item>
-                    <attribute name="action">win.edit-automaton</attribute>
-                    <attribute name="label" translatable="yes">_Edit</attribute>
-                    <attribute name="icon">gtk-edit</attribute>
-                    <attribute name="accel">&lt;Primary&gt;e</attribute>
-                </item>
+                <submenu>
+                    <attribute name="label">Edit</attribute>
+                    <section>
+                        <item>
+                            <attribute name="action">win.edit-automaton</attribute>
+                            <attribute name="label" translatable="yes">More...</attribute>
+                            <attribute name="icon">gtk-edit</attribute>
+                            <attribute name="accel">&lt;Primary&gt;e</attribute>
+                        </item>
+                    </section>
+                </submenu>
                 <item>
                     <attribute name="action">win.simulate-automaton</attribute>
                     <attribute name="label" translatable="yes">_Simulate</attribute>
