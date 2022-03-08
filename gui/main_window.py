@@ -184,7 +184,7 @@ class MainWindow(Gtk.ApplicationWindow):
     def on_new_automaton(self, action, param=None):
         logging.debug("")
         automaton = Automaton()
-        self.props.application.elements.append(automaton)
+        self.add_to_automatonlist(automaton)
         self.add_tab_editor(automaton, 'Untitled')
 
     def on_open_automaton(self, action, param=None):
@@ -203,7 +203,7 @@ class MainWindow(Gtk.ApplicationWindow):
                     print("Fail to load", error)
                     dialog.destroy()
                     return
-                self.props.application.elements.append(automaton)
+                self.add_to_automatonlist(automaton)
                 if result == Gtk.ResponseType.ACCEPT:
                     self.add_tab_editor(automaton, automaton.get_file_name())
                 dialog.destroy()
@@ -259,7 +259,7 @@ class MainWindow(Gtk.ApplicationWindow):
                 file_name = os.path.basename(full_path_name)
                 automaton = Automaton()
                 automaton.ides_import(full_path_name)
-                self.props.application.elements.append(automaton)
+                self.add_to_automatonlist(automaton)
                 if result == Gtk.ResponseType.OK:
                     self.automaton.get_file_name(automaton,f'{file_name} *')
         dialog.destroy()
@@ -298,3 +298,50 @@ class MainWindow(Gtk.ApplicationWindow):
         operation = AutomatonOperation(self.props.application.elements)
         self.add_tab(operation,'Operation')
 
+    def add_to_automatonlist(self, automaton):  # maybe should be moved to application?
+        self.props.application.elements.append(automaton)
+        self.update_menubar()
+
+    def update_menubar(self): # For now, only adds the name of the automaton name in the edit submenu. It isn't linking to any action yet
+        menubar = self.props.application.menubar
+        menu = self._get_menu(menubar, 'Automata', submenu_text='Edit')
+        if menu.get_n_items() > 1:
+            menu.remove(1)      # maybe write a function to verify the correct position to remove
+        if len(self.props.application.elements) > 0:
+            edit_menu = Gio.Menu()
+            section = Gio.MenuItem.new()
+            section.set_section(edit_menu)
+            
+            for automaton in self.props.application.elements: # aut.get_name isn't working if the automaton doesn't have a name
+                try:
+                    name = automaton.get_name()
+                except:
+                    name = 'Untitled'
+                menuitem = Gio.MenuItem.new(name)
+                edit_menu.append_item(menuitem)
+            
+            menu.append_item(section)
+
+    def _get_menu(self, menu, menu_text, submenu_text=None, action_name=None):  # this could be better by scanning all menuitems 
+        n_items = menu.get_n_items()                                            # so it wouldn't be needed to specify a menu, eg: 'Automata'
+        
+        for item_n in range(n_items):
+            item_att_iter = menu.iterate_item_attributes(item_n)
+            item_link_iter = menu.iterate_item_links(item_n)
+            _, _type, value = item_att_iter.get_next()
+            _, _link, menumodel = item_link_iter.get_next()
+
+            if _link == 'submenu':
+                if value.get_string() == menu_text:
+                    r_menu = self._get_menu(menumodel, menu_text, submenu_text, action_name)
+                    if r_menu is not None:
+                        return r_menu
+                elif value.get_string() == submenu_text:
+                    return menumodel
+
+            elif _link == 'section':
+                r_menu = self._get_menu(menumodel, menu_text, submenu_text, action_name)
+                if r_menu is not None:
+                    return r_menu
+            elif _type == 'action' and value.get_string() == action_name:
+                return menu

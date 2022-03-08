@@ -33,9 +33,11 @@ class PropertyBox(Gtk.ListBox):
         widget.connect('notify::active', self.prop_edited, data, callback, None)
         self._add_row(label, widget)
 
-    def add_entry(self, label, value, data=None, callback=None):
+    def add_entry(self, label, value, data=None, callback=None, placeholder=None):
         widget = Gtk.Entry(text=str(value), xalign=1, width_chars=10, has_frame=False)
         widget.connect('activate', self.prop_edited, None, data, callback, None)
+        if placeholder is not None:
+            widget.set_placeholder_text(placeholder)
         self._add_row(label, widget)
 
     def add_spinbutton(self, label, value, data=None, callback=None, lower=0, upper=1000, step_increment=1, page_increment=100, width_chars=4):
