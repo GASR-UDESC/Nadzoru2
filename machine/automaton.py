@@ -350,7 +350,7 @@ class Automaton(Base):
         if self._file_path_name is not None:
             return os.path.basename(self._file_path_name)
         return None
-        
+
     def get_file_path_name(self):
         return self._file_path_name
 
@@ -363,7 +363,7 @@ class Automaton(Base):
 
     def set_file_path_name(self, file_path_name):
         self._file_path_name = file_path_name
-        self._name = None 
+        self._name = None
 
     def set_name(self, name):
         if self._file_path_name is None:
@@ -1752,6 +1752,7 @@ class Automaton(Base):
 
         return safe_diag
 
+"""
     def get_fb(self):
 
         fb = list()
@@ -1776,6 +1777,18 @@ class Automaton(Base):
                 break
             else:
                 fb.append(state)
+
+        return fb
+"""
+    def get_fb(self):
+        fb = list()
+
+        for state in self.states:
+            if state.diagnoser_bad:
+                for transition in state.in_transitions:
+                    if not transition.from_state.diagnoser_bad:
+                        fb.append(state)
+                        break
 
         return fb
 
