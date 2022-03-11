@@ -1752,35 +1752,8 @@ class Automaton(Base):
 
         return safe_diag
 
-    """
     def get_fb(self):
-
-        fb = list()
-        bad_states = list()
-        bad_state_backward_reach = dict()
-
-        for state in self.states:
-            if state.diagnoser_bad:
-                bad_states.append(state)
-                bad_state_backward_reach[state] = list()
-                for transition in state.in_transitions:
-                    if transition.from_state != state:
-                        bad_state_backward_reach[state].append(transition.from_state)
-
-        for state in bad_states:
-            reach = len(bad_state_backward_reach[state])
-            bad_backward_reach = 0
-            for each in bad_state_backward_reach[state]:
-                if each.diagnoser_bad:
-                    bad_backward_reach += 1
-            if reach == bad_backward_reach:
-                break
-            else:
-                fb.append(state)
-
-        return fb
-    """
-    def get_fb(self):
+        #maps all first bad states of each string in the safe diagnoser
         fb = list()
 
         for state in self.states:
@@ -1793,7 +1766,7 @@ class Automaton(Base):
         return fb
 
     def state_has_diagnosis(self, state):
-
+        #if state is certain
         if state.diagnoser_type == StateType.CERTAIN:
             return True
         else:
@@ -1806,46 +1779,45 @@ class Automaton(Base):
         for s in self.states:
             visited[s] = False
 
-        def forward_recursive(self, state, visited):
-            if visited[s] == True and state.diagnoser_type == StateType.UNCERTAIN:
-                return False
-            elif state.diagnoser_type == StateType.CERTAIN:
+        def forward_recursive(s):
+            if s.diagnoser_type == StateType.CERTAIN:
                 return True
+            elif visited[s] == True:
+                return False
             else:
-                visited[state] = True
-                for t in state.out_transitions:
-                    if not visited[t.to_state]:
-                        if not forward_recursive(self, t.to_state, visited):
-                            return False
-                    else:
+                visited[s] = True
+                for t in s.out_transitions:
+                    if not forward_recursive(t.to_state):
                         return False
             return True
 
-        return forward_recursive(self, state, visited)
+        return forward_recursive(state)
 
     def is_safe_controllable(self):
+        ''' language has to be live (add other dependancies)'''
 
         fb = self.get_fb()
 
-        def backward_recursive(self, state, visited):
+        def backward_recursive(state, visited):
             visited[state] = True
             if self.initial_state == state:
                 return False
             for t in state.in_transitions:
                 if t.event.controllable:
                     if self.state_has_diagnosis(t.from_state) or self.state_has_prognosis(t.from_state):
-                        return True
-                if not visited[t.from_state]:
-                    if not backward_recursive(self, t.from_state, visited):
+                        visited[t.from_state] = True
+                    else:
                         return False
-
+                if not visited[t.from_state]:
+                    if not backward_recursive(t.from_state, visited):
+                        return False
             return True
 
         for bad_state in fb:
             visited = dict()
             for s in self.states:
                 visited[s] = False
-            if not backward_recursive(self, bad_state, visited):
+            if not backward_recursive(bad_state, visited):
                 return False
 
         return True
