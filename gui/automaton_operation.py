@@ -93,7 +93,8 @@ class AutomatonOperation(PageMixin, Gtk.Box):
         result = self.selected_op[1](*self.argumentslist_op, **self.arguments_op)  # result is an automaton
         result.set_name(self.result_name)
         window = self.get_ancestor_window()
-        window.props.application.elements.append(result)
+        window.props.application.add_to_automatonlist(result)
+        #window.props.application.elements.append(result)
         self.creation_property_operation(self.selected_op[0], self.selected_op[2]) # (op_label, op_params), updates window after adding automaton
         if not(self.result_open):
             return

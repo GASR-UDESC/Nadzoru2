@@ -1752,7 +1752,7 @@ class Automaton(Base):
 
         return safe_diag
 
-"""
+    """
     def get_fb(self):
 
         fb = list()
@@ -1779,7 +1779,7 @@ class Automaton(Base):
                 fb.append(state)
 
         return fb
-"""
+    """
     def get_fb(self):
         fb = list()
 
