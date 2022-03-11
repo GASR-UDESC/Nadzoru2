@@ -89,6 +89,13 @@ class Application(Gtk.Application):
     def add_to_automatonlist(self, automaton):  # maybe should be moved to application?
         self.elements.append(automaton)
         self.update_menubar()
+    
+    def remove_from_automatonlist(self, automaton):
+        if automaton in self.elements:
+            self.elements.remove(automaton)
+            return True
+        else:
+            return False
 
     def update_menubar(self): # For now, only adds the name of the automaton name in the edit submenu. It isn't linking to any action yet
         menu = self._get_menu(self.menubar, 'Automata', submenu_text='Edit')
@@ -139,7 +146,6 @@ class Application(Gtk.Application):
 
     def on_edit_menu(self, action, target, args):
         automaton = args[0]
-        print(automaton)
         active_win = self.get_active_window()
         active_win.add_tab_editor(automaton, automaton.get_name())
 
