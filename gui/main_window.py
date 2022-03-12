@@ -128,7 +128,7 @@ class MainWindow(Gtk.ApplicationWindow):
     def get_tabs_list(self):
         tabs_list = list()
         for tab_id in range(self.note.get_n_pages()):
-            tabs_list.append(self.note.get_nth_page(tab_id))
+            tabs_list.append((tab_id, self.note.get_nth_page(tab_id)))
         return tabs_list
 
     def set_tab_page_title(self, widget, title):
@@ -323,4 +323,4 @@ class MainWindow(Gtk.ApplicationWindow):
 
     def on_operation(self,action, param):
         operation = AutomatonOperation(self.props.application.elements)
-        self.add_tab(operation,'Operation')
+        self.add_tab(operation, "Operation")

@@ -26,7 +26,7 @@ class AutomatonManager(PageMixin, Gtk.Box):
         self.scrolled.add(self.treeview)
         self.paned.pack1(self.scrolled, True, True)
         self.paned.pack2(self.sidebox, False, False)
-    
+        
     def build_sidebox(self):
         self.sidebox = Gtk.Box(orientation = Gtk.Orientation.VERTICAL, valign=Gtk.Align.CENTER)
         padding = 5
@@ -47,6 +47,9 @@ class AutomatonManager(PageMixin, Gtk.Box):
         closebtn.connect('clicked', self.on_closebtn)
         self.sidebox.pack_start(closebtn, False, False, padding)
 
+    def on_automatonlist_change(self, widget, automaton_list):
+        self.update_treeview()
+
     def build_treeview(self):
         self.liststore = Gtk.ListStore(str, object)
         self.treeview = Gtk.TreeView(model=self.liststore)
@@ -62,7 +65,6 @@ class AutomatonManager(PageMixin, Gtk.Box):
     def update_treeview(self):
         self.liststore.clear()
         rows = list()
-
         for automaton in self.automaton_list:
             rows.append([automaton.get_name(), automaton])
 
@@ -81,33 +83,29 @@ class AutomatonManager(PageMixin, Gtk.Box):
         self.update_treeview()
 
     def _save_dialog(self, automaton):
-        window = self.get_ancestor_window()
-
-        tabs_list = window.get_tabs_list() # TODO: Find a way to check if automaton is open in another tab (checking all windows)
-        for tab in tabs_list:
-            if isinstance(tab, AutomatonEditor):
-                automaton_on_editor = tab.automaton == automaton
-                if automaton_on_editor:
-                    break
-
-        dialog = Gtk.FileChooserDialog("Choose file", window, Gtk.FileChooserAction.SAVE,
+        active_window = self.get_ancestor_window()
+        
+        dialog = Gtk.FileChooserDialog("Choose file", active_window, Gtk.FileChooserAction.SAVE,
             ("_Cancel", Gtk.ResponseType.CANCEL, "_Save", Gtk.ResponseType.OK), do_overwrite_confirmation=True)
 
         result = dialog.run()
         if result ==  Gtk.ResponseType.OK:
+            app = active_window.get_application()
             file_path = dialog.get_filename()
             dialog.destroy()
             if not(file_path.lower().endswith('.xml')):
                 file_path = f'{file_path}.xml'
 
-            if automaton_on_editor:
-                tab.save(file_path)
+            is_saved = False 
+            for tab_id, window in app.is_automaton_open(automaton, AutomatonEditor): # estranho
+                if not is_saved:
+                    tab = window.note.get_nth_page(tab_id)
+                    tab.save(file_path)
+                is_saved = True
                 window.set_tab_page_title(tab, automaton.get_file_name())
                 window.set_tab_label_color(tab, '#000')
-            else:
+            if not is_saved:
                 automaton.save(file_path)
-        
-        self.update_treeview()
 
     def on_editbtn(self, widget):
         window = self.get_ancestor_window()
@@ -116,15 +114,18 @@ class AutomatonManager(PageMixin, Gtk.Box):
         self.update_treeview()
 
     def on_simulatebtn(self, widget):
-        print("Sim", self._get_tree_selection().get_name())
-
-    def on_closebtn(self, widget): # TODO: find a way to remove automaton and close all instances (editor, simulator, etc)
-        window = self.get_ancestor_window()
-        for automaton in self._get_tree_selection():
-            window.props.application.remove_from_automatonlist(automaton)
-        
+        app = self.get_ancestor_window().get_application()
         self.update_treeview()
-        
+        #app.connect('nadzoru-automatonlist-change', self.on_automatonlist_change)
+        #print("Sim", self._get_tree_selection().get_name())
+
+    def on_closebtn(self, widget):
+        app = self.get_ancestor_window().get_application()
+        for automaton in self._get_tree_selection():
+            for tab_id, window in app.is_automaton_open(automaton):
+                if window.remove_tab(tab_id):
+                    app.remove_from_automatonlist(automaton)
+        self.update_treeview()
 
     def _get_tree_selection(self):
         selected_automatons = list()

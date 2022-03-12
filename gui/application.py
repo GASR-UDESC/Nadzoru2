@@ -2,7 +2,7 @@ import sys
 import gi
 import os
 import logging
-from gi.repository import Gdk, Gio, Gtk, GLib
+from gi.repository import Gdk, Gio, Gtk, GLib, GObject
 
 from gui.main_window import MainWindow
 
@@ -16,6 +16,7 @@ class Application(Gtk.Application):
         super().__init__(*args, application_id="org.nadzoru2.application", flags=Gio.ApplicationFlags.HANDLES_COMMAND_LINE, **kwargs)
         self.elements = list()
         self.startup_callback = startup_callback
+        self.connect('nadzoru-automatonlist-change', self.on_automatonlist_change)
 
         self.add_main_option("log", ord("l"), GLib.OptionFlags.NONE, GLib.OptionArg.STRING, "Log level", None)
 
@@ -85,19 +86,28 @@ class Application(Gtk.Application):
         logging.debug("")
         window = editor.get_ancestor_window()
         window.set_tab_label_color(editor, '#F00')
-
-    def add_to_automatonlist(self, automaton):  # maybe should be moved to application?
-        self.elements.append(automaton)
         self.update_menubar()
+
+    def on_automatonlist_change(self, app, automaton_list):
+        #print(':)', app)
+        self.update_menubar()
+    
+    def add_to_automatonlist(self, automaton):
+        self.elements.append(automaton)
+        self.emit('nadzoru-automatonlist-change', self.elements)
+    
+    def get_automatonlist(self):
+        return self.elements
     
     def remove_from_automatonlist(self, automaton):
         if automaton in self.elements:
             self.elements.remove(automaton)
+            self.emit('nadzoru-automatonlist-change', self.elements)
             return True
         else:
             return False
 
-    def update_menubar(self): # For now, only adds the name of the automaton name in the edit submenu. It isn't linking to any action yet
+    def update_menubar(self):
         menu = self._get_menu(self.menubar, 'Automata', submenu_text='Edit')
         if menu.get_n_items() > 1:
             menu.remove(1)      # maybe write a function to verify the correct position to remove
@@ -109,11 +119,6 @@ class Application(Gtk.Application):
                 name = automaton.get_name()
 
                 self._create_action('edit-single-automaton'+str(index), self.on_edit_menu, automaton)
-
-                # action = Gio.SimpleAction.new('edit-single-automaton'+str(index))
-                # action.connect("activate", self.on_edit_menu, automaton)
-                
-                # self.add_action(action)
                 
                 menuitem = Gio.MenuItem.new(name, 'app.edit-single-automaton'+str(index))
                 edit_menu.append_item(menuitem)
@@ -149,3 +154,27 @@ class Application(Gtk.Application):
         active_win = self.get_active_window()
         active_win.add_tab_editor(automaton, automaton.get_name())
 
+    def is_automaton_open(self, automaton, tab_type=None): # returns a list of tab locations where automaton is open
+        windows = self.get_windows()
+        automaton_location = list()
+        for window in windows:
+            is_open = False
+            tabs_list = window.get_tabs_list()
+            for tab_id, tab in tabs_list:
+                if tab_type is None and hasattr(tab, 'automaton'):
+                    is_open = tab.automaton == automaton
+                    if is_open:
+                        automaton_location.append((tab_id, window))
+                        break
+                elif tab_type is not None and isinstance(tab, tab_type):
+                    is_open = tab.automaton == automaton
+                    if is_open:
+                        automaton_location.append((tab_id, window))
+                        break
+        return automaton_location
+
+GObject.signal_new('nadzoru-automatonlist-change',
+    Application,
+    GObject.SignalFlags.RUN_LAST,
+    GObject.TYPE_PYOBJECT,
+    (GObject.TYPE_PYOBJECT,))
