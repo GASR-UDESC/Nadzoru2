@@ -359,11 +359,15 @@ class Automaton(Base):
             return self.get_file_name()
         elif self._name is not None:
             return self._name
-        return 'untitled'
+        return 'Untitled'
 
     def set_file_path_name(self, file_path_name):
         self._file_path_name = file_path_name
         self._name = None
+
+    def clear_file_path_name(self, name=None):
+        self._file_path_name = None
+        self._name = name
 
     def set_name(self, name):
         if self._file_path_name is None:

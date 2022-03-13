@@ -6,7 +6,7 @@ from gi.repository import Gdk, Gio, Gtk
 
 from machine.automaton import Automaton
 from gui.automaton_editor import AutomatonEditor
-from gui.automaton_simulator import AutomatonSimulator
+from gui.automaton_simulator import AutomatonSimulator, DialogSimulator
 from gui.automaton_manager import AutomatonManager
 from gui.tool_palette import ToolPalette
 from gui.automaton_operation import AutomatonOperation
@@ -120,6 +120,10 @@ class MainWindow(Gtk.ApplicationWindow):
         editor = AutomatonEditor(automaton)
         editor.connect('nadzoru-editor-change', self.props.application.on_editor_change)
         self.add_tab(editor, label)
+    
+    def add_tab_simulator(self, automaton, label):
+        simulator = AutomatonSimulator(automaton)
+        self.add_tab(simulator, label)
 
     def get_current_tab_widget(self):
         _id = self.note.get_current_page()
@@ -198,7 +202,7 @@ class MainWindow(Gtk.ApplicationWindow):
         logging.debug("")
         automaton = Automaton()
         # self.add_to_automatonlist(automaton)
-        self.props.application.add_to_automatonlist(automaton)
+        self.get_application().add_to_automatonlist(automaton)
         self.add_tab_editor(automaton, 'Untitled')
 
     def on_open_automaton(self, action, param=None):
@@ -226,8 +230,7 @@ class MainWindow(Gtk.ApplicationWindow):
                     print("Fail to load", error)
                     dialog.destroy()
                     return
-                self.props.application.add_to_automatonlist(automaton)
-                # self.add_to_automatonlist(automaton)
+                self.get_application().add_to_automatonlist(automaton)
                 if result == Gtk.ResponseType.ACCEPT:
                     self.add_tab_editor(automaton, automaton.get_file_name())
                 dialog.destroy()
@@ -283,7 +286,7 @@ class MainWindow(Gtk.ApplicationWindow):
                 file_name = os.path.basename(full_path_name)
                 automaton = Automaton()
                 automaton.ides_import(full_path_name)
-                self.props.application.add_to_automatonlist(automaton)
+                self.get_application().add_to_automatonlist(automaton)
                 # self.add_to_automatonlist(automaton)
                 if result == Gtk.ResponseType.OK:
                     self.automaton.get_file_name(automaton,f'{file_name} *')
@@ -305,22 +308,34 @@ class MainWindow(Gtk.ApplicationWindow):
 
     def on_edit_automaton(self, action, param):
         logging.debug("")
-        manager = AutomatonManager(self.props.application.elements)
+        app = self.get_application()
+        manager = AutomatonManager(app)#(app.get_automatonlist(), app)
         self.add_tab(manager, "Manager")
 
     def on_simulate_automaton(self, action, param):
-        logging.debug("")
-        # TODO: open dialog to select from self.props.application.elements
-        from test_automata import automata_01  # For testing
-        automaton = Automaton()
-        automata_01(automaton)  # For testing
-        simulator = AutomatonSimulator(automaton)
-        self.add_tab(simulator, "Simulator")
+        if len(self.get_application().get_automatonlist()) > 0:
+            dialog = DialogSimulator(self)
+            response = dialog.run()
+            
+            if response == Gtk.ResponseType.OK:
+                for automaton in dialog.get_result():
+                    self.add_tab_simulator(automaton,  "Simu: %s" %automaton.get_name())
+            elif response == Gtk.ResponseType.CANCEL:
+                pass
+            dialog.destroy()
+        # logging.debug("")
+        # # TODO: open dialog to select from self.props.application.elements
+        # from test_automata import automata_01  # For testing
+        # automaton = Automaton()
+        # automata_01(automaton)  # For testing
+        # simulator = AutomatonSimulator(automaton)
+        # self.add_tab(simulator, "Simulator")
 
     def on_close_tab(self, action, param):
         logging.debug("")
         self.remove_current_tab()
 
     def on_operation(self,action, param):
-        operation = AutomatonOperation(self.props.application.elements)
+        app = self.get_application()
+        operation = AutomatonOperation(app) #self.props.application.elements)
         self.add_tab(operation, "Operation")

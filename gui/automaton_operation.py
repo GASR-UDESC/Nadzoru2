@@ -14,15 +14,19 @@ from gui.property_box import PropertyBox
 
 class AutomatonOperation(PageMixin, Gtk.Box):
 
-    def __init__(self, automata, *args, **kwargs):
+    def __init__(self, application, *args, **kwargs):
         if 'spacing' not in kwargs:
             kwargs['spacing'] = 2
         super().__init__(*args, **kwargs)
         self.set_orientation(Gtk.Orientation.HORIZONTAL)
-        self.automata = automata
+
+        self.application = application
+        self.application.connect('nadzoru-automatonlist-change', self.on_automatonlist_change)
+        self.automaton_list = application.get_automatonlist()
         self.result_name = ""
         self.result_open = False
         self.selected_op = None
+
         self.clear_oparguments()
 
         self.operations = [
@@ -44,13 +48,13 @@ class AutomatonOperation(PageMixin, Gtk.Box):
 
         # tree View # left column
         self.liststore = Gtk.ListStore(str, object, object)
-        self.treeview = Gtk.TreeView(model=self.liststore, headers_visible=False)
-        self.selected_row = self.treeview.get_selection()
+        treeview = Gtk.TreeView(model=self.liststore, headers_visible=False)
+        self.selected_row = treeview.get_selection()
         self.selected_row.connect("changed", self.item_selected)
-        self.cell = Gtk.CellRendererText()
-        self.column = Gtk.TreeViewColumn('Operation', self.cell, text=0)
-        self.treeview.append_column(self.column)
-        self.pack_start(self.treeview, True, True, 0)
+        cell = Gtk.CellRendererText()
+        column = Gtk.TreeViewColumn('Operation', cell, text=0)
+        treeview.append_column(column)
+        self.pack_start(treeview, True, True, 0)
         separator = Gtk.Separator(orientation=Gtk.Orientation.VERTICAL)
         self.pack_start(separator, False, False, 0)
         self.update_treeview()
@@ -59,9 +63,9 @@ class AutomatonOperation(PageMixin, Gtk.Box):
         self.pack_start(self.right, True, True, 0)
 
         # execute button
-        self.execute_button = Gtk.Button(label='EXECUTE')
-        self.execute_button.connect('clicked', self.execute)
-        self.right.pack_end(self.execute_button, False, False, 0)
+        execute_button = Gtk.Button(label='EXECUTE')
+        execute_button.connect('clicked', self.execute)
+        self.right.pack_end(execute_button, False, False, 0)
 
         # property BOX
         self.property_box = PropertyBox()
@@ -90,14 +94,15 @@ class AutomatonOperation(PageMixin, Gtk.Box):
             separator = ', '
             self.result_name = f'{str(self.selected_op[0])} ({separator.join(list_name)})'
         # print(self.property_box.get_children()) # probably must check if user selected all necessary inputs
-        result = self.selected_op[1](*self.argumentslist_op, **self.arguments_op)  # result is an automaton
+        operation_fn = self.selected_op[1]
+        result = operation_fn(*self.argumentslist_op, **self.arguments_op)  # result is an automaton
         result.set_name(self.result_name)
-        window = self.get_ancestor_window()
-        window.props.application.add_to_automatonlist(result)
-        #window.props.application.elements.append(result)
-        self.creation_property_operation(self.selected_op[0], self.selected_op[2]) # (op_label, op_params), updates window after adding automaton
+
+        self.application.add_to_automatonlist(result)
+
         if not(self.result_open):
             return
+        window = self.get_ancestor_window()
         window.add_tab_editor(result,result.get_name())
         window.set_tab_label_color(window.get_current_tab_widget(),'#F00')
         
@@ -116,11 +121,21 @@ class AutomatonOperation(PageMixin, Gtk.Box):
             self.creation_property_operation(op_label, op_params)
             self.selected_op = (op_label, op_fn, op_params)
 
+    def on_automatonlist_change(self, widget, automaton_list):
+        #self.update_treeview()
+        self.automaton_list = automaton_list
+        op_label = self.selected_op[0]
+        op_params = self.selected_op[2]
+        self.creation_property_operation(op_label, op_params)
+
+
+
+
     def creation_property_operation(self, operation_name, params):
         open_automata = []
         self.property_box.clear()
 
-        for automato in self.automata:
+        for automato in self.automaton_list:
             open_automata.append((automato.get_name(), automato))
 
         for obj in params:
@@ -133,21 +148,6 @@ class AutomatonOperation(PageMixin, Gtk.Box):
             elif obj['type'] == 'CheckButton':
                 self.property_box.add_checkbutton(obj['label'],self.result_open, data=obj['name'])
 
-
-#     class Operation():
-        # operation = [
-        #     {
-        #         'label': "SUPC", 'Fn': Automaton.sup_c(), 'params':[
-        #             {'label': "G", 'type': 'combobox'},
-        #             {'label': "K", 'type': 'combobox'},
-        #             {'label': "Result", 'type': 'label'}]},
-        #     {
-        #         'label': "SYNC", 'Fn': Automaton.synchronization(), 'params':[
-        #             {'label': "Automaton", 'type': 'mult'},
-        #             {'label': "Result", 'type': 'label'}]
-        #     }
-
-        # ]
 
 
 #         def __init__(self,method, label):
@@ -172,10 +172,4 @@ class AutomatonOperation(PageMixin, Gtk.Box):
 #         self.append(op)
 #         return op
 
-            
-if __name__ == '__main__':
-    a = AutomatonOperation()
-    a.connect("delete-event", Gtk.main_quit)
-    a.show_all()
-    Gtk.main()
 

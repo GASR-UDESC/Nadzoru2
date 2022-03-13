@@ -5,15 +5,18 @@ from gi.repository import GLib, Gio, Gtk
 
 from gui.base import PageMixin
 from gui.automaton_editor import AutomatonEditor
+from gui.automaton_simulator import AutomatonSimulator
 from machine.automaton import Automaton
 #from gui.property_box import PropertyBox
 
 class AutomatonManager(PageMixin, Gtk.Box):
-    def __init__(self, automaton_list, *args, **kwargs):
+    def __init__(self, application, *args, **kwargs):
         if 'spacing' not in kwargs:
             kwargs['spacing'] = 2
         super().__init__(*args, **kwargs)
-        self.automaton_list = automaton_list
+        self.automaton_list = application.get_automatonlist()
+        self.application = application
+        self.application.connect('nadzoru-automatonlist-change', self.on_automatonlist_change)
         self.set_orientation(Gtk.Orientation.HORIZONTAL)
 
         self.paned = Gtk.Paned()
@@ -49,6 +52,7 @@ class AutomatonManager(PageMixin, Gtk.Box):
 
     def on_automatonlist_change(self, widget, automaton_list):
         self.update_treeview()
+        self.automaton_list = automaton_list
 
     def build_treeview(self):
         self.liststore = Gtk.ListStore(str, object)
@@ -57,6 +61,8 @@ class AutomatonManager(PageMixin, Gtk.Box):
         self.treeview_selection.set_mode(Gtk.SelectionMode.MULTIPLE)
 
         cell = Gtk.CellRendererText()
+        cell.set_property('editable', True)
+        cell.connect('edited', self.edit_treeview_text)
         column = Gtk.TreeViewColumn("Open Automatons", cell, text=0)
         self.treeview.append_column(column)
         
@@ -77,6 +83,16 @@ class AutomatonManager(PageMixin, Gtk.Box):
         # for i in range(60):
         #     self.liststore.append(['row'+str(i), i])
 
+    def edit_treeview_text(self, cell, path, new_text):
+        automaton = self.liststore[path][1]
+        if automaton.get_file_path_name() is None: # Should this change the name of a automaton when it has a file_path_name?
+            automaton.set_name(new_text)
+            for tab_id, window in self.application.is_automaton_open(automaton):
+                tab = window.note.get_nth_page(tab_id)
+                window.set_tab_page_title(tab, automaton.get_name())
+        self.application.emit('nadzoru-automatonlist-change', self.automaton_list)
+        self.update_treeview()
+
     def on_savebtn(self, widget):
         for automaton in self._get_tree_selection():
             self._save_dialog(automaton)
@@ -90,42 +106,52 @@ class AutomatonManager(PageMixin, Gtk.Box):
 
         result = dialog.run()
         if result ==  Gtk.ResponseType.OK:
-            app = active_window.get_application()
             file_path = dialog.get_filename()
             dialog.destroy()
             if not(file_path.lower().endswith('.xml')):
                 file_path = f'{file_path}.xml'
 
-            is_saved = False 
-            for tab_id, window in app.is_automaton_open(automaton, AutomatonEditor): # estranho
-                if not is_saved:
-                    tab = window.note.get_nth_page(tab_id)
-                    tab.save(file_path)
-                is_saved = True
-                window.set_tab_page_title(tab, automaton.get_file_name())
-                window.set_tab_label_color(tab, '#000')
-            if not is_saved:
+            # automaton.save saves the file.
+            # editor.save saves the file and removes has_changes_to_save status (editor is a AutomatonEditor)
+
+            if not self.application.is_automaton_open(automaton, AutomatonEditor):
                 automaton.save(file_path)
 
+            is_saved = False 
+            for tab_id, window in self.application.is_automaton_open(automaton, AutomatonEditor): # estranho
+                editor = window.note.get_nth_page(tab_id)
+                if not is_saved:
+                    editor.save(file_path)
+                is_saved = True
+                window.set_tab_page_title(editor, automaton.get_name())
+                window.set_tab_label_color(editor, '#000')
+
+
     def on_editbtn(self, widget):
-        window = self.get_ancestor_window()
-        for automaton in self._get_tree_selection():
-            window.add_tab_editor(automaton, automaton.get_name())
+        # If there is already a AutomatonEditor with the selected automaton, a copy will be created
+        active_window = self.get_ancestor_window() 
+        for automaton in self._get_tree_selection():  
+            if not self.application.is_automaton_open(automaton, AutomatonEditor):
+                active_window.add_tab_editor(automaton, automaton.get_name())
+            else:
+                automaton = automaton.copy()
+                automaton.clear_file_path_name(automaton.get_name()+ " copy")
+                self.application.add_to_automatonlist(automaton)
+                active_window.add_tab_editor(automaton, automaton.get_name())
         self.update_treeview()
 
     def on_simulatebtn(self, widget):
-        app = self.get_ancestor_window().get_application()
+
+        active_window = self.get_ancestor_window()
+        for automaton in self._get_tree_selection():
+            active_window.add_tab_simulator(automaton, "Simu: %s" %automaton.get_name())
+            # if not self.application.is_automaton_open(automaton, AutomatonSimulator): # Probably OK to have more than 1 simulator instance
+
         self.update_treeview()
-        #app.connect('nadzoru-automatonlist-change', self.on_automatonlist_change)
-        #print("Sim", self._get_tree_selection().get_name())
 
     def on_closebtn(self, widget):
-        app = self.get_ancestor_window().get_application()
         for automaton in self._get_tree_selection():
-            for tab_id, window in app.is_automaton_open(automaton):
-                if window.remove_tab(tab_id):
-                    app.remove_from_automatonlist(automaton)
-        self.update_treeview()
+            self.application.close_automaton(automaton)
 
     def _get_tree_selection(self):
         selected_automatons = list()

@@ -89,7 +89,6 @@ class Application(Gtk.Application):
         self.update_menubar()
 
     def on_automatonlist_change(self, app, automaton_list):
-        #print(':)', app)
         self.update_menubar()
     
     def add_to_automatonlist(self, automaton):
@@ -98,11 +97,19 @@ class Application(Gtk.Application):
     
     def get_automatonlist(self):
         return self.elements
-    
-    def remove_from_automatonlist(self, automaton):
+
+    def _remove_from_automaton_list(self, automaton):
+        self.elements.remove(automaton)
+        self.emit('nadzoru-automatonlist-change', self.elements) 
+
+    def close_automaton(self, automaton):
         if automaton in self.elements:
-            self.elements.remove(automaton)
-            self.emit('nadzoru-automatonlist-change', self.elements)
+            if not self.is_automaton_open(automaton):
+                self._remove_from_automaton_list(automaton)
+            else:
+                for tab_id, window in self.is_automaton_open(automaton):
+                    if window.remove_tab(tab_id):
+                        self._remove_from_automaton_list(automaton)
             return True
         else:
             return False
@@ -126,7 +133,7 @@ class Application(Gtk.Application):
             menu.append_item(section)
 
     def _get_menu(self, menu, menu_text, submenu_text=None, action_name=None):  # this could be better by scanning all menuitems 
-        n_items = menu.get_n_items()                                            # so it wouldn't be needed to specify a menu, eg: 'Automata'
+        n_items = menu.get_n_items()                                            # so it wouldn't be needed to specify a menu, eg: 'Automata', 'File' etc
         
         for item_n in range(n_items):
             item_att_iter = menu.iterate_item_attributes(item_n)
@@ -151,8 +158,18 @@ class Application(Gtk.Application):
 
     def on_edit_menu(self, action, target, args):
         automaton = args[0]
-        active_win = self.get_active_window()
-        active_win.add_tab_editor(automaton, automaton.get_name())
+        active_window = self.get_active_window()
+
+        if not self.is_automaton_open(automaton):
+            active_window.add_tab_editor(automaton, automaton.get_name())
+        else:
+            for tab_id, window in self.is_automaton_open(automaton):
+                tab = window.note.get_nth_page(tab_id)
+                if tab.__class__.__name__ == 'AutomatonEditor':
+                    automaton = automaton.copy()
+                    automaton.clear_file_path_name(automaton.get_name()+ " copy")
+                    self.add_to_automatonlist(automaton)
+                    active_window.add_tab_editor(automaton, automaton.get_name())
 
     def is_automaton_open(self, automaton, tab_type=None): # returns a list of tab locations where automaton is open
         windows = self.get_windows()
@@ -162,15 +179,15 @@ class Application(Gtk.Application):
             tabs_list = window.get_tabs_list()
             for tab_id, tab in tabs_list:
                 if tab_type is None and hasattr(tab, 'automaton'):
-                    is_open = tab.automaton == automaton
+                    is_open = tab.automaton is automaton
                     if is_open:
                         automaton_location.append((tab_id, window))
-                        break
+                        # break
                 elif tab_type is not None and isinstance(tab, tab_type):
-                    is_open = tab.automaton == automaton
+                    is_open = tab.automaton is automaton
                     if is_open:
                         automaton_location.append((tab_id, window))
-                        break
+                        # break
         return automaton_location
 
 GObject.signal_new('nadzoru-automatonlist-change',
