@@ -9,6 +9,10 @@ class PageMixin:
     def get_ancestor_window(self):
         return self.get_ancestor(Gtk.Window)
 
+    def get_application(self):
+        win = self.get_ancestor_window()
+        return win.get_application()
+
     def has_changes_to_save(self):
         return self._changes_to_save
 

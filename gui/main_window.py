@@ -116,14 +116,24 @@ class MainWindow(Gtk.ApplicationWindow):
                 return False  # at least one tab canceled
         return True  # was able to close all tabs
 
-    def add_tab_editor(self, automaton, label): 
-        editor = AutomatonEditor(automaton)
-        editor.connect('nadzoru-editor-change', self.props.application.on_editor_change)
-        self.add_tab(editor, label)
+    def add_tab_editor(self, automaton, label):
+        ''' Checks if automaton is already open in another tab/window. 
+            creates a new editor instance if it isn't or focus the tab if it is
+        '''
+        already_open_in = self.get_application().is_automaton_open(automaton, AutomatonEditor)
+        if already_open_in is None:
+            editor = AutomatonEditor(automaton)
+            editor.connect('nadzoru-editor-change', self.props.application.on_editor_change)
+            self.add_tab(editor, label)
+        else:
+            tab_id, window = already_open_in
+            window.note.set_current_page(tab_id)
+            window.present()
+
     
     def add_tab_simulator(self, automaton, label):
         simulator = AutomatonSimulator(automaton)
-        self.add_tab(simulator, label)
+        self.add_tab(simulator, label) # Probably OK to have more than 1 simulator instance
 
     def get_current_tab_widget(self):
         _id = self.note.get_current_page()
@@ -308,21 +318,22 @@ class MainWindow(Gtk.ApplicationWindow):
 
     def on_edit_automaton(self, action, param):
         logging.debug("")
-        app = self.get_application()
-        manager = AutomatonManager(app)#(app.get_automatonlist(), app)
+        manager = AutomatonManager()
         self.add_tab(manager, "Manager")
 
     def on_simulate_automaton(self, action, param):
-        if len(self.get_application().get_automatonlist()) > 0:
-            dialog = DialogSimulator(self)
-            response = dialog.run()
+        manager = AutomatonManager()
+        self.add_tab(manager, "Manager")
+        # if len(self.get_application().get_automatonlist()) > 0:
+        #     dialog = DialogSimulator(self)
+        #     response = dialog.run()
             
-            if response == Gtk.ResponseType.OK:
-                for automaton in dialog.get_result():
-                    self.add_tab_simulator(automaton,  "Simu: %s" %automaton.get_name())
-            elif response == Gtk.ResponseType.CANCEL:
-                pass
-            dialog.destroy()
+        #     if response == Gtk.ResponseType.OK:
+        #         for automaton in dialog.get_result():
+        #             self.add_tab_simulator(automaton,  "Simu: %s" %automaton.get_name())
+        #     elif response == Gtk.ResponseType.CANCEL:
+        #         pass
+        #     dialog.destroy()
         # logging.debug("")
         # # TODO: open dialog to select from self.props.application.elements
         # from test_automata import automata_01  # For testing
@@ -336,6 +347,6 @@ class MainWindow(Gtk.ApplicationWindow):
         self.remove_current_tab()
 
     def on_operation(self,action, param):
-        app = self.get_application()
-        operation = AutomatonOperation(app) #self.props.application.elements)
+        #app = self.get_application()
+        operation = AutomatonOperation() #self.props.application.elements)
         self.add_tab(operation, "Operation")

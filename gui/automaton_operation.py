@@ -14,15 +14,14 @@ from gui.property_box import PropertyBox
 
 class AutomatonOperation(PageMixin, Gtk.Box):
 
-    def __init__(self, application, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         if 'spacing' not in kwargs:
             kwargs['spacing'] = 2
         super().__init__(*args, **kwargs)
+        self.automatonlist = list()
         self.set_orientation(Gtk.Orientation.HORIZONTAL)
+        self.connect('parent-set', self.on_parent_set)
 
-        self.application = application
-        self.application.connect('nadzoru-automatonlist-change', self.on_automatonlist_change)
-        self.automaton_list = application.get_automatonlist()
         self.result_name = ""
         self.result_open = False
         self.selected_op = None
@@ -46,18 +45,10 @@ class AutomatonOperation(PageMixin, Gtk.Box):
             }
         ]
 
-        # tree View # left column
-        self.liststore = Gtk.ListStore(str, object, object)
-        treeview = Gtk.TreeView(model=self.liststore, headers_visible=False)
-        self.selected_row = treeview.get_selection()
-        self.selected_row.connect("changed", self.item_selected)
-        cell = Gtk.CellRendererText()
-        column = Gtk.TreeViewColumn('Operation', cell, text=0)
-        treeview.append_column(column)
-        self.pack_start(treeview, True, True, 0)
+        self.build_treeview()   # Build the treeview in the left side
+        
         separator = Gtk.Separator(orientation=Gtk.Orientation.VERTICAL)
         self.pack_start(separator, False, False, 0)
-        self.update_treeview()
 
         self.right = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         self.pack_start(self.right, True, True, 0)
@@ -72,14 +63,37 @@ class AutomatonOperation(PageMixin, Gtk.Box):
         self.property_box.connect('nadzoru-property-change', self.prop_edited)
         self.right.pack_start(self.property_box, True, True, 0)
 
+    def on_parent_set(self, widget, oldparent):     # Widget is self
+        # GTK removes self's parent first when a tab is moved to another window or
+        # when the application is closed, thus, it isn't possible to get_application.
+        # This happens when there was a parent, that is, oldparent isn't None.
+        if oldparent is None:                       
+            app = widget.get_application()          
+            app.connect('nadzoru-automatonlist-change', self.on_automatonlist_change)
+            self.automatonlist = app.get_automatonlist()
+
     def clear_oparguments(self):
         self.arguments_op = dict()
         self.argumentslist_op = list()
 
+    def build_treeview(self):
+        self.liststore = Gtk.ListStore(str, object, object)
+        treeview = Gtk.TreeView(model=self.liststore, headers_visible=False)
+        self.selected_row = treeview.get_selection()
+        self.selected_row.connect("changed", self.item_selected)
+        cell = Gtk.CellRendererText()
+        column = Gtk.TreeViewColumn('Operation', cell, text=0)
+        treeview.append_column(column)
+        self.pack_start(treeview, True, True, 0)
+
+        for op in self.operations:
+            row = [op['label'], op['fn'], op['params']]
+            self.liststore.append(row)
+
     def prop_edited(self, widget, value, property_name):
         if property_name == 'output':
             self.result_name = value
-        elif property_name =='open':
+        elif property_name == 'open':
             self.result_open = value
         elif property_name == 'args':
             self.argumentslist_op = value
@@ -87,7 +101,7 @@ class AutomatonOperation(PageMixin, Gtk.Box):
             self.arguments_op.update({property_name: value})
 
     def execute(self, widget):
-        if self.result_name == '': 
+        if self.result_name == '':
             list_name = []
             for argument in self.argumentslist_op:
                 list_name.append(argument.get_name())
@@ -98,18 +112,13 @@ class AutomatonOperation(PageMixin, Gtk.Box):
         result = operation_fn(*self.argumentslist_op, **self.arguments_op)  # result is an automaton
         result.set_name(self.result_name)
 
-        self.application.add_to_automatonlist(result)
+        self.get_application().add_to_automatonlist(result)
 
         if not(self.result_open):
             return
         window = self.get_ancestor_window()
-        window.add_tab_editor(result,result.get_name())
-        window.set_tab_label_color(window.get_current_tab_widget(),'#F00')
-        
-    def update_treeview(self):
-        for op in self.operations:
-            row = [op['label'], op['fn'], op['params']]
-            self.liststore.append(row)
+        window.add_tab_editor(result, result.get_name())
+        window.set_tab_label_color(window.get_current_tab_widget(), '#F00')
 
     def item_selected(self, selection):
         model, row = selection.get_selected()
@@ -121,21 +130,16 @@ class AutomatonOperation(PageMixin, Gtk.Box):
             self.creation_property_operation(op_label, op_params)
             self.selected_op = (op_label, op_fn, op_params)
 
-    def on_automatonlist_change(self, widget, automaton_list):
-        #self.update_treeview()
-        self.automaton_list = automaton_list
+    def on_automatonlist_change(self, widget, automatonlist):
+        self.automatonlist = automatonlist
         op_label = self.selected_op[0]
         op_params = self.selected_op[2]
         self.creation_property_operation(op_label, op_params)
 
-
-
-
     def creation_property_operation(self, operation_name, params):
         open_automata = []
         self.property_box.clear()
-
-        for automato in self.automaton_list:
+        for automato in self.automatonlist:
             open_automata.append((automato.get_name(), automato))
 
         for obj in params:

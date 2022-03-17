@@ -93,21 +93,21 @@ class Application(Gtk.Application):
     
     def add_to_automatonlist(self, automaton):
         self.elements.append(automaton)
-        self.emit('nadzoru-automatonlist-change', self.elements)
+        self.emit('nadzoru-automatonlist-change', self.get_automatonlist())
     
-    def get_automatonlist(self):
+    def get_automatonlist(self): # TODO: return a iterator
         return self.elements
 
     def _remove_from_automaton_list(self, automaton):
         self.elements.remove(automaton)
-        self.emit('nadzoru-automatonlist-change', self.elements) 
+        self.emit('nadzoru-automatonlist-change', self.get_automatonlist()) 
 
     def close_automaton(self, automaton):
         if automaton in self.elements:
-            if not self.is_automaton_open(automaton):
+            if not self.is_automaton_open_anywhere(automaton):
                 self._remove_from_automaton_list(automaton)
             else:
-                for tab_id, window in self.is_automaton_open(automaton):
+                for tab_id, window in self.is_automaton_open_anywhere(automaton):
                     if window.remove_tab(tab_id):
                         self._remove_from_automaton_list(automaton)
             return True
@@ -115,25 +115,39 @@ class Application(Gtk.Application):
             return False
 
     def update_menubar(self):
-        menu = self._get_menu(self.menubar, 'Automata', submenu_text='Edit')
-        if menu.get_n_items() > 1:
-            menu.remove(1)      # maybe write a function to verify the correct position to remove
-        if len(self.elements) > 0:
-            edit_menu = Gio.Menu()
-            section = Gio.MenuItem.new()
-            section.set_section(edit_menu)
-            for index, automaton in enumerate(self.elements):
-                name = automaton.get_name()
+        # Edit menu section
+        self._rebuild_submenubar('Automata', '_Edit', 'edit-automaton', self.on_edit_menu)
+        self._rebuild_submenubar('Automata', '_Simulate', 'simulate-automaton', self.on_simulate_menu)
+        
+        
+    def _rebuild_submenubar(self, mainmenu_label, submenu_label, new_action, callback, max_items=10):
+        menu = self._get_menu(self.menubar, mainmenu_label, submenu_label)
 
-                self._create_action('edit-single-automaton'+str(index), self.on_edit_menu, automaton)
-                
-                menuitem = Gio.MenuItem.new(name, 'app.edit-single-automaton'+str(index))
-                edit_menu.append_item(menuitem)
-            
+        if menu.get_n_items() > 1:
+            menu.remove(1)  # maybe write a function to verify the correct position to remove
+        if len(self.get_automatonlist()) > 0:
+            new_menu = Gio.Menu()
+            section = Gio.MenuItem.new()
+            section.set_section(new_menu)
+
+            for index, automaton in enumerate(self.get_automatonlist()):
+                if index < max_items:
+                    self._create_action(new_action+str(index), callback, automaton)
+                    name = automaton.get_name()
+                    menuitem = Gio.MenuItem.new(name, 'app.'+new_action+str(index))
+                    new_menu.append_item(menuitem)
             menu.append_item(section)
 
-    def _get_menu(self, menu, menu_text, submenu_text=None, action_name=None):  # this could be better by scanning all menuitems 
-        n_items = menu.get_n_items()                                            # so it wouldn't be needed to specify a menu, eg: 'Automata', 'File' etc
+    def _get_menu(self, menu, menu_text, submenu_text=None, action_name=None):
+        ''' Looks inside the given menu and returns the Gio.Menu which contains the action_name
+            or the submenu that matches the submenu_text
+
+            eg: File (menu) > New Window (action); _getmenu(self.menubar, 'File', action_name='app.new-window')
+            would return the menu which contains the New Window
+            eg2: Automata (menu) > Import/Export (submenu); _getmenu(self.menubar, 'File', submenu_text='Import/Export')
+            would return the menu inside Import/Export submenu
+        '''                                               
+        n_items = menu.get_n_items()                                            
         
         for item_n in range(n_items):
             item_att_iter = menu.iterate_item_attributes(item_n)
@@ -159,36 +173,40 @@ class Application(Gtk.Application):
     def on_edit_menu(self, action, target, args):
         automaton = args[0]
         active_window = self.get_active_window()
+        active_window.add_tab_editor(automaton, automaton.get_name())
 
-        if not self.is_automaton_open(automaton):
-            active_window.add_tab_editor(automaton, automaton.get_name())
-        else:
-            for tab_id, window in self.is_automaton_open(automaton):
-                tab = window.note.get_nth_page(tab_id)
-                if tab.__class__.__name__ == 'AutomatonEditor':
-                    automaton = automaton.copy()
-                    automaton.clear_file_path_name(automaton.get_name()+ " copy")
-                    self.add_to_automatonlist(automaton)
-                    active_window.add_tab_editor(automaton, automaton.get_name())
+    def on_simulate_menu(self, action, target, args):
+        automaton = args[0]
+        active_window = self.get_active_window()
+        active_window.add_tab_simulator(automaton, "Simu: "+automaton.get_name())
 
-    def is_automaton_open(self, automaton, tab_type=None): # returns a list of tab locations where automaton is open
+    def is_automaton_open(self, automaton, tab_type=None):
+        ''' returns (tab_id, window) if the automaton is open in any tab of type tab_type;
+            returns None if anything else
+        '''
+        windows = self.get_windows()
+        automaton_location = None
+        for window in windows:
+            tabs_list = window.get_tabs_list()
+            for tab_id, tab in tabs_list:
+                if tab_type is not None and isinstance(tab, tab_type):
+                    if tab.automaton is automaton:
+                        automaton_location = (tab_id, window)
+                        break
+
+        return automaton_location
+
+    def is_automaton_open_anywhere(self, automaton):
+        '''returns list((tab_id, window)) if the automaton is open in any tab'''
         windows = self.get_windows()
         automaton_location = list()
         for window in windows:
-            is_open = False
             tabs_list = window.get_tabs_list()
             for tab_id, tab in tabs_list:
-                if tab_type is None and hasattr(tab, 'automaton'):
-                    is_open = tab.automaton is automaton
-                    if is_open:
-                        automaton_location.append((tab_id, window))
-                        # break
-                elif tab_type is not None and isinstance(tab, tab_type):
-                    is_open = tab.automaton is automaton
-                    if is_open:
-                        automaton_location.append((tab_id, window))
-                        # break
+                if hasattr(tab, 'automaton') and tab.automaton is automaton:
+                    automaton_location.append((tab_id, window))
         return automaton_location
+
 
 GObject.signal_new('nadzoru-automatonlist-change',
     Application,
