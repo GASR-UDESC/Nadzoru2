@@ -52,11 +52,11 @@ class AutomatonManager(PageMixin, Gtk.Box):
         _add_btn_to_sidebox("Clone", self.on_clonebtn)
         _add_btn_to_sidebox("Edit", self.on_editbtn)
         _add_btn_to_sidebox("Simulate", self.on_simulatebtn)
-        _add_btn_to_sidebox("Close", self.on_clonebtn)
+        _add_btn_to_sidebox("Close", self.on_closebtn)
 
     def on_automatonlist_change(self, widget, automatonlist):
-        self.update_treeview()
         self.automatonlist = automatonlist
+        self.update_treeview()
 
     def build_treeview(self):
         self.liststore = Gtk.ListStore(str, object)
@@ -105,7 +105,22 @@ class AutomatonManager(PageMixin, Gtk.Box):
 
     def on_savebtn(self, widget):
         for automaton in self._get_tree_selection():
-            self._save_dialog(automaton)
+            file_path_name = automaton.get_file_path_name()
+            if file_path_name is None:
+                file_path_name = self._save_dialog(automaton)
+            # Note that file_path_name can be None, the dialog opens and the user Cancels it, thus remaining None
+            if file_path_name is not None:
+                # automaton.save saves the file.
+                # editor.save saves the file and removes has_changes_to_save status (editor is a AutomatonEditor)
+                already_open = self.get_application().is_automaton_open(automaton, AutomatonEditor)
+                if already_open is None:
+                    automaton.save(file_path_name)
+                else:
+                    tab_id, window = already_open
+                    editor = window.note.get_nth_page(tab_id)
+                    editor.save(file_path_name)
+                    window.set_tab_page_title(editor, automaton.get_name())
+                    window.set_tab_label_color(editor, '#000')
         self.update_treeview()
 
     def _save_dialog(self, automaton):
@@ -115,32 +130,26 @@ class AutomatonManager(PageMixin, Gtk.Box):
             "Choose file", active_window, Gtk.FileChooserAction.SAVE,
             ("_Cancel", Gtk.ResponseType.CANCEL, "_Save", Gtk.ResponseType.OK),
             do_overwrite_confirmation=True)
-
+        filefilter = Gtk.FileFilter()
+        filefilter.set_name(".xml")
+        filefilter.add_pattern('*.xml')
+        dialog.set_filter(filefilter)
+        dialog.set_current_name(f'{automaton.get_name()}.xml')
         result = dialog.run()
+        
         if result == Gtk.ResponseType.OK:
             file_path = dialog.get_filename()
-            dialog.destroy()
             if not(file_path.lower().endswith('.xml')):
                 file_path = f'{file_path}.xml'
-
-            # automaton.save saves the file.
-            # editor.save saves the file and removes has_changes_to_save status (editor is a AutomatonEditor)
-            already_open = self.get_application().is_automaton_open(automaton, AutomatonEditor)
-            if already_open is None:
-                automaton.save(file_path)
-            else:
-                tab_id, window = already_open
-                editor = window.note.get_nth_page(tab_id)
-                editor.save(file_path)
-                window.set_tab_page_title(editor, automaton.get_name())
-                window.set_tab_label_color(editor, '#000')
+            dialog.destroy()
+            return file_path
+        dialog.destroy()
+        return None
 
     def on_editbtn(self, widget):
-        # If there is already a AutomatonEditor with the selected automaton, a copy will be created
         active_window = self.get_ancestor_window()
         for automaton in self._get_tree_selection():
             active_window.add_tab_editor(automaton, automaton.get_name())
-
         self.update_treeview()
 
     def on_clonebtn(self, widget):
@@ -152,8 +161,7 @@ class AutomatonManager(PageMixin, Gtk.Box):
     def on_simulatebtn(self, widget):
         active_window = self.get_ancestor_window()
         for automaton in self._get_tree_selection():
-            active_window.add_tab_simulator(automaton, "Simu: %s" % automaton.get_name())
-
+            active_window.add_tab_simulator(automaton, "Sim: %s" % automaton.get_name())
         self.update_treeview()
 
     def on_closebtn(self, widget):

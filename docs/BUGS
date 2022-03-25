@@ -1,0 +1,4 @@
+- "Save as" dialog will overwrite existing files without confirmation
+    - The user inputs a filename that already exists without adding the extension .xmd
+    - Gtk.FileChooserDialog will check for filename conflicts before the filename is complemented with the extension
+    - eg: existing file: 'example.xmd'; user inputed filename: 'example'

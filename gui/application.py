@@ -115,7 +115,6 @@ class Application(Gtk.Application):
             return False
 
     def update_menubar(self):
-        # Edit menu section
         self._rebuild_submenubar('Automata', '_Edit', 'edit-automaton', self.on_edit_menu)
         self._rebuild_submenubar('Automata', '_Simulate', 'simulate-automaton', self.on_simulate_menu)
         
@@ -178,7 +177,7 @@ class Application(Gtk.Application):
     def on_simulate_menu(self, action, target, args):
         automaton = args[0]
         active_window = self.get_active_window()
-        active_window.add_tab_simulator(automaton, "Simu: "+automaton.get_name())
+        active_window.add_tab_simulator(automaton, "Sim: "+automaton.get_name())
 
     def is_automaton_open(self, automaton, tab_type=None):
         ''' returns (tab_id, window) if the automaton is open in any tab of type tab_type;
