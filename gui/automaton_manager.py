@@ -42,12 +42,12 @@ class AutomatonManager(PageMixin, Gtk.Box):
 
     def build_sidebox(self):
         self.sidebox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, valign=Gtk.Align.CENTER)
-        
+
         def _add_btn_to_sidebox(btn_label, callback, padding=5):
             btn = Gtk.Button(label=btn_label)
             btn.connect('clicked', callback)
             self.sidebox.pack_start(btn, False, False, padding)
-        
+
         _add_btn_to_sidebox("Save", self.on_savebtn)
         _add_btn_to_sidebox("Clone", self.on_clonebtn)
         _add_btn_to_sidebox("Edit", self.on_editbtn)
@@ -140,7 +140,7 @@ class AutomatonManager(PageMixin, Gtk.Box):
         dialog.add_filter(_add_filefilter("All files", '*'))
         dialog.set_current_name(f'{automaton.get_name()}.xml')
         result = dialog.run()
-        
+
         if result == Gtk.ResponseType.OK:
             file_path = dialog.get_filename()
             dialog.destroy()

@@ -123,10 +123,11 @@ class AutomatonSimulator(PageMixin, Gtk.Box):
             self.listbox.remove(row)
 
     def reset_list_box(self):
-        for transition in self.current_state.out_transitions:
-            self.listbox.add(ListBoxRowWithData(transition))
-        self.listbox.show_all()
-        self.renderer.queue_draw()
+        if self.current_state is not None:
+            for transition in self.current_state.out_transitions:
+                self.listbox.add(ListBoxRowWithData(transition))
+            self.listbox.show_all()
+            self.renderer.queue_draw()
 
     def on_row_activated(self, listbox, row):
         self.current_state = row.transition.to_state

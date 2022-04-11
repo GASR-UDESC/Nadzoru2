@@ -90,17 +90,17 @@ class Application(Gtk.Application):
 
     def on_automatonlist_change(self, app, automaton_list):
         self.update_menubar()
-    
+
     def add_to_automatonlist(self, automaton):
         self.elements.append(automaton)
         self.emit('nadzoru-automatonlist-change', self.get_automatonlist())
-    
+
     def get_automatonlist(self): # TODO: return a iterator
         return self.elements
 
     def _remove_from_automaton_list(self, automaton):
         self.elements.remove(automaton)
-        self.emit('nadzoru-automatonlist-change', self.get_automatonlist()) 
+        self.emit('nadzoru-automatonlist-change', self.get_automatonlist())
 
     def close_automaton(self, automaton):
         if automaton in self.get_automatonlist():
@@ -117,7 +117,7 @@ class Application(Gtk.Application):
     def update_menubar(self):
         self._rebuild_submenubar('Automata', '_Edit', 'edit-automaton', self.on_edit_menu)
         self._rebuild_submenubar('Automata', '_Simulate', 'simulate-automaton', self.on_simulate_menu)
-        
+
     def _rebuild_submenubar(self, mainmenu_label, submenu_label, new_action, callback, max_items=10):
         menu = self._get_menu(self.menubar, mainmenu_label, submenu_label)
 
@@ -144,9 +144,9 @@ class Application(Gtk.Application):
             would return the menu which contains the New Window
             eg2: Automata (menu) > Import/Export (submenu); _getmenu(self.menubar, 'File', submenu_text='Import/Export')
             would return the menu inside Import/Export submenu
-        '''                                               
-        n_items = menu.get_n_items()                                            
-        
+        '''
+        n_items = menu.get_n_items()
+
         for item_n in range(n_items):
             item_att_iter = menu.iterate_item_attributes(item_n)
             item_link_iter = menu.iterate_item_links(item_n)

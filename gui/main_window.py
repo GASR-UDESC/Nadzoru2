@@ -117,7 +117,7 @@ class MainWindow(Gtk.ApplicationWindow):
         return True  # was able to close all tabs
 
     def add_tab_editor(self, automaton, label):
-        ''' Checks if automaton is already open in another tab/window. 
+        ''' Checks if automaton is already open in another tab/window.
             creates a new editor instance if it isn't or focus the tab if it is
         '''
         already_open_in = self.get_application().is_automaton_open(automaton, AutomatonEditor)
@@ -130,7 +130,7 @@ class MainWindow(Gtk.ApplicationWindow):
             window.note.set_current_page(tab_id)
             window.present()
 
-    
+
     def add_tab_simulator(self, automaton, label):
         simulator = AutomatonSimulator(automaton)
         self.add_tab(simulator, label) # Probably OK to have more than 1 simulator instance
@@ -227,7 +227,7 @@ class MainWindow(Gtk.ApplicationWindow):
         dialog.add_filter(self._add_filefilter(".xml files", '*.xml'))
         dialog.add_filter(self._add_filefilter("All files", '*'))
         result = dialog.run()
-        
+
         if result in [Gtk.ResponseType.ACCEPT, Gtk.ResponseType.OK]:
             for file_path_name in dialog.get_filenames():
                 file_name = os.path.basename(file_path_name)
@@ -241,22 +241,25 @@ class MainWindow(Gtk.ApplicationWindow):
                 self.get_application().add_to_automatonlist(automaton)
                 if result == Gtk.ResponseType.ACCEPT:
                     self.add_tab_editor(automaton, automaton.get_file_name())
-        dialog.destroy()    
+        dialog.destroy()
 
     def _save_dialog(self, widget):
         dialog = Gtk.FileChooserDialog("Choose file", self, Gtk.FileChooserAction.SAVE,
             ("_Cancel", Gtk.ResponseType.CANCEL, "_Save", Gtk.ResponseType.OK), do_overwrite_confirmation=True)
-        
+
         dialog.add_filter(self._add_filefilter(".xml files", '*.xml'))
         dialog.add_filter(self._add_filefilter("All files", '*'))
-        dialog.set_current_name(f'{widget.automaton.get_name()}.xml')
+        suggested_name = widget.automaton.get_name()
+        if not suggested_name.endswith('.xml'):
+            suggested_name = f'{suggested_name}.xml'
+        dialog.set_current_name(suggested_name)
         result = dialog.run()
 
         if result ==  Gtk.ResponseType.OK:
             file_path = (dialog.get_filename())
             dialog.destroy()
-            if not(file_path.lower().endswith('.xml')):
-                file_path = f'{file_path}.xml'
+            #~ if not(file_path.lower().endswith('.xml')):
+                #~ file_path = f'{file_path}.xml'
             return widget.save(file_path)
         dialog.destroy()
         return False
@@ -266,7 +269,7 @@ class MainWindow(Gtk.ApplicationWindow):
         widget = self.get_current_tab_widget()
         if (widget is None):
             return
-        
+
         if isinstance(widget, AutomatonEditor):
             automata = widget.automaton
             file_path_name = automata.get_file_path_name()
