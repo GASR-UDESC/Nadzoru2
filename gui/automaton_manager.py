@@ -87,7 +87,7 @@ class AutomatonManager(PageMixin, Gtk.Box):
         automaton = self.liststore[path][1]
         if automaton.get_file_path_name() is None:  # Should this change the name of a automaton when it has a file_path_name?
             automaton.set_name(new_text)
-            for tab_id, window in self.get_application().is_automaton_open_anywhere(automaton):
+            for tab_id, window in self.get_application().is_automaton_open_anytype(automaton):
                 tab = window.note.get_nth_page(tab_id)
                 window.set_tab_page_title(tab, automaton.get_name())
         self.get_application().emit('nadzoru-automatonlist-change', self.automatonlist)
@@ -130,17 +130,19 @@ class AutomatonManager(PageMixin, Gtk.Box):
             "Choose file", active_window, Gtk.FileChooserAction.SAVE,
             ("_Cancel", Gtk.ResponseType.CANCEL, "_Save", Gtk.ResponseType.OK),
             do_overwrite_confirmation=True)
-        filefilter = Gtk.FileFilter()
-        filefilter.set_name(".xml")
-        filefilter.add_pattern('*.xml')
-        dialog.set_filter(filefilter)
+
+        def _add_filefilter(name, pattern):
+            filefilter = Gtk.FileFilter()
+            filefilter.set_name(name)
+            filefilter.add_pattern(pattern)
+            return filefilter
+        dialog.add_filter(_add_filefilter(".xml files", '*.xml'))
+        dialog.add_filter(_add_filefilter("All files", '*'))
         dialog.set_current_name(f'{automaton.get_name()}.xml')
         result = dialog.run()
         
         if result == Gtk.ResponseType.OK:
             file_path = dialog.get_filename()
-            if not(file_path.lower().endswith('.xml')):
-                file_path = f'{file_path}.xml'
             dialog.destroy()
             return file_path
         dialog.destroy()
@@ -155,13 +157,13 @@ class AutomatonManager(PageMixin, Gtk.Box):
     def on_clonebtn(self, widget):
         for automaton in self._get_tree_selection():
             automaton = automaton.copy()
-            automaton.clear_file_path_name(automaton.get_name() + " copy")
+            automaton.clear_file_path_name(f"{automaton.get_name()} copy")
             self.get_application().add_to_automatonlist(automaton)
 
     def on_simulatebtn(self, widget):
         active_window = self.get_ancestor_window()
         for automaton in self._get_tree_selection():
-            active_window.add_tab_simulator(automaton, "Sim: %s" % automaton.get_name())
+            active_window.add_tab_simulator(automaton, f"Sim: {automaton.get_name()}")
         self.update_treeview()
 
     def on_closebtn(self, widget):

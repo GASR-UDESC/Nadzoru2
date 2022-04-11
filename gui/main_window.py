@@ -166,7 +166,6 @@ class MainWindow(Gtk.ApplicationWindow):
         else:
             return False  # Execute the default handler, on_notebook_page_removed will trigger self.destroy() but it doesn't seem to be a problem. Must return False to close a window without tabs
 
-
     def on_notebook_create_window(self,notebook,widget,x,y): #is widget a automaton Editor?? is  Notebook a page??
         # handler for dropping outside of notebook
         logging.debug("")
@@ -211,23 +210,22 @@ class MainWindow(Gtk.ApplicationWindow):
     def on_new_automaton(self, action, param=None):
         logging.debug("")
         automaton = Automaton()
-        # self.add_to_automatonlist(automaton)
         self.get_application().add_to_automatonlist(automaton)
         self.add_tab_editor(automaton, 'Untitled')
+
+    def _add_filefilter(self, name, pattern):
+            filefilter = Gtk.FileFilter()
+            filefilter.set_name(name)
+            filefilter.add_pattern(pattern)
+            return filefilter
 
     def on_open_automaton(self, action, param=None):
         logging.debug("")
         dialog = Gtk.FileChooserDialog("Choose file", self, Gtk.FileChooserAction.OPEN,
             ("_Cancel", Gtk.ResponseType.CANCEL, "_Edit", Gtk.ResponseType.ACCEPT, "_Open", Gtk.ResponseType.OK))
         dialog.set_property('select-multiple', True)
-        filefilter = Gtk.FileFilter()
-        filefilter.set_name(".xml files")
-        filefilter.add_pattern('*.xml')
-        dialog.add_filter(filefilter)
-        filefilter = Gtk.FileFilter()
-        filefilter.set_name("All files")
-        filefilter.add_pattern('*')
-        dialog.add_filter(filefilter)
+        dialog.add_filter(self._add_filefilter(".xml files", '*.xml'))
+        dialog.add_filter(self._add_filefilter("All files", '*'))
         result = dialog.run()
         
         if result in [Gtk.ResponseType.ACCEPT, Gtk.ResponseType.OK]:
@@ -243,14 +241,17 @@ class MainWindow(Gtk.ApplicationWindow):
                 self.get_application().add_to_automatonlist(automaton)
                 if result == Gtk.ResponseType.ACCEPT:
                     self.add_tab_editor(automaton, automaton.get_file_name())
-                dialog.destroy()
-
-           
+        dialog.destroy()    
 
     def _save_dialog(self, widget):
         dialog = Gtk.FileChooserDialog("Choose file", self, Gtk.FileChooserAction.SAVE,
             ("_Cancel", Gtk.ResponseType.CANCEL, "_Save", Gtk.ResponseType.OK), do_overwrite_confirmation=True)
+        
+        dialog.add_filter(self._add_filefilter(".xml files", '*.xml'))
+        dialog.add_filter(self._add_filefilter("All files", '*'))
+        dialog.set_current_name(f'{widget.automaton.get_name()}.xml')
         result = dialog.run()
+
         if result ==  Gtk.ResponseType.OK:
             file_path = (dialog.get_filename())
             dialog.destroy()
@@ -263,17 +264,23 @@ class MainWindow(Gtk.ApplicationWindow):
     def on_save_automaton(self, action, param=None):
         logging.debug("")
         widget = self.get_current_tab_widget()
-        if (widget is None) or type(widget) != AutomatonEditor:
+        if (widget is None):
             return
-        automata = widget.automaton
+        
+        if isinstance(widget, AutomatonEditor):
+            automata = widget.automaton
+            file_path_name = automata.get_file_path_name()
+            if file_path_name == None:
+                self._save_dialog(widget)
+                self.set_tab_page_title(widget, automata.get_file_name())
+            else:
+                widget.save(file_path_name)
+            self.set_tab_label_color(widget, '#000')
 
-        file_path_name = automata.get_file_path_name()
-        if file_path_name == None:
-            self._save_dialog(widget)
-            self.set_tab_page_title(widget, automata.get_file_name())
+        elif isinstance(widget, AutomatonManager):
+            widget.on_savebtn(None)
         else:
-            widget.save(file_path_name)
-        self.set_tab_label_color(widget, '#000')
+            return
 
     def on_save_as_automaton(self, action, param=None):
         logging.debug("")
@@ -297,7 +304,6 @@ class MainWindow(Gtk.ApplicationWindow):
                 automaton = Automaton()
                 automaton.ides_import(full_path_name)
                 self.get_application().add_to_automatonlist(automaton)
-                # self.add_to_automatonlist(automaton)
                 if result == Gtk.ResponseType.OK:
                     self.automaton.get_file_name(automaton,f'{file_name} *')
         dialog.destroy()
@@ -324,23 +330,6 @@ class MainWindow(Gtk.ApplicationWindow):
     def on_simulate_automaton(self, action, param):
         manager = AutomatonManager()
         self.add_tab(manager, "Manager")
-        # if len(self.get_application().get_automatonlist()) > 0:
-        #     dialog = DialogSimulator(self)
-        #     response = dialog.run()
-            
-        #     if response == Gtk.ResponseType.OK:
-        #         for automaton in dialog.get_result():
-        #             self.add_tab_simulator(automaton,  "Simu: %s" %automaton.get_name())
-        #     elif response == Gtk.ResponseType.CANCEL:
-        #         pass
-        #     dialog.destroy()
-        # logging.debug("")
-        # # TODO: open dialog to select from self.props.application.elements
-        # from test_automata import automata_01  # For testing
-        # automaton = Automaton()
-        # automata_01(automaton)  # For testing
-        # simulator = AutomatonSimulator(automaton)
-        # self.add_tab(simulator, "Simulator")
 
     def on_close_tab(self, action, param):
         logging.debug("")
@@ -348,5 +337,5 @@ class MainWindow(Gtk.ApplicationWindow):
 
     def on_operation(self,action, param):
         #app = self.get_application()
-        operation = AutomatonOperation() #self.props.application.elements)
+        operation = AutomatonOperation()
         self.add_tab(operation, "Operation")

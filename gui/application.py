@@ -103,11 +103,11 @@ class Application(Gtk.Application):
         self.emit('nadzoru-automatonlist-change', self.get_automatonlist()) 
 
     def close_automaton(self, automaton):
-        if automaton in self.elements:
-            if not self.is_automaton_open_anywhere(automaton):
+        if automaton in self.get_automatonlist():
+            if not self.is_automaton_open_anytype(automaton):
                 self._remove_from_automaton_list(automaton)
             else:
-                for tab_id, window in self.is_automaton_open_anywhere(automaton):
+                for tab_id, window in self.is_automaton_open_anytype(automaton):
                     if window.remove_tab(tab_id):
                         self._remove_from_automaton_list(automaton)
             return True
@@ -117,7 +117,6 @@ class Application(Gtk.Application):
     def update_menubar(self):
         self._rebuild_submenubar('Automata', '_Edit', 'edit-automaton', self.on_edit_menu)
         self._rebuild_submenubar('Automata', '_Simulate', 'simulate-automaton', self.on_simulate_menu)
-        
         
     def _rebuild_submenubar(self, mainmenu_label, submenu_label, new_action, callback, max_items=10):
         menu = self._get_menu(self.menubar, mainmenu_label, submenu_label)
@@ -177,7 +176,7 @@ class Application(Gtk.Application):
     def on_simulate_menu(self, action, target, args):
         automaton = args[0]
         active_window = self.get_active_window()
-        active_window.add_tab_simulator(automaton, "Sim: "+automaton.get_name())
+        active_window.add_tab_simulator(automaton, f"Sim: {automaton.get_name()}")
 
     def is_automaton_open(self, automaton, tab_type=None):
         ''' returns (tab_id, window) if the automaton is open in any tab of type tab_type;
@@ -195,7 +194,7 @@ class Application(Gtk.Application):
 
         return automaton_location
 
-    def is_automaton_open_anywhere(self, automaton):
+    def is_automaton_open_anytype(self, automaton):
         '''returns list((tab_id, window)) if the automaton is open in any tab'''
         windows = self.get_windows()
         automaton_location = list()
