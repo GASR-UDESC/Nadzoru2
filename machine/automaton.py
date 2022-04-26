@@ -479,16 +479,15 @@ class Automaton(Base):
     def state_remove(self, state):
         if self.initial_state == state:
             self.initial_state = None
-        in_transitions = set()
+
+        transitions = set()  
         for r in state.in_transitions:
-            in_transitions.add(r)
-        out_transitions = set()
+            transitions.add(r)
         for r in state.out_transitions:
-            out_transitions.add(r)
-        for transition in in_transitions:
+            transitions.add(r)
+        for transition in transitions:
             self.transition_remove(transition)
-        for transition in out_transitions:
-            self.transition_remove(transition)
+
         try:
             self.states.remove(state)
         except KeyError:
