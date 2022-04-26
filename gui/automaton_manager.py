@@ -1,13 +1,7 @@
 from machine.automaton import Automaton
-from gui.automaton_simulator import AutomatonSimulator
 from gui.automaton_editor import AutomatonEditor
 from gui.base import PageMixin
 from gi.repository import GLib, Gio, Gtk
-import sys
-import gi
-gi.require_version('Gtk', '3.0')
-
-#from gui.property_box import PropertyBox
 
 
 class AutomatonManager(PageMixin, Gtk.Box):
@@ -53,6 +47,7 @@ class AutomatonManager(PageMixin, Gtk.Box):
         _add_btn_to_sidebox("Edit", self.on_editbtn)
         _add_btn_to_sidebox("Simulate", self.on_simulatebtn)
         _add_btn_to_sidebox("Close", self.on_closebtn)
+        _add_btn_to_sidebox("Send to Arduino", self.on_arduinobtn)
 
     def on_automatonlist_change(self, widget, automatonlist):
         self.automatonlist = automatonlist
@@ -169,3 +164,6 @@ class AutomatonManager(PageMixin, Gtk.Box):
     def on_closebtn(self, widget):
         for automaton in self._get_tree_selection():
             self.get_application().close_automaton(automaton)
+
+    def on_arduinobtn(self, widget):
+        pass
