@@ -1,0 +1,26 @@
+
+const unsigned char ev_controllable[{{events|count}}] = {{'{'}}{% for event in events %}{{event.controllable and 1 or 0}}{%if not loop.last%}, {%endif%}{%endfor%}}
+
+{%-for state in states-%}{%for transition in state.out_transitions%}
+{{'{'}}{{transition.from_state}}, {{transition.to_state}}, {{'EV_'+transition.event.name}}{{'},'}}
+{%-endfor-%}{%endfor%}
+
+unsigned char   sup_events[{{ automatons|count }}][{{ events|count }}] 
+
+unsigned char   sup_events[{{ automaton_list|count }}][{{ events|count }}] = { 
+{% for k_automaton, automaton in automatons %}
+    { 
+    {% for i in range(events|count) %}
+    {{ sup_events[k_automaton][i] and 1 or 0 }},
+    {% endfor %}
+    {% endfor %}
+
+
+
+
+void setup() {
+}
+
+
+void loop() {
+}

@@ -1,8 +1,9 @@
 from machine.automaton import Automaton
 from gui.automaton_editor import AutomatonEditor
 from gui.base import PageMixin
+from codegen.code_gen import CodeGenerator
 from gi.repository import GLib, Gio, Gtk
-
+import math
 
 class AutomatonManager(PageMixin, Gtk.Box):
     def __init__(self, *args, **kwargs):
@@ -166,4 +167,7 @@ class AutomatonManager(PageMixin, Gtk.Box):
             self.get_application().close_automaton(automaton)
 
     def on_arduinobtn(self, widget):
-        pass
+        # for testing
+
+        codegen = CodeGenerator()
+        codegen.write(self._get_tree_selection())
