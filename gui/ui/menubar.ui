@@ -129,6 +129,11 @@
                     <attribute name="icon">gtk-indent</attribute>
                     <attribute name="accel">&lt;Primary&gt;&lt;Shift&gt;o</attribute>
                 </item>
+                <item>
+                    <attribute name="action">win.generate-code-automaton</attribute>
+                    <attribute name="label" translatable="yes">_Generator</attribute>
+                    <attribute name="accel">&lt;Primary&gt;&lt;Shift&gt;g</attribute>
+                </item>
             </section>
             <section>
                 <item>

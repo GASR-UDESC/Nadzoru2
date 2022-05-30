@@ -1,9 +1,7 @@
 from machine.automaton import Automaton
 from gui.automaton_editor import AutomatonEditor
 from gui.base import PageMixin
-from codegen.code_gen import CodeGenerator
 from gi.repository import GLib, Gio, Gtk
-import math
 
 class AutomatonManager(PageMixin, Gtk.Box):
     def __init__(self, *args, **kwargs):
@@ -17,13 +15,13 @@ class AutomatonManager(PageMixin, Gtk.Box):
         self.paned = Gtk.Paned()
         self.pack_start(self.paned, True, True, 0)
 
-        self.build_sidebox()
+        self.btnbox = self.build_btnbox()
         self.build_treeview()
 
         self.scrolled = Gtk.ScrolledWindow()
         self.scrolled.add(self.treeview)
         self.paned.pack1(self.scrolled, True, True)
-        self.paned.pack2(self.sidebox, False, False)
+        self.paned.pack2(self.btnbox, False, False)
 
     def on_parent_set(self, widget, oldparent):
         # GTK removes self's parent first when a tab is moved to another window or
@@ -35,20 +33,21 @@ class AutomatonManager(PageMixin, Gtk.Box):
             self.automatonlist = app.get_automatonlist()
             self.update_treeview()
 
-    def build_sidebox(self):
-        self.sidebox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, valign=Gtk.Align.CENTER)
+    def build_btnbox(self):
+        btnbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, valign=Gtk.Align.CENTER)
 
-        def _add_btn_to_sidebox(btn_label, callback, padding=5):
+        def _add_btn_to_btnbox(btn_label, callback, padding=5):
             btn = Gtk.Button(label=btn_label)
             btn.connect('clicked', callback)
-            self.sidebox.pack_start(btn, False, False, padding)
+            btnbox.pack_start(btn, False, False, padding)
 
-        _add_btn_to_sidebox("Save", self.on_savebtn)
-        _add_btn_to_sidebox("Clone", self.on_clonebtn)
-        _add_btn_to_sidebox("Edit", self.on_editbtn)
-        _add_btn_to_sidebox("Simulate", self.on_simulatebtn)
-        _add_btn_to_sidebox("Close", self.on_closebtn)
-        _add_btn_to_sidebox("Send to Arduino", self.on_arduinobtn)
+        _add_btn_to_btnbox("Save", self.on_savebtn)
+        _add_btn_to_btnbox("Clone", self.on_clonebtn)
+        _add_btn_to_btnbox("Edit", self.on_editbtn)
+        _add_btn_to_btnbox("Simulate", self.on_simulatebtn)
+        _add_btn_to_btnbox("Close", self.on_closebtn)
+
+        return btnbox
 
     def on_automatonlist_change(self, widget, automatonlist):
         self.automatonlist = automatonlist
@@ -165,9 +164,3 @@ class AutomatonManager(PageMixin, Gtk.Box):
     def on_closebtn(self, widget):
         for automaton in self._get_tree_selection():
             self.get_application().close_automaton(automaton)
-
-    def on_arduinobtn(self, widget):
-        # for testing
-
-        codegen = CodeGenerator()
-        codegen.write(self._get_tree_selection())

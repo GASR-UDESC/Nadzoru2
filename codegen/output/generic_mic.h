@@ -1,11 +1,9 @@
 #include <stdlib.h>
 /* Struct's */
-#define NUM_EVENTS 4
-#define NUM_SUPERVISORS 2
-#define EV_a 0
-#define EV_b 1
-#define EV_c 2
-#define EV_y 3
+#define NUM_EVENTS 2
+#define NUM_SUPERVISORS 1
+#define EV_y 0
+#define EV_x 1
 
 void SCT_init();
 void SCT_reset();

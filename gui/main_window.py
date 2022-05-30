@@ -8,6 +8,7 @@ from machine.automaton import Automaton
 from gui.automaton_editor import AutomatonEditor
 from gui.automaton_simulator import AutomatonSimulator, DialogSimulator
 from gui.automaton_manager import AutomatonManager
+from gui.automaton_generator import AutomatonGenerator
 from gui.tool_palette import ToolPalette
 from gui.automaton_operation import AutomatonOperation
 
@@ -48,14 +49,14 @@ class MainWindow(Gtk.ApplicationWindow):
         self._create_action('open-automaton', self.on_open_automaton)
         self._create_action('save-automaton', self.on_save_automaton)
         self._create_action('save-as-automaton', self.on_save_as_automaton)
-        self._create_action('operation-automaton', self.on_operation)
 
         self._create_action('import-ides', self.on_import_ides)
         self._create_action('export-ides', self.on_export_ides)
 
         self._create_action('edit-automaton', self.on_edit_automaton)
-
         self._create_action('simulate-automaton', self.on_simulate_automaton)
+        self._create_action('operation-automaton', self.on_operation)
+        self._create_action('generate-code-automaton', self.on_generate_code)
 
         self._create_action('close-tab', self.on_close_tab)
 
@@ -342,3 +343,7 @@ class MainWindow(Gtk.ApplicationWindow):
         #app = self.get_application()
         operation = AutomatonOperation()
         self.add_tab(operation, "Operation")
+    
+    def on_generate_code(self, action, param):
+        generator = AutomatonGenerator()
+        self.add_tab(generator, "Code Generator")

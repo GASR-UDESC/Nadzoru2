@@ -1,7 +1,4 @@
-from sqlite3 import apilevel
-import gi
 
-gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 
 # import sys
@@ -148,10 +145,9 @@ class AutomatonOperation(PageMixin, Gtk.Box):
             elif obj['type'] == 'entry':
                 self.property_box.add_entry(obj['label'], obj['default_value'], data=obj['name'], placeholder=obj.get('placeholder', None))
             elif obj['type'] == 'chooser':
-                self.property_box.add_chooser(obj['label'], [], open_automata, data=obj['name']) # Check if list is really needed
+                self.property_box.add_chooser(obj['label'], [], open_automata, data=obj['name'], scrollable=True, scroll_hmax=300, scroll_hmin=200) # Check if list is really needed
             elif obj['type'] == 'CheckButton':
                 self.property_box.add_checkbutton(obj['label'],self.result_open, data=obj['name'])
-
 
 
 #         def __init__(self,method, label):
