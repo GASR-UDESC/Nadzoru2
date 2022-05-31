@@ -78,8 +78,15 @@ class AutomatonEditor(PageMixin, Gtk.Box):
         self.delete_button = Gtk.Button(label = "Remove Event")
         self.delete_button.connect('clicked', self.event_remove)
         self.sidebox.pack_start(self.delete_button, False, False, 0)
+        
+        self.validate_button = Gtk.Button(label = "Validate Events")
+        self.validate_button.connect('clicked', self.validate_events)
+        self.sidebox.pack_start(self.validate_button, False, False, 0)
 
         self.update_treeview()
+
+    def validate_events(self, widget):
+        print(self.automaton.name_validation())
 
     def update_treeview(self):
         self.liststore.clear()

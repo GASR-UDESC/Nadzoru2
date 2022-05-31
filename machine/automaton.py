@@ -373,6 +373,9 @@ class Automaton(Base):
         if self._file_path_name is None:
             self._name = name
 
+            
+    
+
     # ------------------------------------------------------------------------ #
     # -------------------------- Event manipulation -------------------------- #
     # ------------------------------------------------------------------------ #
@@ -388,11 +391,17 @@ class Automaton(Base):
 
     def event_add(self, *args, **kwargs):
         event = self.event_class(*args, **kwargs)
-        if self.event_name_exists(event.name):
-            raise EventNameDuplicateException
         self.events.add(event)
         return event
-
+    
+    def name_validation(self):  # funcao de verificacao
+        event_dict = dict()
+        for event in self.events:
+            if event.name in event_dict.values():
+                return False
+            event_dict[event] = event.name
+        return True
+    
     def event_remove(self, event):
         if event not in self.events:
             return False
