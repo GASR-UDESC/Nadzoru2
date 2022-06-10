@@ -1,4 +1,3 @@
-from re import template
 from jinja2 import Environment, FileSystemLoader, meta
 import math
 
@@ -45,6 +44,7 @@ class BaseGenerator():
             
             tmplt_vars = self.get_template_variables(tmplt_name)
             vars_to_render = {key: arguments[key] for key in arguments.keys() & tmplt_vars}
+            vars_to_render['generator'] = self
 
             template = self.environment.get_template(tmplt_name)
             render = template.render(**vars_to_render)
@@ -109,38 +109,40 @@ class GenericMcu(BaseGenerator):
 class ArduinoGenerator(GenericMcu):
     templates_name = ['arduino.ino', 'generic_mic.h']
     template_path = 'codegen/templates'
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.set_device('arduino')
 
         self.set_template_path(self.template_path) 
+        self.RANDOM_PSEUDOFIX = 0
+        self.RANDOM_PSEUDOAD = 1
+        self.RANDOM_AD = 2
+        self.RANDOM_PSEUDOTIME = 3
+        self.INPUT_TIMER = 0
+        self.INPUT_MULTIPLEXED = 1
+        self.INPUT_RS232 = 2
 
-        RANDOM_PSEUDOFIX = 0
-        RANDOM_PSEUDOAD = 1
-        RANDOM_AD = 2
-        INPUT_TIMER = 0
-        INPUT_MULTIPLEXED = 1
-        INPUT_RS232 = 2
 
         self.set_option('random_fn', "Random Type", 'choice', {
             'options': [
-                ("Pseudo Random Seed Fixed",    RANDOM_PSEUDOFIX),
-                ("Pseudo Random Seed AD input", RANDOM_PSEUDOAD),
-                ("AD input",                    RANDOM_AD)
+                ("Pseudo Random Seed Fixed",        self.RANDOM_PSEUDOFIX),
+                ("Pseudo Random Seed by AD input",  self.RANDOM_PSEUDOAD),
+                ("AD input",                        self.RANDOM_AD),
+                ("Pseudo Random Seed by Time",      self.RANDOM_PSEUDOTIME)
             ]})
-        self.set_option('input_fn', "Input (Delay Sensitibility)", 'choice', {
-            'options': [
-                ("Timer Interruption",                  INPUT_TIMER),
-                ("Multiplexed External Interruption",   INPUT_MULTIPLEXED),
-                ("RS232 with Interrupt",                INPUT_RS232)
-                       ]     
-        })
         self.set_option('ad_port', "AD Port", 'choice', {
             'options': [
-                ("AN0", '0'), ("AN1", '1'), ("AN2", '2'),
-                ("AN4", '4'), ("AN5", '5'), ("AN6", '6'),
-                ("AN7", '7'), ("AN8", '8'), ("AN9", '9')
+                ("A0", 'A0'), ("A1", 'A1'), ("A2", 'A2'),
+                ("A4", 'A4'), ("A5", 'A5')
                        ]
+        })
+        self.set_option('input_fn', "Input (Delay Sensitibility)", 'choice', {
+            'options': [
+                ("Timer Interruption",                  self.INPUT_TIMER),
+                ("Multiplexed External Interruption",   self.INPUT_MULTIPLEXED)#,
+                #("RS232 with Interrupt",                self.INPUT_RS232)
+                       ]     
         })
 
     def write(self, automatons, vars_dict, output_path):
@@ -160,6 +162,8 @@ class ArduinoGenerator(GenericMcu):
                 for element in data_to_gen:
                     aux.append(str(element))
             res = ', '.join(aux)
+            res = res.replace("[", "{")
+            res = res.replace("]", "}")
             res = f'{{{res}}}'
             return res
 
@@ -173,9 +177,9 @@ class ArduinoGenerator(GenericMcu):
 
         str_event_map = list()
         for automaton_event_list in event_map:
-            str_event_map.append(['1' if event else '0' for event in automaton_event_list])
+            str_event_map.append([1 if event else 0 for event in automaton_event_list])
         sup_event_map = _gen_str(str_event_map)
-
+        print(sup_event_map)
         return {'automaton_list': automatons,
                 'events': events,
                 'data': data,
