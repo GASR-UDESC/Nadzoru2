@@ -255,7 +255,7 @@ void loop() {
         if (get_next_controllable(&event))
         {
             if (!input_buffer_check_empty())
-                continue;
+                return;
             make_transition(event);
             callback(event);
         }

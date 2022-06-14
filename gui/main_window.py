@@ -6,7 +6,7 @@ from gi.repository import Gdk, Gio, Gtk
 
 from machine.automaton import Automaton
 from gui.automaton_editor import AutomatonEditor
-from gui.automaton_simulator import AutomatonSimulator, DialogSimulator
+from gui.automaton_simulator import AutomatonSimulator
 from gui.automaton_manager import AutomatonManager
 from gui.automaton_generator import AutomatonGenerator
 from gui.tool_palette import ToolPalette

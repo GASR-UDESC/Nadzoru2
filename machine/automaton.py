@@ -531,7 +531,7 @@ class Automaton(Base):
 
     def state_rename_sequential(self):
         for _id, state in enumerate(self.states):
-            state.name = str(_id)
+            state.name = str(_id+1)
 
     # Editor specific methods
 
