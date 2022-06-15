@@ -91,6 +91,16 @@
                             <attribute name="label" translatable="yes">Export DESTool</attribute>
                        </item>
                     </section>
+                    <section>
+                        <item>
+                            <attribute name="action">win.import-nadzoru</attribute>
+                            <attribute name="label" translatable="yes">Import Nadzoru 1</attribute>
+                        </item>
+                        <item>
+                            <attribute name="action">win.export-nadzoru</attribute>
+                            <attribute name="label" translatable="yes">Export Nadzoru 1</attribute>
+                       </item>
+                    </section>
                 </submenu>
             </section>
             <section>

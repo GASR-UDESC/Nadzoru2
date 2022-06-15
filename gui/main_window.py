@@ -52,6 +52,7 @@ class MainWindow(Gtk.ApplicationWindow):
 
         self._create_action('import-ides', self.on_import_ides)
         self._create_action('export-ides', self.on_export_ides)
+        self._create_action('import-nadzoru', self.on_import_nadzoru)
 
         self._create_action('edit-automaton', self.on_edit_automaton)
         self._create_action('simulate-automaton', self.on_simulate_automaton)
@@ -325,6 +326,23 @@ class MainWindow(Gtk.ApplicationWindow):
                 automata = widget.automaton
                 automata.ides_export(file_path)
         dialog.destroy()
+
+    def on_import_nadzoru(self, action, param):
+        dialog = Gtk.FileChooserDialog("Choose file", self, Gtk.FileChooserAction.OPEN,
+            ("_Cancel", Gtk.ResponseType.CANCEL, "_Open", Gtk.ResponseType.ACCEPT, "_Edit", Gtk.ResponseType.OK))
+        dialog.set_property('select-multiple', True)
+        result = dialog.run()
+        if result in [Gtk.ResponseType.ACCEPT, Gtk.ResponseType.OK]:
+            for full_path_name in dialog.get_filenames():
+                file_name = os.path.basename(full_path_name)
+                automaton = Automaton()
+                automaton.legacy_nadzoru_import(full_path_name)
+                self.get_application().add_to_automatonlist(automaton)
+                if result == Gtk.ResponseType.OK:
+                    # self.automaton.get_file_name(automaton,f'{file_name} *')
+                    self.add_tab_editor(automaton, f'{file_name} *')
+        dialog.destroy()
+
 
     def on_edit_automaton(self, action, param):
         logging.debug("")

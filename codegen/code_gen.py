@@ -17,7 +17,7 @@ class BaseGenerator():
         for k, v in self.items():
             devs += f'{k}, '
             opts += f'{k}: {v}\n\t'
-        print(f'{__class__}\nDevice: {devs}\nOptions: {opts}')
+
         return f'{__class__}\nDevice: {devs}\nOptions: {opts}'
 
     def set_device(self, device):
@@ -179,7 +179,6 @@ class ArduinoGenerator(GenericMcu):
         for automaton_event_list in event_map:
             str_event_map.append([1 if event else 0 for event in automaton_event_list])
         sup_event_map = _gen_str(str_event_map)
-        print(sup_event_map)
         return {'automaton_list': automatons,
                 'events': events,
                 'data': data,

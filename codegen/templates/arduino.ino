@@ -6,6 +6,9 @@
 {%- set n_data = data|count %}
 #define NUM_EVENTS {{ n_events }}
 #define NUM_SUPERVISORS {{ n_automatons }}
+{% if input_fn == generator.INPUT_MULTIPLEXED %}
+#define ext_int_pin 2 // You can choose either pin 1 or pin 2. Beware that pin 1 is used for TX.
+{% endif %}
 {%- for event in events %}
 #define EV_{{event.name}} {{loop.index-1}}
 {%- endfor %}
@@ -186,14 +189,14 @@ unsigned char get_next_controllable(unsigned char *event){
 
     get_active_controllable_events(events);
     count_actives = 0;
-    for (i = 0; i < {{n_events}}; i++){
+    for (i = 0; i < NUM_EVENTS; i++){
         if (events[i]){
             count_actives++;
         }
     }
     if (count_actives){
         random_pos = randomChar() % count_actives;
-        for (i = 0; i < {{n_events}}; i++){
+        for (i = 0; i < NUM_EVENTS; i++){
             if (!random_pos && events[i]){
                 *event = i;
                 return 1;
