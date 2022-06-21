@@ -181,6 +181,8 @@ class AutomatonEditor(PageMixin, Gtk.Box):
 
     def trigger_change(self):
         self._changes_to_save = True
+        self.update_properties_box()
+        self.automaton_render.queue_draw()
         self.emit('nadzoru-editor-change', None)
 
     def reset_selection(self):
@@ -272,13 +274,11 @@ class AutomatonEditor(PageMixin, Gtk.Box):
         self.update_properties_box()
         self.automaton_render.queue_draw()
 
-    def on_tool_clicked(self, toolpallet, tool_id):
-        
-        if tool_id == 'state_enum':
-            self.automaton.state_rename_sequential()
-            self.trigger_change()
-            # for state in self.automaton.states:
-            #     print(state)
+    def on_tool_clicked(self, toolpallet, tool_id, tab):
+        if tab == self:
+            if tool_id == 'state_enum':
+                self.automaton.state_rename_sequential()
+                self.trigger_change()
 
     def on_parent_set(self, widget, oldparent):     # Widget is self
         # GTK removes self's parent first when a tab is moved to another window or
@@ -286,6 +286,7 @@ class AutomatonEditor(PageMixin, Gtk.Box):
         # This happens when there was a parent, that is, oldparent isn't None.
         if oldparent is None:
             window = self.get_ancestor_window()
-            window.toolpallet.connect('nadzoru-tool-clicked', self.on_tool_clicked)
+            tab = window.get_current_tab_widget()
+            window.toolpallet.connect('nadzoru-tool-clicked', self.on_tool_clicked, tab)
 
 GObject.signal_new('nadzoru-editor-change', AutomatonEditor, GObject.SIGNAL_RUN_LAST, GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT,))

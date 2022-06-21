@@ -95,9 +95,6 @@ class ToolPalette(Gtk.ToolPalette):
         self.emit('nadzoru-tool-clicked', btn.tool_id)
 
 
-    # def on_click_test(self, *args):
-    #     print(self.get_selected_tool())
-
 GObject.signal_new('nadzoru-tool-change', ToolPalette, GObject.SIGNAL_RUN_LAST, GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT,))
 
 GObject.signal_new('nadzoru-tool-clicked',

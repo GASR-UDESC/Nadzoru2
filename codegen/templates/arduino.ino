@@ -7,7 +7,7 @@
 #define NUM_EVENTS {{ n_events }}
 #define NUM_SUPERVISORS {{ n_automatons }}
 {% if input_fn == generator.INPUT_MULTIPLEXED %}
-#define ext_int_pin 2 // You can choose either pin 1 or pin 2. Beware that pin 1 is used for TX.
+#define ext_int_pin 2 // You can choose either pin 2 or pin 3.
 {% endif %}
 {%- for event in events %}
 #define EV_{{event.name}} {{loop.index-1}}

@@ -1164,9 +1164,9 @@ class Automaton(Base):
         while len(state_stack) > 0:
             s_r, s_g = state_stack.pop()
             for trans_r in s_r.out_transitions:
-                t_g = s_g.get_target_from_event_name(event_name)
                 if trans_r.to_state not in univocal_map:
                     event_name = trans_r.event.name
+                    t_g = s_g.get_target_from_event_name(event_name)
                     t_r = trans_r.to_state
                     univocal_map[t_r] = t_g
                     if t_g is not None:

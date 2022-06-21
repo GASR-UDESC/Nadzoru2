@@ -30,7 +30,7 @@ class AutomatonOperation(PageMixin, Gtk.Box):
                 'label': "SUPC", 'fn': Automaton.sup_c, 'params': [
                     {'label': "G", 'type': 'combobox', 'name': 'G'},
                     {'label': "K", 'type': 'combobox', 'name': 'R'},
-                    {'label': "Result", 'type': 'entry', 'name': 'output', 'default_value': ""},
+                    {'label': "Result", 'type': 'entry', 'name': 'output', 'default_value': "",  'placeholder': "type a name"},
                     {'label': "Open result ", 'type':'CheckButton','name':'open'}
                     ]},
             {
@@ -107,7 +107,7 @@ class AutomatonOperation(PageMixin, Gtk.Box):
         # print(self.property_box.get_children()) # probably must check if user selected all necessary inputs
         operation_fn = self.selected_op[1]
         result = operation_fn(*self.argumentslist_op, **self.arguments_op)  # result is an automaton
-        result.set_name(self.result_name)
+        result.clear_file_path_name(name=self.result_name)
 
         self.get_application().add_to_automatonlist(result)
 
@@ -148,28 +148,4 @@ class AutomatonOperation(PageMixin, Gtk.Box):
                 self.property_box.add_chooser(obj['label'], [], open_automata, data=obj['name'], scrollable=True, scroll_hmax=300, scroll_hmin=200) # Check if list is really needed
             elif obj['type'] == 'CheckButton':
                 self.property_box.add_checkbutton(obj['label'],self.result_open, data=obj['name'])
-
-
-#         def __init__(self,method, label):
-#             self.method = method
-#             self.label = label
-
-#         def param_automaton(self,name):
-#             # TODO ...
-#             return self
-
-#         def param_automata_list(self, name):
-#             # TODO ...
-#             return self
-        
-#         def paran_string(self,name):
-#             # TODO ...
-#             return self
-        
-#     @classmethod
-#     def register_operation(cls,method, label):
-#         op = Operation(method, label)
-#         self.append(op)
-#         return op
-
 
