@@ -115,7 +115,7 @@ class AutomatonManager(PageMixin, Gtk.Box):
                     editor = window.note.get_nth_page(tab_id)
                     editor.save(file_path_name)
                     window.set_tab_page_title(editor, automaton.get_name())
-                    window.set_tab_label_color(editor, '#000')
+                    window.set_tab_label_color(editor, 'label-black')
         self.update_treeview()
 
     def _save_dialog(self, automaton):

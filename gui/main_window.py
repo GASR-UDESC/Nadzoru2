@@ -39,6 +39,9 @@ class MainWindow(Gtk.ApplicationWindow):
         self.note.popup_disable()
         self.note.set_scrollable(True)
         self.note.set_show_border(True)
+        
+        self.css_provider = Gtk.CssProvider()
+        self.css_provider.load_from_path('gui/style.css') # inicializando cor
 
         self.note.connect('create-window', self.on_notebook_create_window)
         self.note.connect('page-removed', self.on_notebook_page_removed)
@@ -152,14 +155,22 @@ class MainWindow(Gtk.ApplicationWindow):
         label.set_text(title)
         self.show_all()
 
-    def set_tab_label_color(self, widget, color="#000000"):
+    def add_default_css_provider(self, widget, color):
+        
+        context = widget.get_style_context()
+        context.add_provider(self.css_provider, Gtk.STYLE_PROVIDER_PRIORITY_USER)
+        context.add_class(color)
+
+    def set_tab_label_color(self, widget, color = 'label-black'):
+        
         label = self.note.get_tab_label(widget)
+        self.add_default_css_provider(label, color)
+        
+    #   rgba = Gdk.RGBA(0, 0, 0)
+    #   rgba.parse(color)
+    #   label.override_color(Gtk.StateFlags.NORMAL, rgba)
 
-        rgba = Gdk.RGBA(0, 0, 0)
-        rgba.parse(color)
-        label.override_color(Gtk.StateFlags.NORMAL, rgba)
-
-        self.show_all()
+    #   self.show_all()
 
     def do_delete_event(self, event):
         logging.debug("")
@@ -280,7 +291,7 @@ class MainWindow(Gtk.ApplicationWindow):
                 self.set_tab_page_title(widget, automata.get_file_name())
             else:
                 widget.save(file_path_name)
-            self.set_tab_label_color(widget, '#000')
+            self.set_tab_label_color(widget, 'label-black')
 
         elif isinstance(widget, AutomatonManager):
             widget.on_savebtn(None)
@@ -295,7 +306,7 @@ class MainWindow(Gtk.ApplicationWindow):
         automata = widget.automaton
         self._save_dialog(widget)
         self.set_tab_page_title(widget, automata.get_file_name())
-        self.set_tab_label_color(widget, '#000')
+        self.set_tab_label_color(widget, 'label-black')
 
     def on_import_ides(self, action, param):
         logging.debug("")

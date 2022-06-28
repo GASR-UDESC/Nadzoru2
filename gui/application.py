@@ -85,7 +85,7 @@ class Application(Gtk.Application):
     def on_editor_change(self, editor, *args):
         logging.debug("")
         window = editor.get_ancestor_window()
-        window.set_tab_label_color(editor, '#F00')
+        window.set_tab_label_color(editor, 'label-red')
         self.update_menubar()
 
     def on_automatonlist_change(self, app, automaton_list):

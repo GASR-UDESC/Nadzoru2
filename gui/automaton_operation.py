@@ -115,7 +115,7 @@ class AutomatonOperation(PageMixin, Gtk.Box):
             return
         window = self.get_ancestor_window()
         window.add_tab_editor(result, result.get_name())
-        window.set_tab_label_color(window.get_current_tab_widget(), '#F00')
+        window.set_tab_label_color(window.get_current_tab_widget(), 'label-red')
 
     def item_selected(self, selection):
         model, row = selection.get_selected()
