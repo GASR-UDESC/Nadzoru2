@@ -1,13 +1,9 @@
 
 from gi.repository import Gtk
-
-# import sys
-# import gi
-# from gi.repository import GLib, Gio, Gtk, GObject
-
 from gui.base import PageMixin
 from machine.automaton import Automaton
 from gui.property_box import PropertyBox
+from inspect import getfullargspec
 
 class AutomatonOperation(PageMixin, Gtk.Box):
 
@@ -21,25 +17,56 @@ class AutomatonOperation(PageMixin, Gtk.Box):
 
         self.result_name = ""
         self.result_open = False
-        self.selected_op = None
+        self.op_label = None
+        self.op_fn = None
+        self.op_params = None
 
         self.clear_oparguments()
 
         self.operations = [
             {
-                'label': "SUPC", 'fn': Automaton.sup_c, 'params': [
+                'label': "SupC", 'fn': Automaton.sup_c, 'params': [
                     {'label': "G", 'type': 'combobox', 'name': 'G'},
                     {'label': "K", 'type': 'combobox', 'name': 'R'},
-                    {'label': "Result", 'type': 'entry', 'name': 'output', 'default_value': "",  'placeholder': "type a name"},
-                    {'label': "Open result ", 'type':'CheckButton','name':'open'}
                     ]},
             {
-                'label': "SYNC", 'fn': Automaton.synchronization, 'params': [
+                'label': "Sync", 'fn': Automaton.synchronization, 'params': [
                     {'label': "Automaton", 'type': 'chooser', 'name': 'args'},
-                    {'label': "Result", 'type': 'entry', 'name': 'output', 'default_value': "", 'placeholder': "type a name" },
-                    {'label': "Open result ", 'type':'CheckButton','name':'open'}
-                    ]
-            }
+                    ]},
+            {
+                'label': "Observer", 'fn': Automaton.observer, 'params': [
+                    {'label': "Automaton", 'type': 'combobox', 'name': 'self'}
+                ]},
+            {
+                'label': "Accessible", 'fn': Automaton.accessible, 'params': [
+                    {'label': "Automaton", 'type': 'combobox', 'name': 'self'}
+                ]},
+            {
+                'label': "Coaccessible", 'fn': Automaton.coaccessible, 'params': [
+                    {'label': "Automaton", 'type': 'combobox', 'name': 'self'}
+                ]},
+            {
+                'label': "Trim", 'fn': Automaton.trim, 'params': [
+                    {'label': "Automaton", 'type': 'combobox', 'name': 'self'}
+                ]},
+            {
+                'label': "Minimize", 'fn': Automaton.minimize, 'params': [
+                    {'label': "Automaton", 'type': 'combobox', 'name': 'self'}
+                ]},
+            {
+                'label': "Supervisor Reduction", 'fn': Automaton.supervisor_reduction, 'params': [
+                    {'label': "Automaton", 'type': 'combobox', 'name': 'self'},
+                    {'label': "G", 'type': 'combobox', 'name': 'G'},
+                    {'label': "Criteria", 'type': 'explicit_combobox', 'cb_content': [("Minimum dependancies", 'b'), ("Target state intersection", 'c'), ("Future agregation", 'd'), ("Random", 'e')], 'name': 'criteria'}]},
+            {
+                'label': "Labeller", 'fn': Automaton.labeller, 'params': [
+                    {'label': "Fault events", 'type': 'ev_chooser', 'name': 'fault_events'}
+                ]},
+            {
+                'label': "Diagnoser", 'fn': Automaton.diagnoser, 'params': [
+                    {'label': "Automaton", 'type': 'combobox', 'name': 'self'},
+                    {'label': "Labeller", 'type': 'combobox', 'name': 'labeller'}
+                ]},
         ]
 
         self.build_treeview()   # Build the treeview in the left side
@@ -52,7 +79,7 @@ class AutomatonOperation(PageMixin, Gtk.Box):
 
         # execute button
         execute_button = Gtk.Button(label='EXECUTE')
-        execute_button.connect('clicked', self.execute)
+        execute_button.connect('clicked', self.on_execute_btn)
         self.right.pack_end(execute_button, False, False, 0)
 
         # property BOX
@@ -70,14 +97,14 @@ class AutomatonOperation(PageMixin, Gtk.Box):
             self.automatonlist = app.get_automatonlist()
 
     def clear_oparguments(self):
-        self.arguments_op = dict()
+        self.kwarguments_op = dict()
         self.argumentslist_op = list()
 
     def build_treeview(self):
         self.liststore = Gtk.ListStore(str, object, object)
         treeview = Gtk.TreeView(model=self.liststore, headers_visible=False)
-        self.selected_row = treeview.get_selection()
-        self.selected_row.connect("changed", self.item_selected)
+        selected_row = treeview.get_selection()
+        selected_row.connect("changed", self.on_operation_selected)
         cell = Gtk.CellRendererText()
         column = Gtk.TreeViewColumn('Operation', cell, text=0)
         treeview.append_column(column)
@@ -95,21 +122,27 @@ class AutomatonOperation(PageMixin, Gtk.Box):
         elif property_name == 'args':
             self.argumentslist_op = value
         else:
-            self.arguments_op.update({property_name: value})
+            self.kwarguments_op.update({property_name: value})
 
-    def execute(self, widget):
-        if self.result_name == '':
+    def on_execute_btn(self, widget):
+        if self.result_name == "":
             list_name = []
             for argument in self.argumentslist_op:
-                list_name.append(argument.get_name())
+                if type(argument) is Automaton:
+                    list_name.append(argument.get_name())
+            for key, value in self.kwarguments_op.items():
+                if type(value) is Automaton:
+                    list_name.append(f'{key}: {value.get_name()}')
             separator = ', '
-            self.result_name = f'{str(self.selected_op[0])} ({separator.join(list_name)})'
+            self.result_name = f'{str(self.op_label)} ({separator.join(list_name)})'
         # print(self.property_box.get_children()) # probably must check if user selected all necessary inputs
-        operation_fn = self.selected_op[1]
-        result = operation_fn(*self.argumentslist_op, **self.arguments_op)  # result is an automaton
-        result.clear_file_path_name(name=self.result_name)
 
+
+        result = self.op_fn(*self.argumentslist_op, **self.kwarguments_op)  # result is an automaton
+
+        result.clear_file_path_name(name=self.result_name)
         self.get_application().add_to_automatonlist(result)
+        self.result_name = ""
 
         if not(self.result_open):
             return
@@ -117,35 +150,50 @@ class AutomatonOperation(PageMixin, Gtk.Box):
         window.add_tab_editor(result, result.get_name())
         window.set_tab_label_color(window.get_current_tab_widget(), 'label-red')
 
-    def item_selected(self, selection):
+    def on_operation_selected(self, selection):
         model, row = selection.get_selected()
         if row is not None:
             self.clear_oparguments()
-            op_params = model[row][2]
-            op_label = str(model[row][0])
-            op_fn = model[row][1]
-            self.creation_property_operation(op_label, op_params)
-            self.selected_op = (op_label, op_fn, op_params)
+            self.op_params = model[row][2]
+            self.op_label = str(model[row][0])
+            self.op_fn = model[row][1]
+            self.build_rhs_operation_box(self.op_label, self.op_params)
 
     def on_automatonlist_change(self, widget, automatonlist):
         self.automatonlist = automatonlist
-        op_label = self.selected_op[0]
-        op_params = self.selected_op[2]
-        self.creation_property_operation(op_label, op_params)
+        if self.op_fn:
+            self.build_rhs_operation_box(self.op_label, self.op_params)
 
-    def creation_property_operation(self, operation_name, params):
-        open_automata = []
+    def build_rhs_operation_box(self, operation_name, params):
+        open_automata = list()
+        _events = dict()
+        events = list()
         self.property_box.clear()
+
         for automato in self.automatonlist:
             open_automata.append((automato.get_name(), automato))
+            for event in automato.events:
+                _events[event.name] = event
+        
+        for k, v in _events.items():
+            events.append((k, v))
 
         for obj in params:
-            if obj['type'] == 'combobox':
+            if obj['type'] == 'explicit_combobox':
+                self.property_box.add_combobox(obj['label'], obj['cb_content'], data=obj['name'])
+            elif obj['type'] == 'ev_combobox':
+                self.property_box.add_combobox(obj['label'], events, data=obj['name'])
+            elif obj['type'] == 'ev_chooser':
+                self.property_box.add_chooser(obj['label'], [], events, data=obj['name'], scrollable=True, scroll_hmax=300, scroll_hmin=200)
+            elif obj['type'] == 'combobox':
                 self.property_box.add_combobox(obj['label'], open_automata, data=obj['name'])
             elif obj['type'] == 'entry':
                 self.property_box.add_entry(obj['label'], obj['default_value'], data=obj['name'], placeholder=obj.get('placeholder', None))
             elif obj['type'] == 'chooser':
                 self.property_box.add_chooser(obj['label'], [], open_automata, data=obj['name'], scrollable=True, scroll_hmax=300, scroll_hmin=200) # Check if list is really needed
-            elif obj['type'] == 'CheckButton':
+            elif obj['type'] == 'checkbutton':
                 self.property_box.add_checkbutton(obj['label'],self.result_open, data=obj['name'])
 
+        # build the default widgets: entry for naming the new automaton; checkbutton asking if it should be opened in editor
+        self.property_box.add_entry("Result", "", data='output', placeholder="type a name")
+        self.property_box.add_checkbutton("Open result ", self.result_open, data='open')

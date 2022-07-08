@@ -1848,7 +1848,7 @@ class Automaton(Base):
 
         return observer
 
-    def labeller(self, fault_events):
+    def labeller(fault_events):
         #this funtion receives a list of fault events.
         #one event only means that the faults are treated separately
         #two or more fault events means that the faults are treated together
