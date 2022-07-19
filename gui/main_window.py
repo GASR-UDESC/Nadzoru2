@@ -159,12 +159,16 @@ class MainWindow(Gtk.ApplicationWindow):
         
         context = widget.get_style_context()
         context.add_provider(self.css_provider, Gtk.STYLE_PROVIDER_PRIORITY_USER)
+        for style_cls in context.list_classes():
+            context.remove_class(style_cls)    
         context.add_class(color)
 
     def set_tab_label_color(self, widget, color = 'label-black'):
         
         label = self.note.get_tab_label(widget)
         self.add_default_css_provider(label, color)
+        
+    
         
     #   rgba = Gdk.RGBA(0, 0, 0)
     #   rgba.parse(color)
