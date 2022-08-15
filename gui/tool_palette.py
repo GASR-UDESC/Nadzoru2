@@ -13,13 +13,18 @@ class FileIconMixin:
 
 
 class FileIconToolButton(FileIconMixin, Gtk.ToolButton):
-    pass
+    def __init__(self, *args, tool_id=None, label=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.tool_id = tool_id
+        self.set_tooltip_text(label)
 
 
 class FileIconToggleToolButton(FileIconMixin, Gtk.ToggleToolButton):
-    def __init__(self, *args, tool_id, **kwargs):
+    def __init__(self, *args, tool_id, label=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.tool_id = tool_id
+        self.set_tooltip_text(label)
+
 
 
 class ToolPalette(Gtk.ToolPalette):
@@ -31,7 +36,7 @@ class ToolPalette(Gtk.ToolPalette):
 
         self.add_group('file', "File")
         self.add_group('edit', "Edit")
-        self.add_group('view', "view")
+        self.add_group('view', "View")
 
         #~ self.add_button('file', label="Save", icon_name='gtk-floppy', callback=self.on_click_test)
         self.add_toggle_button('edit', tool_id='state_add', label="Add State", icon_file_name='./res/icons/state_add.png')
@@ -41,18 +46,21 @@ class ToolPalette(Gtk.ToolPalette):
         self.add_toggle_button('edit', tool_id='edit', label="Edit", icon_file_name='./res/icons/edit.png')
         self.add_toggle_button('edit', tool_id='move', label="Move", icon_file_name='./res/icons/move.png')
         self.add_toggle_button('edit', tool_id='delete', label="Delete", icon_file_name='./res/icons/delete.png')
+        self.add_button('edit', tool_id='state_enum', label="Enumerate States", icon_file_name='./res/icons/enumerate.png')
+
 
         self.add_button('view', label="Zoom In", icon_file_name='./res/icons/zoom_in.png')
         self.add_button('view', label="Zoom Out", icon_file_name='./res/icons/zoom_out.png')
 
     def add_group(self, name, label):
-        assert name not in self.groups, "group '{}' already exists".format(name)
+        assert name not in self.groups, "group '{}' already exists".format(name)    
         self.groups[name] = Gtk.ToolItemGroup.new(label)
         self.add(self.groups[name])
 
     def add_button(self, group_name, *args, position=-1, callback=None, **kwargs):
         btn = FileIconToolButton(*args, **kwargs)
         self.groups[group_name].insert(btn, position)
+        btn.connect('clicked', self.on_clicked)
         if callback is not None:
             btn.connect('clicked', callback)
 
@@ -82,8 +90,15 @@ class ToolPalette(Gtk.ToolPalette):
         else:
             self.tool = None
             self.emit('nadzoru-tool-change', self.get_selected_tool())
+    
+    def on_clicked(self, btn):
+        self.emit('nadzoru-tool-clicked', btn.tool_id)
 
-    #~ def on_click_test(self, *args):
-        #~ print(self.get_selected_tool())
 
 GObject.signal_new('nadzoru-tool-change', ToolPalette, GObject.SIGNAL_RUN_LAST, GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT,))
+
+GObject.signal_new('nadzoru-tool-clicked',
+                   ToolPalette, 
+                   GObject.SIGNAL_RUN_LAST, 
+                   GObject.TYPE_PYOBJECT, 
+                   (GObject.TYPE_PYOBJECT,))

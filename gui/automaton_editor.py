@@ -14,6 +14,8 @@ class AutomatonEditor(PageMixin, Gtk.Box):
             kwargs['spacing'] = 2
         super().__init__(*args, **kwargs)
 
+        self.connect('parent-set', self.on_parent_set)
+
         self.automaton = automaton
         self.selected_state = None
         self.selected_transitions = None
@@ -78,8 +80,15 @@ class AutomatonEditor(PageMixin, Gtk.Box):
         self.delete_button = Gtk.Button(label = "Remove Event")
         self.delete_button.connect('clicked', self.event_remove)
         self.sidebox.pack_start(self.delete_button, False, False, 0)
+        
+        self.validate_button = Gtk.Button(label = "Validate Events")
+        self.validate_button.connect('clicked', self.validate_events)
+        self.sidebox.pack_start(self.validate_button, False, False, 0)
 
         self.update_treeview()
+
+    def validate_events(self, widget):
+        print(self.automaton.name_validation())
 
     def update_treeview(self):
         self.liststore.clear()
@@ -172,6 +181,8 @@ class AutomatonEditor(PageMixin, Gtk.Box):
 
     def trigger_change(self):
         self._changes_to_save = True
+        self.update_properties_box()
+        self.automaton_render.queue_draw()
         self.emit('nadzoru-editor-change', None)
 
     def reset_selection(self):
@@ -262,5 +273,20 @@ class AutomatonEditor(PageMixin, Gtk.Box):
 
         self.update_properties_box()
         self.automaton_render.queue_draw()
+
+    def on_tool_clicked(self, toolpallet, tool_id, tab):
+        if tab == self:
+            if tool_id == 'state_enum':
+                self.automaton.state_rename_sequential()
+                self.trigger_change()
+
+    def on_parent_set(self, widget, oldparent):     # Widget is self
+        # GTK removes self's parent first when a tab is moved to another window or
+        # when the application is closed, thus, it isn't possible to get_application.
+        # This happens when there was a parent, that is, oldparent isn't None.
+        if oldparent is None:
+            window = self.get_ancestor_window()
+            tab = window.get_current_tab_widget()
+            window.toolpallet.connect('nadzoru-tool-clicked', self.on_tool_clicked, tab)
 
 GObject.signal_new('nadzoru-editor-change', AutomatonEditor, GObject.SIGNAL_RUN_LAST, GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT,))

@@ -91,11 +91,21 @@
                             <attribute name="label" translatable="yes">Export DESTool</attribute>
                        </item>
                     </section>
+                    <section>
+                        <item>
+                            <attribute name="action">win.import-nadzoru</attribute>
+                            <attribute name="label" translatable="yes">Import Nadzoru 1</attribute>
+                        </item>
+                        <item>
+                            <attribute name="action">win.export-nadzoru</attribute>
+                            <attribute name="label" translatable="yes">Export Nadzoru 1</attribute>
+                       </item>
+                    </section>
                 </submenu>
             </section>
             <section>
                 <submenu>
-                    <attribute name="label">Edit</attribute>
+                    <attribute name="label" translatable="yes">_Edit</attribute>
                     <section>
                         <item>
                             <attribute name="action">win.edit-automaton</attribute>
@@ -105,12 +115,18 @@
                         </item>
                     </section>
                 </submenu>
-                <item>
-                    <attribute name="action">win.simulate-automaton</attribute>
+                <submenu>
                     <attribute name="label" translatable="yes">_Simulate</attribute>
-                    <attribute name="icon">gtk-jump-to</attribute>
-                    <attribute name="accel">&lt;Primary&gt;&lt;Alt&gt;s</attribute>
-                </item>
+                    <section>
+                        <item>
+                            <attribute name="action">win.simulate-automaton</attribute>
+                            <attribute name="label" translatable="yes">More...</attribute>
+                            <attribute name="icon">gtk-jump-to</attribute>
+                            <attribute name="accel">&lt;Primary&gt;&lt;Alt&gt;s</attribute>
+                        </item>
+                    </section>
+                </submenu>
+
                 <item>
                     <attribute name="action">win.operation-automaton</attribute>
                     <attribute name="label" translatable="yes">_Operations</attribute>
@@ -122,6 +138,11 @@
                     <attribute name="label" translatable="yes">Script _Operations</attribute>
                     <attribute name="icon">gtk-indent</attribute>
                     <attribute name="accel">&lt;Primary&gt;&lt;Shift&gt;o</attribute>
+                </item>
+                <item>
+                    <attribute name="action">win.generate-code-automaton</attribute>
+                    <attribute name="label" translatable="yes">_Generator</attribute>
+                    <attribute name="accel">&lt;Primary&gt;&lt;Shift&gt;g</attribute>
                 </item>
             </section>
             <section>

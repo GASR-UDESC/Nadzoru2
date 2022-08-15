@@ -2,7 +2,7 @@
 
 import sys
 
-import pluggins
+# import pluggins # this causes errors in python 3.8.9+
 from machine.automaton import Automaton
 from gui import Application
 

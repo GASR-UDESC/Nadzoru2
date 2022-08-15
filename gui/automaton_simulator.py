@@ -24,6 +24,64 @@ class ListBoxRowWithData(Gtk.ListBoxRow):
 def listbox_sort_func(row_1, row_2, data, notify_destroy):
         return row_1.transition.event.name.lower() > row_2.transition.event.name.lower()
 
+
+class DialogSimulator(Gtk.Dialog):
+    def __init__(self, parent):
+        super().__init__(title="Simulate", transient_for=parent, flags=0)
+        self.add_buttons(
+            Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+            "Simulate", Gtk.ResponseType.OK
+        )
+        self.set_default_size(300, 5)
+        self.set_border_width(5)
+        self.connect('response', self._on_response)
+        self.parent = parent
+        self.result = list()
+        box = self.get_content_area()
+        label = Gtk.Label(label="Choose a automaton to simulate")
+        box.add(label)
+
+        treeview = self._build_treeview()
+        box.pack_start(treeview, True, True, 5)
+
+        self.show_all()
+
+    def get_result(self):
+        return self.result
+
+    def _build_treeview(self):
+        self.liststore = Gtk.ListStore(str, object)
+        treeview = Gtk.TreeView(model=self.liststore, headers_visible=False)
+        self.treeview_selection = treeview.get_selection()
+        self.treeview_selection.set_mode(Gtk.SelectionMode.MULTIPLE)
+        cell = Gtk.CellRendererText()
+        column = Gtk.TreeViewColumn("Automatons", cell, text=0)
+        treeview.append_column(column)
+
+        self.liststore.clear()
+        rows = list()
+        for automaton in self.parent.get_application().get_automatonlist():
+            rows.append([automaton.get_name(), automaton])
+        rows.sort(key=lambda row: row[0])
+        for row in rows:
+            self.liststore.append(row)
+
+        return treeview
+
+    def _get_tree_selection(self):
+        selected_automatons = list()
+        _, tree_path_list = self.treeview_selection.get_selected_rows()
+
+        for tree_path in tree_path_list:
+            tree_iter = self.liststore.get_iter(tree_path)
+            selected = self.liststore.get(tree_iter, 1)[0]
+            selected_automatons.append(selected)
+        return selected_automatons
+
+    def _on_response(self, dialog, response_id):
+        self.result = self._get_tree_selection()
+
+
 class AutomatonSimulator(PageMixin, Gtk.Box):
     def __init__(self, automaton, *args, **kwargs):
         if 'spacing' not in kwargs:
@@ -65,10 +123,11 @@ class AutomatonSimulator(PageMixin, Gtk.Box):
             self.listbox.remove(row)
 
     def reset_list_box(self):
-        for transition in self.current_state.out_transitions:
-            self.listbox.add(ListBoxRowWithData(transition))
-        self.listbox.show_all()
-        self.renderer.queue_draw()
+        if self.current_state is not None:
+            for transition in self.current_state.out_transitions:
+                self.listbox.add(ListBoxRowWithData(transition))
+            self.listbox.show_all()
+            self.renderer.queue_draw()
 
     def on_row_activated(self, listbox, row):
         self.current_state = row.transition.to_state

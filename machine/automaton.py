@@ -4,30 +4,30 @@
 
 import copy
 import functools
-import os
 import random
-import re
+import os
 import sys
+from random import seed
+from random import randint
 from enum import Enum
 from xml.dom.minidom import parse
+import re
 
 cur_path = os.path.realpath(__file__)
 base_path = os.path.dirname(os.path.dirname(cur_path))
 sys.path.insert(1, base_path)
 
-
 class EventNameDuplicateException(Exception):
     pass
-
 
 class Base:
     def __init__(self, *args, **kwargs):
         for key, value in kwargs.items():
             print("Warning: key '{key}' @ '{class_}' was not consumed by any pluggin, value: '{value}'.".format(
-                key=key,
-                value=value,
-                class_=self.__class__
-            ))
+                    key=key,
+                    value=value,
+                    class_=self.__class__
+                ))
 
         # self.__dict__.update(kwargs)
 
@@ -36,11 +36,11 @@ class Base:
 
     @classmethod
     def plugin_append(cls, plugin):
-        cls.__bases__ = cls.__bases__ + (plugin,)
+        cls.__bases__ = cls.__bases__ + (plugin, )
 
     @classmethod
     def plugin_prepend(cls, plugin):
-        cls.__bases__ = (plugin,) + cls.__bases__
+        cls.__bases__ = (plugin, ) + cls.__bases__
 
 
 class Event(Base):
@@ -141,19 +141,11 @@ class TransitionLayout:
     def render_factor(self, value):
         self._render_factor = int(value)
 
-
 class StateType(Enum):
     NEUTRAL = 0
     NORMAL = 1
     UNCERTAIN = 2
     CERTAIN = 3
-
-
-class ControlabilityType(Enum):
-    BOTH = 0
-    DIAGNOSIS_ONLY = 1
-    PROGNOSIS_ONLY = 2
-
 
 class State(Base):
     properties = [{'label': "Name", 'property': 'name', 'gtk_control': 'entry'},
@@ -161,8 +153,7 @@ class State(Base):
                   {'label': "X", 'property': 'x', 'gtk_control': 'spinbutton'},
                   {'label': "Y", 'property': 'y', 'gtk_control': 'spinbutton'}]
 
-    def __init__(self, name=None, marked=False, x=0, y=0, quantity=None, diagnoser_type=StateType.NEUTRAL,
-                 diagnoser_bad=False, *args, **kwargs):
+    def __init__(self, name=None, marked=False, x=0, y=0, quantity=None, diagnoser_type=StateType.NEUTRAL, diagnoser_bad=False, *args, **kwargs):
         if name is None:
             if quantity is not None:
                 name = str(quantity + 1)
@@ -300,8 +291,7 @@ class Transition(Base):
         super().__init__(*args, **kwargs)
 
     def __str__(self):
-        return "{from_state:<8}, {event:<8} --> {to_state}".format(from_state=str(self.from_state),
-                                                                   event=str(self.event), to_state=str(self.to_state))
+        return "{from_state:<8}, {event:<8} --> {to_state}".format(from_state=str(self.from_state), event=str(self.event), to_state=str(self.to_state))
 
     @property
     def from_state(self):
@@ -321,9 +311,9 @@ class Transition(Base):
         if isinstance(value, State):
             self._to_state = value
 
+
     def __str__(self):
-        return "{from_state}, {event} --> {to_state}".format(from_state=self.from_state, to_state=self.to_state,
-                                                             event=self.event)
+        return "{from_state}, {event} --> {to_state}".format(from_state=self.from_state, to_state=self.to_state, event=self.event)
 
 
 class Automaton(Base):
@@ -348,10 +338,10 @@ class Automaton(Base):
         for s in self.states:
             transitions = transitions + list(s.out_transitions)
         return "Events: {events} \nStates: {states}\nInitial: {initial}\nTransitions:\n    {transitions}".format(
-            events=", ".join(map(lambda event: event.name, self.events)),
-            states="; ".join(map(str, self.states)),
-            initial=str(self.initial_state),
-            transitions="\n    ".join(map(str, transitions)),
+            events = ", ".join(map(lambda event: event.name, self.events)),
+            states = "; ".join(map(str, self.states)),
+            initial = str(self.initial_state),
+            transitions = "\n    ".join(map(str, transitions)),
         )
 
     # --------------------------------------------------------------------------
@@ -413,9 +403,10 @@ class Automaton(Base):
             return False
         return self.event_remove(event)
 
+
     def event_rename(self, event, new_event_name):
         if event.name == new_event_name:
-            return False  # This event's name is already event_name
+            return False  #  This event's name is already event_name
         if self.event_name_exists(new_event_name):  # ANOTHER event is already named 'event_name'
             raise EventNameDuplicateException
         event.name = new_event_name
@@ -470,6 +461,7 @@ class Automaton(Base):
     # ------------------------------------------------------------------------ #
     # -------------------------- State manipulation -------------------------- #
     # ------------------------------------------------------------------------ #
+
 
     def state_add(self, *args, initial=False, **kwargs):
         quantity = len(self.states)
@@ -546,7 +538,7 @@ class Automaton(Base):
         else:
             self.set_file_path_name(file_path_name)
 
-        f = open(file_path_name, 'w')
+        f = open(file_path_name,'w')
         f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
         f.write('<model version="0.0" type="FSA" id="Untitled">\n')
         f.write('<data>\n')
@@ -557,13 +549,11 @@ class Automaton(Base):
         for state_id, state in enumerate(self.states):
             state_to_id_map[state] = state_id
             initial = state == self.initial_state
-            f.write(
-                f'\t<state id="{state_id}" name="{state.name}" initial ="{initial}" marked="{state.marked}" x="{state.x}" y="{state.y}" />\n')
+            f.write(f'\t<state id="{state_id}" name="{state.name}" initial ="{initial}" marked="{state.marked}" x="{state.x}" y="{state.y}" />\n')
 
         for event_id, event in enumerate(self.events):
             event_to_id_map[event] = event_id
-            f.write(
-                f'\t<event id="{event_id}" name="{event.name}" controllable="{event.controllable}" observable="{event.observable}"/>\n')
+            f.write(f'\t<event id="{event_id}" name="{event.name}" controllable="{event.controllable}" observable="{event.observable}"/>\n')
 
         for source_state in self.states:
             for transition in source_state.out_transitions:
@@ -624,6 +614,7 @@ class Automaton(Base):
 
         return self
 
+
     def ides_import(self, file_path_name, load_layout=True):
         self.set_file_path_name(None)  # check rule
 
@@ -680,7 +671,7 @@ class Automaton(Base):
         return self
 
     def ides_export(self, file_path_name):
-        f = open(file_path_name, 'w')
+        f = open(file_path_name,'w')
         f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
         f.write('<model version="2.1" type="FSA" id="Untitled">\n')
         f.write('<data>\n')
@@ -692,37 +683,31 @@ class Automaton(Base):
             state_id_map[state] = state_id
             initial = state == self.initial_state
             if initial:
-                f.write(
-                    f'\t<state id="{state_id + 1}">\n \t\t<properties>\n \t\t\t<initial />\n \t\t\t<marked />\n \t\t</properties>\n \t\t<name>{state_id + 1}</name>\n \t</state>\n')
+                f.write(f'\t<state id="{state_id+1}">\n \t\t<properties>\n \t\t\t<initial />\n \t\t\t<marked />\n \t\t</properties>\n \t\t<name>{state_id+1}</name>\n \t</state>\n')
             else:
-                f.write(
-                    f'\t<state id="{state_id + 1}">\n \t\t<properties>\n \t\t\t<marked />\n \t\t</properties>\n \t\t<name>{state_id + 1}</name>\n \t</state>\n')
+                f.write(f'\t<state id="{state_id+1}">\n \t\t<properties>\n \t\t\t<marked />\n \t\t</properties>\n \t\t<name>{state_id+1}</name>\n \t</state>\n')
 
         for event_id, event in enumerate(self.events):
             event_id_map[event] = event_id
             if event.controllable == True:
-                f.write(
-                    f'\t<event id="{event_id + 1}">\n \t\t<properties>\n \t\t\t<controllable />\n \t\t\t<observable />\n \t\t</properties>\n \t\t<name>{event.name}</name>\n \t</event>\n')
+                f.write(f'\t<event id="{event_id+1}">\n \t\t<properties>\n \t\t\t<controllable />\n \t\t\t<observable />\n \t\t</properties>\n \t\t<name>{event.name}</name>\n \t</event>\n')
             else:
-                f.write(
-                    f'\t<event id="{event_id + 1}">\n \t\t<properties>\n \t\t\t<observable />\n \t\t</properties>\n \t\t<name>{event.name}</name>\n \t</event>\n')
+                f.write(f'\t<event id="{event_id+1}">\n \t\t<properties>\n \t\t\t<observable />\n \t\t</properties>\n \t\t<name>{event.name}</name>\n \t</event>\n')
 
         for source_state in self.states:
             for transition_id, transition in enumerate(source_state.out_transitions):
                 source_id = state_id_map[transition.from_state]
                 target_id = state_id_map[transition.to_state]
                 event_id = event_id_map[transition.event]
-                f.write(
-                    f'\t<transition id="{transition_id + 1}" source="{source_id}" target="{target_id}" event="{event_id}">\n \t</transition>\n')
+                f.write(f'\t<transition id="{transition_id+1}" source="{source_id}" target="{target_id}" event="{event_id}">\n \t</transition>\n')
 
         f.write('</data>\n')
         f.write('<meta tag="layout" version="2.1">\n')
-        meta_id_map = dict()
+        meta_id_map=dict()
         for state in self.states:
             state_id = state_id_map[state]
             initial = state == self.initial_state
-            f.write(
-                f'\t<state id="{state_id + 1}">\n \t\t<circle r="18.0" x="{state.x}" y="{state.y}" />\n \t</state>\n')
+            f.write(f'\t<state id="{state_id+1}">\n \t\t<circle r="18.0" x="{state.x}" y="{state.y}" />\n \t</state>\n')
 
         f.write('</meta>\n')
         f.write("</model>\n")
@@ -778,8 +763,7 @@ class Automaton(Base):
                     if ev_name.issubset(uncontrollable_events):
                         controllable = False
                     event_name_to_event_map[l[1]] = self.event_add(l[1], controllable, True)
-                self.transition_add(state_name_to_state_map[l[0].strip('\n')],
-                                    state_name_to_state_map[l[2].strip('\n')], event_name_to_event_map[l[1]])
+                self.transition_add(state_name_to_state_map[l[0].strip('\n')], state_name_to_state_map[l[2].strip('\n')], event_name_to_event_map[l[1]])
         return self
 
     def grail_export(self, file_path_name):
@@ -821,11 +805,10 @@ class Automaton(Base):
                         state_name_to_state_map[state_name] = self.state_add(state_name, marked=markd, initial=init)
                 if l[1] not in event_name_to_event_map.keys():
                     controllable = True
-                    if not l[1] % 2:
+                    if not l[1]%2:
                         controllable = False
                     event_name_to_event_map[l[1]] = self.event_add(l[1], controllable, True)
-                self.transition_add(state_name_to_state_map[l[0].strip('\n')],
-                                    state_name_to_state_map[l[2].strip('\n')], event_name_to_event_map[l[1]])
+                self.transition_add(state_name_to_state_map[l[0].strip('\n')], state_name_to_state_map[l[2].strip('\n')], event_name_to_event_map[l[1]])
         return self
 
     def tct_export(self, file_path_name):
@@ -835,6 +818,7 @@ class Automaton(Base):
 
     def clone(self):
         return self.copy()
+
 
     def detect_accessible_state(self):
         states_dict = dict()
@@ -862,6 +846,7 @@ class Automaton(Base):
 
         return states_dict, states_number, accessible_states
 
+
     def is_accessible(self):
         states_dict, states_number, accessible_states = self.detect_accessible_state()
         return states_number == accessible_states
@@ -877,7 +862,7 @@ class Automaton(Base):
 
         states_dict, states_number, accessible_states = self.detect_accessible_state()
 
-        if (accessible_states == states_number):
+        if(accessible_states == states_number):
             return self
 
         non_acessible_states_set = set()
@@ -995,16 +980,13 @@ class Automaton(Base):
             for state in state_tuple:
                 state_type_counter[state.diagnoser_type] += 1
             if state_type_counter[StateType.NEUTRAL] < len(state_tuple):
-                if (state_type_counter[StateType.NEUTRAL] + state_type_counter[StateType.NORMAL]) == len(
-                        state_tuple):  # only neutral and normal
+                if (state_type_counter[StateType.NEUTRAL] + state_type_counter[StateType.NORMAL]) == len(state_tuple): #only neutral and normal
                     diag_type = StateType.NORMAL
-                elif (state_type_counter[StateType.NEUTRAL] + state_type_counter[StateType.CERTAIN]) == len(
-                        state_tuple):  # only neutral and certain
+                elif (state_type_counter[StateType.NEUTRAL] + state_type_counter[StateType.CERTAIN]) == len(state_tuple): #only neutral and certain
                     diag_type = StateType.CERTAIN
                 else:
                     diag_type = StateType.UNCERTAIN
-            s = G.state_add(state_name, initial=initial, marked=marked, diagnoser_type=diag_type,
-                            diagnoser_bad=diag_bad)
+            s = G.state_add(state_name, initial=initial, marked=marked, diagnoser_type=diag_type, diagnoser_bad=diag_bad)
             state_map[state_tuple] = s
             state_stack.append(state_tuple)
             return s
@@ -1045,9 +1027,9 @@ class Automaton(Base):
     def univocal(G, R, return_status=False):
         equivalent_events, event_map = G.check_equivalent_event_set(R)
         if not equivalent_events:
-            raise Exception  # TODO: custom error that can be catch by application
+            raise Exception   # TODO: custom error that can be catch by application
 
-        univocal_map = {R.initial_state: G.initial_state}  # [state in R] to [state in G]
+        univocal_map = {R.initial_state: G.initial_state} # [state in R] to [state in G]
         state_stack = [(R.initial_state, G.initial_state)]
         status = True
 
@@ -1078,6 +1060,7 @@ class Automaton(Base):
         # TODO ...
 
         return bad_states
+
 
     def sup_c(G, R, univocal_map=None):
         # Look for Bad States in R.
@@ -1147,61 +1130,57 @@ class Automaton(Base):
 
     def determinize(self):
 
-        def get_range(s):
-            tf = dict()
-
-            for t in s.out_transitions:
-                try:
-                    tf[t.event].add(t.to_state)
-                except KeyError:
-                    tf[t.event] = set()
-                    tf[t.event].add(t.to_state)
-
-            return tf
-
-        def merge_states(state_list):
-
-            is_initial = False
-            normal_state_counter = 0
-            certain_state_counter = 0
-            uncertain_state_counter = 0
-            diag_type = StateType.NORMAL
-
-            state_tuple = tuple(state_list)
-            is_marked = functools.reduce(lambda val, s: val and s.marked, state_tuple, True)
-            if self.initial_state in state_list: is_initial = True
-            diag_bad = functools.reduce(lambda val, s: val and s.diagnoser_bad, state_tuple, True)
-            state_name = ",".join(state.name for state in state_tuple)
-            for state in state_list:
-                if state.diagnoser_type == StateType.NORMAL:
-                    normal_state_counter += 1
-                elif state.diagnoser_type == StateType.CERTAIN:
-                    certain_state_counter += 1
-                else:
-                    uncertain_state_counter += 1
-            if normal_state_counter < len(state_list):
-                if certain_state_counter < len(state_list):
-                    diag_type = StateType.UNCERTAIN
-                else:
-                    diag_type = StateType.CERTAIN
-            if state_name not in state_dict.keys():
-                state_stack.append(state_list)  # adiciona estado de destino a stack
-                state_dict[state_name] = self.state_add(state_name, initial=is_initial, marked=is_marked,
-                                                                     diagnoser_type=diag_type, diagnoser_bad=diag_bad)
-            return state_dict[state_name]
-
+        state_map = dict()
         state_stack = list()
-        state_dict = dict()
+        state_list = list()
 
+        def get_transition_function(list_of_states):
+            transition_function = dict()
+            for state in list_of_states:
+                for transition in state.out_transitions:
+                    if transition.event not in transition_function.keys():
+                        transition_function[transition.event] = list()
+                    transition_function[transition.event].append(transition.to_state)
+            return transition_function
+
+        def state_add(state_list, initial=False):
+            if len(state_list) > 1:
+                new_transitions_map = dict()
+                target_state_tuple = tuple(state_list)
+                marked = functools.reduce(lambda val, s: val and s.marked, target_state_tuple, True)
+                state_name = ",".join(state.name for state in target_state_tuple)
+                s = self.state_add(state_name, initial=initial, marked=marked)
+                for item in state_list:
+                    new_transitions_map[item] = s
+            else:
+                s = state_list[0]
+            state_stack.append(s)
+            state_map[s] = state_list
+            return s
+
+        state_list.append(self.initial_state)
+        state_map[self.initial_state] = state_list
         state_stack.append(self.initial_state)
-        state_dict[tuple(self.initial_state.name)] = state_stack
 
         while len(state_stack) > 0:
             state = state_stack.pop()
-            t_function = get_range(state)
-            for ev in t_function.keys():
-                if tuple(t_function[ev]) not in state_dict:
-                    merge_states(t_function[ev])
+            tf = get_transition_function(state_map[state])
+            for event in tf.keys():
+                state_list = list()
+                for target_state in tf[event]:
+                    if target_state not in state_list:
+                        state_list.append(target_state)
+                if state_list not in state_map.values():
+                    state_add(state_list, False)
+
+        #for removable in new_transitions_map.keys():
+        #    for transition in removable.in_transitions:
+        #        if transition.event.observable:
+        #            self.transition_add(transition.from_state, new_transitions_map[removable], transition.event)
+        #    for transition in removable.out_transitions:
+        #        if transition.event.observable:
+        #            self.transition_add(new_transitions_map[removable], transition.to_state, transition.event)
+        #    self.state_remove(removable)
 
         return self
 
@@ -1245,8 +1224,8 @@ class Automaton(Base):
                         marked_matrix[pair] = False
                         can_be_equivalent_stack.append(pair)
 
-        # now we are going to evaluate the transition functions of each unmarked pair
-        # ToDo: Does this have to loop?
+        #now we are going to evaluate the transition functions of each unmarked pair
+        #ToDo: Does this have to loop?
         while len(can_be_equivalent_stack) != 0:
             pair = can_be_equivalent_stack.pop()
             for event_name in events_names:
@@ -1269,7 +1248,7 @@ class Automaton(Base):
             state_equivalences.add(state_1)
             for state_2 in states:
                 if state_1 != state_2:
-                    pair = frozenset((state_1, state_2))
+                    pair = frozenset((state_1,state_2))
                     try:
                         if marked_matrix[pair] is False:
                             state_equivalences.add(state_2)
@@ -1369,7 +1348,7 @@ class Automaton(Base):
         control_cover_state = set()
         state_stack = list()
 
-        # ============Private Functions
+        #============Private Functions
 
         # this function returns the set of disabled events in the supervisor
         def get_disabled_events(sup_state):
@@ -1418,7 +1397,7 @@ class Automaton(Base):
         def get_marked_action_attribute(x1, x2):
             mx1 = get_marked_attribute(x1)
             mx2 = get_marked_attribute(x2)
-            # ~ if (mx1 == mx2) or ((mx1 == 0) and (mx2 != 0)) or ((mx2 == 0) and (mx1 != 0)):
+            #~ if (mx1 == mx2) or ((mx1 == 0) and (mx2 != 0)) or ((mx2 == 0) and (mx1 != 0)):
             if (mx1 == mx2) or (mx1 == 0) or (mx2 == 0):
                 return True
             else:
@@ -1455,7 +1434,7 @@ class Automaton(Base):
 
             chosen_cell = cell_sizes[max(sizes)]
             if current == control_cover_dict[chosen_cell]:
-                var = True
+                var =True
 
             for state in states:
                 if state not in control_cover_dict[chosen_cell]:
@@ -1531,13 +1510,11 @@ class Automaton(Base):
                 if states[i] != states[j]:
                     pair = frozenset((states[i], states[j]))
                     # Condition 1: E(x1) Intersection D(x2) = 0 AND E(x2) Intersection D(x1) = 0
-                    if (len(get_enabled_events(states[i]).intersection(get_disabled_events(states[j]))) == 0) and (
-                            len(get_enabled_events(states[j]).intersection(get_disabled_events(states[i]))) == 0):
+                    if (len(get_enabled_events(states[i]).intersection(get_disabled_events(states[j]))) == 0) and (len(get_enabled_events(states[j]).intersection(get_disabled_events(states[i]))) == 0):
                         # Marked Criteria - Sivolella def 4.1
                         if get_marked_action_attribute(states[i], states[j]) is True:
                             # Condition 3: Looking for dependancies
-                            common_transitions = get_enabled_events(states[i]).intersection(
-                                get_enabled_events(states[j]))
+                            common_transitions = get_enabled_events(states[i]).intersection(get_enabled_events(states[j]))
                             if len(common_transitions) == 0:
                                 aggregate_matrix[pair] = set()
                                 aggregate_stack.append(pair)
@@ -1550,11 +1527,9 @@ class Automaton(Base):
                                     j_transition_function_dict[transition.event.name] = transition.to_state
                                 dependancies = set()
                                 for each in common_transitions:
-                                    target_pair = frozenset(
-                                        (i_transition_function_dict[each], j_transition_function_dict[each]))
+                                    target_pair = frozenset((i_transition_function_dict[each], j_transition_function_dict[each]))
                                     if target_pair != pair and len(target_pair) == 2:
-                                        dependancies.add(frozenset(
-                                            (i_transition_function_dict[each], j_transition_function_dict[each])))
+                                        dependancies.add(frozenset((i_transition_function_dict[each], j_transition_function_dict[each])))
                                 aggregate_matrix[pair] = dependancies
                                 if len(dependancies) == 0:
                                     aggregate_stack.append(pair)
@@ -1574,7 +1549,7 @@ class Automaton(Base):
         control_cover_dict[0] = control_cover_state
         state_stack.append(control_cover_state)
         while len(state_stack) != 0:
-            # current is one element of control_cover_dict (a control cover cell)
+            #current is one element of control_cover_dict (a control cover cell)
             current_cell_updated = False
             current = state_stack.pop(0)
             for event_name in self.event_get_name_list():
@@ -1588,15 +1563,14 @@ class Automaton(Base):
                 # at this point control_cover_state holds a set with the destiny states
                 # decide if there is already a control cover that has this set, if not, create it
                 if not is_cell_covered(control_cover_dict, control_cover_state):
-                    possible_aggregation_indexes = get_possible_aggregation_indexes(control_cover_dict,
-                                                                                    control_cover_state)
+                    possible_aggregation_indexes = get_possible_aggregation_indexes(control_cover_dict, control_cover_state)
                     # if target states cant be aggregated in any existing cells
                     if len(possible_aggregation_indexes) == 0:
                         control_cover_dict[len(control_cover_dict)] = control_cover_state
                         state_stack.append(control_cover_state)
                     else:
                         # aggregate based on the criteria given
-                        # current_cell_updated = True
+                        #current_cell_updated = True
                         if criteria == 'b':
                             b_min_dependancies_criteria()
                         elif criteria == 'c':
@@ -1605,9 +1579,8 @@ class Automaton(Base):
                             d_future_agregation_criteria()
                         elif criteria == 'e':
                             e_random_criteria(possible_aggregation_indexes, control_cover_state)
-                        else:  # if 'a' but also default
-                            current_cell_updated = a_size_criteria(possible_aggregation_indexes, control_cover_state,
-                                                                   current)
+                        else: #if 'a' but also default
+                            current_cell_updated = a_size_criteria(possible_aggregation_indexes, control_cover_state, current)
                 if current_cell_updated is True:
                     break
 
@@ -1710,8 +1683,7 @@ class Automaton(Base):
                     diag_type = StateType.CERTAIN
             if state_name not in observer_state_dict.keys():
                 state_stack.append(state_list)  # adiciona estado de destino a stack
-                observer_state_dict[state_name] = observer.state_add(state_name, initial=is_initial, marked=is_marked,
-                                                                     diagnoser_type=diag_type, diagnoser_bad=diag_bad)
+                observer_state_dict[state_name] = observer.state_add(state_name, initial=is_initial, marked=is_marked, diagnoser_type=diag_type, diagnoser_bad=diag_bad)
             return observer_state_dict[state_name]
 
         while len(state_stack) > 0:
@@ -1740,21 +1712,19 @@ class Automaton(Base):
                                 if each not in target_states:
                                     target_states.append(each)
                     if len(target_states) > 0:
-                        in_state = merge_states(target_states)  # cria estado de destino
-                        if event.name not in observer_event_dict.keys():  # if not observer.has_event
-                            observer_event_dict[event.name] = observer.event_add(event.name, event.controllable,
-                                                                                 event.observable)
+                        in_state = merge_states(target_states) #cria estado de destino
+                        if event.name not in observer_event_dict.keys(): #if not observer.has_event
+                            observer_event_dict[event.name] = observer.event_add(event.name, event.controllable, event.observable)
                         if not out_state.out_transition_exists(in_state, observer_event_dict[event.name]):
-                            observer.transition_add(out_state, in_state, observer_event_dict[
-                                event.name])  # define as transicoes de out para in
+                            observer.transition_add(out_state, in_state, observer_event_dict[event.name]) #define as transicoes de out para in
 
         return observer
 
     def labeller(self, fault_events):
-        # this funtion receives a list of fault events.
-        # one event only means that the faults are treated separately
-        # two or more fault events means that the faults are treated together
-        # ToDo: Do we need to create a copy?
+        #this funtion receives a list of fault events.
+        #one event only means that the faults are treated separately
+        #two or more fault events means that the faults are treated together
+        #ToDo: Do we need to create a copy?
 
         R = Automaton()
         N = R.state_add('N', initial=True, marked=False, diagnoser_type=StateType.NORMAL, diagnoser_bad=False)
