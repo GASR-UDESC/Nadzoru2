@@ -147,13 +147,21 @@ class StateType(Enum):
     UNCERTAIN = 2
     CERTAIN = 3
 
+
+class ControlabilityType(Enum):
+    BOTH = 0
+    DIAGNOSIS_ONLY = 1
+    PROGNOSIS_ONLY = 2
+
+
 class State(Base):
     properties = [{'label': "Name", 'property': 'name', 'gtk_control': 'entry'},
                   {'label': "Marked", 'property': 'marked', 'gtk_control': 'checkbutton'},
                   {'label': "X", 'property': 'x', 'gtk_control': 'spinbutton'},
                   {'label': "Y", 'property': 'y', 'gtk_control': 'spinbutton'}]
 
-    def __init__(self, name=None, marked=False, x=0, y=0, quantity=None, diagnoser_type=StateType.NEUTRAL, diagnoser_bad=False, *args, **kwargs):
+    def __init__(self, name=None, marked=False, x=0, y=0, quantity=None, diagnoser_type=StateType.NEUTRAL,
+                 diagnoser_bad=False, *args, **kwargs):
         if name is None:
             if quantity is not None:
                 name = str(quantity + 1)
