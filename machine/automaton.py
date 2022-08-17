@@ -1142,6 +1142,7 @@ class Automaton(Base):
         state_stack = list()
         det_dict = dict()
         det_states_dict = dict()
+        det_event_dict = dict()
 
         def get_transition_function(state_list):
             transition_function = dict()
@@ -1185,8 +1186,8 @@ class Automaton(Base):
             else:
                 return det_states_dict[state_name]
 
-        def get_keys_from_value(d, list):
-            return [k for k, v in d.items() if v == list][0]
+        def get_keys_from_value(d, value):
+            return [k for k, v in d.items() if v == value][0]
 
         state_list = list()
         state_list.append(self.initial_state)
@@ -1198,8 +1199,13 @@ class Automaton(Base):
             transition_function = get_transition_function(state_list)
             for event in transition_function.keys():
                 target_state = merge_states(transition_function[event])
-                if not source_state.out_transition_exists(target_state, event):
-                    determinized_automaton.transition_add(source_state, target_state, event)  # def
+                if event.name not in det_event_dict.keys():
+                    ev = determinized_automaton.event_add(event.name, event.controllable, event.observable)
+                    det_event_dict[ev.name] = event
+                else:
+                    ev = det_event_dict[event.name]
+                if not source_state.out_transition_exists(target_state, ev):
+                    determinized_automaton.transition_add(source_state, target_state, ev)  # def
 
         return determinized_automaton
 
