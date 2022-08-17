@@ -1138,59 +1138,70 @@ class Automaton(Base):
 
     def determinize(self):
 
-        state_map = dict()
+        determinized_automaton = Automaton()
         state_stack = list()
-        state_list = list()
+        det_dict = dict()
+        det_states_dict = dict()
 
-        def get_transition_function(list_of_states):
+        def get_transition_function(state_list):
             transition_function = dict()
-            for state in list_of_states:
+            for state in state_list:
                 for transition in state.out_transitions:
                     if transition.event not in transition_function.keys():
                         transition_function[transition.event] = list()
-                    transition_function[transition.event].append(transition.to_state)
+                    if transition.to_state not in transition_function[transition.event]:
+                        transition_function[transition.event].append(transition.to_state)
             return transition_function
 
-        def state_add(state_list, initial=False):
-            if len(state_list) > 1:
-                new_transitions_map = dict()
-                target_state_tuple = tuple(state_list)
-                marked = functools.reduce(lambda val, s: val and s.marked, target_state_tuple, True)
-                state_name = ",".join(state.name for state in target_state_tuple)
-                s = self.state_add(state_name, initial=initial, marked=marked)
-                for item in state_list:
-                    new_transitions_map[item] = s
+        def get_merged_diagnoser_type(state_list):
+            normal_state_counter = 0
+            certain_state_counter = 0
+            uncertain_state_counter = 0
+            for state in state_list:
+                if state.diagnoser_type == StateType.NORMAL: normal_state_counter += 1
+                elif state.diagnoser_type == StateType.CERTAIN: certain_state_counter += 1
+                else: uncertain_state_counter += 1
+            if normal_state_counter < len(state_list):
+                if certain_state_counter < len(state_list):
+                    return StateType.UNCERTAIN
+                else:
+                    return StateType.CERTAIN
             else:
-                s = state_list[0]
-            state_stack.append(s)
-            state_map[s] = state_list
-            return s
+                return StateType.NORMAL
 
+        def merge_states(state_list, is_initial=False):
+            state_tuple = tuple(state_list)
+            is_marked = functools.reduce(lambda val, s: val and s.marked, state_tuple, True)
+            diag_type = get_merged_diagnoser_type(state_list)
+            diag_bad = functools.reduce(lambda val, s: val and s.diagnoser_bad, state_tuple, True)
+            state_name = ",".join(state.name for state in state_tuple)
+
+            if state_name not in det_states_dict.keys():
+                det_state = determinized_automaton.state_add(state_name, initial=is_initial, marked=is_marked, diagnoser_type=diag_type, diagnoser_bad=diag_bad)
+                det_states_dict[state_name] = det_state
+                det_dict[det_state] = state_list
+                state_stack.append(det_dict[det_state])
+                return det_state
+            else:
+                return det_states_dict[state_name]
+
+        def get_keys_from_value(d, list):
+            return [k for k, v in d.items() if v == list][0]
+
+        state_list = list()
         state_list.append(self.initial_state)
-        state_map[self.initial_state] = state_list
-        state_stack.append(self.initial_state)
+        merge_states(state_list, True)
 
         while len(state_stack) > 0:
-            state = state_stack.pop()
-            tf = get_transition_function(state_map[state])
-            for event in tf.keys():
-                state_list = list()
-                for target_state in tf[event]:
-                    if target_state not in state_list:
-                        state_list.append(target_state)
-                if state_list not in state_map.values():
-                    state_add(state_list, False)
+            state_list = state_stack.pop()
+            source_state = get_keys_from_value(det_dict, state_list)
+            transition_function = get_transition_function(state_list)
+            for event in transition_function.keys():
+                target_state = merge_states(transition_function[event])
+                if not source_state.out_transition_exists(target_state, event):
+                    determinized_automaton.transition_add(source_state, target_state, event)  # def
 
-        #for removable in new_transitions_map.keys():
-        #    for transition in removable.in_transitions:
-        #        if transition.event.observable:
-        #            self.transition_add(transition.from_state, new_transitions_map[removable], transition.event)
-        #    for transition in removable.out_transitions:
-        #        if transition.event.observable:
-        #            self.transition_add(new_transitions_map[removable], transition.to_state, transition.event)
-        #    self.state_remove(removable)
-
-        return self
+        return determinized_automaton
 
     def complement(self, copy=False):
         pass
