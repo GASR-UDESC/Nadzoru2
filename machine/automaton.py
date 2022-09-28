@@ -367,11 +367,14 @@ class Automaton(Base):
             return self.get_file_name()
         elif self._name is not None:
             return self._name
-        return 'untitled'
+        return 'Untitled'
 
     def set_file_path_name(self, file_path_name):
         self._file_path_name = file_path_name
         self._name = None
+
+    def clear_file_path_name(self):
+        self._file_path_name = None
 
     def set_name(self, name):
         if self._file_path_name is None:
@@ -527,7 +530,7 @@ class Automaton(Base):
 
     def state_rename_sequential(self):
         for _id, state in enumerate(self.states):
-            state.name = str(_id)
+            state.name = str(_id+1)
 
     # Editor specific methods
 

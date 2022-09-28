@@ -140,7 +140,8 @@ class AutomatonOperation(PageMixin, Gtk.Box):
 
         result = self.op_fn(*self.argumentslist_op, **self.kwarguments_op)  # result is an automaton
 
-        result.clear_file_path_name(name=self.result_name)
+        result.clear_file_path_name()
+        result.set_name(self.result_name)
         self.get_application().add_to_automatonlist(result)
         self.result_name = ""
 

@@ -44,6 +44,7 @@ class AutomatonEditor(PageMixin, Gtk.Box):
         # self.automaton_render.connect("button-release-event", self.on_button_release)
         self.propbox.connect('nadzoru-property-change', self.prop_edited)
 
+
     def build_treeview(self):
         self.liststore = Gtk.ListStore(str, bool, bool, object)
 
@@ -275,7 +276,9 @@ class AutomatonEditor(PageMixin, Gtk.Box):
         self.automaton_render.queue_draw()
 
     def on_tool_clicked(self, toolpallet, tool_id, tab):
-        if tab == self:
+        window = self.get_ancestor_window()
+        tab = window.get_current_tab_widget()
+        if tab == self and window.is_active():
             if tool_id == 'state_enum':
                 self.automaton.state_rename_sequential()
                 self.trigger_change()
@@ -286,7 +289,7 @@ class AutomatonEditor(PageMixin, Gtk.Box):
         # This happens when there was a parent, that is, oldparent isn't None.
         if oldparent is None:
             window = self.get_ancestor_window()
-            tab = window.get_current_tab_widget()
-            window.toolpallet.connect('nadzoru-tool-clicked', self.on_tool_clicked, tab)
+            window.toolpallet.connect('nadzoru-tool-clicked', self.on_tool_clicked, window.get_current_tab_widget())
+
 
 GObject.signal_new('nadzoru-editor-change', AutomatonEditor, GObject.SIGNAL_RUN_LAST, GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT,))

@@ -152,7 +152,8 @@ class AutomatonManager(PageMixin, Gtk.Box):
     def on_clonebtn(self, widget):
         for automaton in self._get_tree_selection():
             automaton = automaton.copy()
-            automaton.clear_file_path_name(f"{automaton.get_name()} copy")
+            automaton.clear_file_path_name()
+            automaton.set_name(f"{automaton.get_name()} copy")
             self.get_application().add_to_automatonlist(automaton)
 
     def on_simulatebtn(self, widget):
