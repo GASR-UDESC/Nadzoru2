@@ -9,6 +9,7 @@ from gui.automaton_editor import AutomatonEditor
 from gui.automaton_simulator import AutomatonSimulator
 from gui.automaton_manager import AutomatonManager
 from gui.automaton_generator import AutomatonGenerator
+from gui.statusbar import StatusBar
 from gui.tool_palette import ToolPalette
 from gui.automaton_operation import AutomatonOperation
 
@@ -20,17 +21,19 @@ class MainWindow(Gtk.ApplicationWindow):
         self.vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
         self.hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
         self.expander = Gtk.Expander(expanded=True)
+        self.statusbar_expander = Gtk.Expander(expanded=True)
         self.toolpallet = ToolPalette(width_request=148, vexpand=True)
         self.note = Gtk.Notebook(group_name='0', scrollable=True)
-        self.statusbar = Gtk.Statusbar()
 
+        self.statusbar = StatusBar()
+        self.statusbar_expander.add(self.statusbar)
         self.dialogCurrentFolder = None
 
         self.vbox.pack_start(self.hbox, True, True, 0)
         self.hbox.pack_start(self.expander, False, False, 0)
         self.expander.add(self.toolpallet)
         self.hbox.pack_start(self.note, True, True, 0)
-        self.vbox.pack_start(self.statusbar, False, False, 0)
+        self.vbox.pack_start(self.statusbar_expander, False, False, 0)
         self.add(self.vbox)
 
         self.set_default_size(1000, 800)
