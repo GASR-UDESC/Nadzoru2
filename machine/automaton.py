@@ -395,8 +395,8 @@ class Automaton(Base):
 
     def event_add(self, *args, **kwargs):
         event = self.event_class(*args, **kwargs)
-        if self.event_name_exists(event.name):
-            raise EventNameDuplicateException
+       ## if self.event_name_exists(event.name):
+       ##    raise EventNameDuplicateException
         self.events.add(event)
         return event
 
