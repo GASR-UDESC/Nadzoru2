@@ -12,6 +12,7 @@ from random import randint
 from enum import Enum
 from xml.dom.minidom import parse
 import re
+import machine.exceptions as expt
 
 cur_path = os.path.realpath(__file__)
 base_path = os.path.dirname(os.path.dirname(cur_path))
@@ -222,7 +223,7 @@ class State(Base):
 
     def transition_out_remove(self, transition):
         self.out_transitions.discard(transition)
-        self.transition_layouts[transition.to_state]
+        self.transition_layouts[transition.to_state].dec_ref()
         if self.transition_layouts[transition.to_state].ref_count == 0:
             del self.transition_layouts[transition.to_state]
 
@@ -971,7 +972,7 @@ class Automaton(Base):
             states and then calculate the accessible part, we only add accessible states to the output."""
 
         if len(args) < 2:
-            return
+            raise expt.TooFewArgumentsError
 
         G = args[0].__class__()  # function output
 
@@ -984,7 +985,6 @@ class Automaton(Base):
             state_type_counter = dict()
             for type in StateType: state_type_counter[type] = 0
             diag_type = StateType.NEUTRAL
-
             marked = functools.reduce(lambda val, s: val and s.marked, state_tuple, True)
             state_name = ",".join(state.name for state in state_tuple)
             diag_bad = functools.reduce(lambda val, s: s.diagnoser_bad, state_tuple, True)
@@ -1003,8 +1003,12 @@ class Automaton(Base):
             return s
 
         init_state_tuple = tuple(state.initial_state for state in args)
-        G_state_add(init_state_tuple, True)
 
+        if None in init_state_tuple:
+            raise expt.NoInitialStateError
+
+        G_state_add(init_state_tuple, True)
+        print(f'state_stack: {state_stack}')
         while len(state_stack) != 0:
             state_tuple = state_stack.pop()
             source_state = state_map[state_tuple]

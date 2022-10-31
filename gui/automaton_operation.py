@@ -3,7 +3,7 @@ from gi.repository import Gtk
 from gui.base import PageMixin
 from machine.automaton import Automaton
 from gui.property_box import PropertyBox
-from inspect import getfullargspec
+import machine.exceptions as expt
 
 class AutomatonOperation(PageMixin, Gtk.Box):
 
@@ -137,19 +137,30 @@ class AutomatonOperation(PageMixin, Gtk.Box):
             self.result_name = f'{str(self.op_label)} ({separator.join(list_name)})'
         # print(self.property_box.get_children()) # probably must check if user selected all necessary inputs
 
+        def push_msg_statusbar(message):
+            win = self.get_ancestor_window()
+            win.statusbar.push(message)
 
-        result = self.op_fn(*self.argumentslist_op, **self.kwarguments_op)  # result is an automaton
+        try:
+            result = self.op_fn(*self.argumentslist_op, **self.kwarguments_op)  # result is an automaton
+            result.clear_file_path_name()
+            result.set_name(self.result_name)
+            self.get_application().add_to_automatonlist(result)
+            self.result_name = ""
 
-        result.clear_file_path_name()
-        result.set_name(self.result_name)
-        self.get_application().add_to_automatonlist(result)
-        self.result_name = ""
+            if not (self.result_open):
+                return
+            window = self.get_ancestor_window()
+            window.add_tab_editor(result, result.get_name())
+            window.set_tab_label_color(window.get_current_tab_widget(), 'label-red')
 
-        if not(self.result_open):
-            return
-        window = self.get_ancestor_window()
-        window.add_tab_editor(result, result.get_name())
-        window.set_tab_label_color(window.get_current_tab_widget(), 'label-red')
+        except expt.TooFewArgumentsError:
+            push_msg_statusbar(expt.TooFewArgumentsError.user_message)
+        except expt.NoInitialStateError:
+            push_msg_statusbar(expt.NoInitialStateError.user_message)
+        except expt.NoMarkedStateError:
+            push_msg_statusbar(expt.NoMarkedStateError.user_message)
+
 
     def on_operation_selected(self, selection):
         model, row = selection.get_selected()
