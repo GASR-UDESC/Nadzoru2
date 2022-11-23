@@ -154,12 +154,8 @@ class AutomatonOperation(PageMixin, Gtk.Box):
             window.add_tab_editor(result, result.get_name())
             window.set_tab_label_color(window.get_current_tab_widget(), 'label-red')
 
-        except expt.TooFewArgumentsError:
-            push_msg_statusbar(expt.TooFewArgumentsError.user_message)
-        except expt.NoInitialStateError:
-            push_msg_statusbar(expt.NoInitialStateError.user_message)
-        except expt.NoMarkedStateError:
-            push_msg_statusbar(expt.NoMarkedStateError.user_message)
+        except expt.NadzoruError as e:
+            push_msg_statusbar(str(e))
 
 
     def on_operation_selected(self, selection):

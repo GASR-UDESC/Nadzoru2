@@ -1002,13 +1002,14 @@ class Automaton(Base):
             state_stack.append(state_tuple)
             return s
 
-        init_state_tuple = tuple(state.initial_state for state in args)
+        init_state_tuple = tuple(automaton.initial_state for automaton in args)
 
         if None in init_state_tuple:
-            raise expt.NoInitialStateError
+            automatons_without_initial = list(map(lambda automaton: automaton.get_name(),
+                                                  filter(lambda automaton: automaton.initial_state is None, args)))
+            raise expt.NoInitialStateError(*automatons_without_initial)
 
         G_state_add(init_state_tuple, True)
-        print(f'state_stack: {state_stack}')
         while len(state_stack) != 0:
             state_tuple = state_stack.pop()
             source_state = state_map[state_tuple]
@@ -1677,6 +1678,9 @@ class Automaton(Base):
         return transition_function
 
     def observer(self):
+
+        if self.initial_state is None:
+            raise expt.NoInitialStateError(self.get_name())
 
         observer = Automaton()
         observer_event_dict = dict()
