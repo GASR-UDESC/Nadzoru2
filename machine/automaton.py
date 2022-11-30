@@ -1225,6 +1225,7 @@ class Automaton(Base):
 
     def minimize(self, copy=False):
 
+        automaton = self.copy()
         # function calculates the out transition function of the state
         def get_transition_function(state):
             transition_function = dict()
@@ -1239,9 +1240,9 @@ class Automaton(Base):
             return False
 
         # list the events' names
-        events_names = self.event_get_name_list()  # list of event's names
+        events_names = automaton.event_get_name_list()  # list of event's names
         # lists the states of the supervisor
-        states = list(self.states)
+        states = list(automaton.states)
         # half matrix: dict(frozenset of pair of states) = have or not have same marked attribute
         marked_matrix = dict()
         # creates a half matrix so we can relate all pairs of states
@@ -1297,7 +1298,7 @@ class Automaton(Base):
             state_name = ",".join(each.name for each in eq)
             is_initial = False
             for each in eq:
-                if each == self.initial_state:
+                if each == automaton.initial_state:
                     is_initial = True
                     break
             is_marked = False
@@ -1305,27 +1306,27 @@ class Automaton(Base):
                 if each.marked:
                     is_marked = True
                     break
-            equivalent_state = self.state_add(state_name, marked=is_marked, initial=is_initial)
-            for state in self.states:
+            equivalent_state = automaton.state_add(state_name, marked=is_marked, initial=is_initial)
+            for state in automaton.states:
                 if state in eq:
                     for transition in state.in_transitions:
                         if transition.from_state == transition.to_state and not transition_already_exists(
                                 equivalent_state, equivalent_state, transition.event):
-                            self.transition_add(equivalent_state, equivalent_state, transition.event)
+                            automaton.transition_add(equivalent_state, equivalent_state, transition.event)
                         elif not transition_already_exists(transition.from_state, equivalent_state, transition.event):
-                            self.transition_add(transition.from_state, equivalent_state, transition.event)
+                            automaton.transition_add(transition.from_state, equivalent_state, transition.event)
                     for transition in state.out_transitions:
                         if transition.from_state == transition.to_state and not transition_already_exists(
                                 equivalent_state, equivalent_state, transition.event):
-                            self.transition_add(equivalent_state, equivalent_state, transition.event)
+                            automaton.transition_add(equivalent_state, equivalent_state, transition.event)
                         elif not transition_already_exists(equivalent_state, transition.to_state, transition.event):
-                            self.transition_add(equivalent_state, transition.to_state, transition.event)
+                            automaton.transition_add(equivalent_state, transition.to_state, transition.event)
                     states_to_remove.add(state)
 
         for each in states_to_remove:
-            self.state_remove(each)
+            automaton.state_remove(each)
 
-        return self
+        return automaton
 
     def mask(self, masks, copy=False):
         pass
