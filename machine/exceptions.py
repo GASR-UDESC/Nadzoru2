@@ -23,3 +23,7 @@ class NoMarkedStateError(NadzoruError):
 class TooFewArgumentsError(NadzoruError):
     def __str__(self):
         return "Error: Too few arguments"
+
+class NotEquivalentEventsError(NadzoruError):
+    def __str__(self):
+        return "Error: Not Equivalent Events"

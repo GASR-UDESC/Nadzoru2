@@ -1043,7 +1043,7 @@ class Automaton(Base):
     def univocal(G, R, return_status=False):
         equivalent_events, event_map = G.check_equivalent_event_set(R)
         if not equivalent_events:
-            raise Exception   # TODO: custom error that can be catch by application
+            raise expt.NotEquivalentEventsError # TODO: custom error that can be catch by application
 
         univocal_map = {R.initial_state: G.initial_state} # [state in R] to [state in G]
         state_stack = [(R.initial_state, G.initial_state)]
@@ -1052,9 +1052,9 @@ class Automaton(Base):
         while len(state_stack) > 0:
             s_r, s_g = state_stack.pop()
             for trans_r in s_r.out_transitions:
+                event_name = trans_r.event.name
                 t_g = s_g.get_target_from_event_name(event_name)
                 if trans_r.to_state not in univocal_map:
-                    event_name = trans_r.event.name
                     t_r = trans_r.to_state
                     univocal_map[t_r] = t_g
                     if t_g is not None:
