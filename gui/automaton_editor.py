@@ -51,6 +51,7 @@ class AutomatonEditor(PageMixin, Gtk.Box):
         self.treeview = Gtk.TreeView(model=self.liststore)
         self.treeview_selection  = self.treeview.get_selection()
         self.treeview_selection.set_mode(Gtk.SelectionMode.MULTIPLE)
+        self.treeview.set_enable_search(False)
 
         renderer_editabletext = Gtk.CellRendererText()
         renderer_editabletext.set_property('editable', True)
@@ -92,6 +93,8 @@ class AutomatonEditor(PageMixin, Gtk.Box):
         print(self.automaton.name_validation())
 
     def update_treeview(self):
+        cursor_path, cursor_focus_column = self.treeview.get_cursor()
+
         self.liststore.clear()
         rows = list()
 
@@ -102,6 +105,10 @@ class AutomatonEditor(PageMixin, Gtk.Box):
 
         for row in rows:
             self.liststore.append(row)
+        
+        if cursor_path:
+            self.treeview.set_cursor(cursor_path, cursor_focus_column, False)
+        
 
     def text_edited(self, widget, path, event_name):
         event = self.liststore[path][3]

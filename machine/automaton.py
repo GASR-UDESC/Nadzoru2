@@ -951,8 +951,19 @@ class Automaton(Base):
     def selfloop(self, event_set):
         pass
 
+    def check_equivalent_events(self, controllable=False, observable=True, *args): #todo
+        events = dict()
+        for g in args:
+            for g_event in g.events:
+                if g_event.name not in events:
+                    new_event = g_event.copy()
+                    self.events.add(new_event)
+
+        pass
+
     def _merge_events(self, *args):
         "Add events from *args into self, self may already have events"
+
         event_names = {event.name for event in self.events}  # set, initiate with events' names already in self
         added_events = list()  # so we can undo in case of error
         for g in args:
@@ -975,7 +986,7 @@ class Automaton(Base):
             raise expt.TooFewArgumentsError
 
         G = args[0].__class__()  # function output
-
+        print(G)
         G._merge_events(*args)
 
         state_stack = list()
