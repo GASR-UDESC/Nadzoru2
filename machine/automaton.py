@@ -951,15 +951,24 @@ class Automaton(Base):
     def selfloop(self, event_set):
         pass
 
-    def check_equivalent_events(self, controllable=False, observable=True, *args): #todo
+    def check_equivalent_events(self, controllable=True, observable=True, *args): #todo
         events = dict()
+        non_equivalent_events = set()
         for g in args:
             for g_event in g.events:
-                if g_event.name not in events:
-                    new_event = g_event.copy()
-                    self.events.add(new_event)
-
-        pass
+                if g_event.name not in events.keys():
+                    events[g_event.name] = [g_event.controllable, g_event.observable]
+                else:
+                    is_controllable, is_observable = events[g_event.name]
+                    if controllable and g_event.controllable != is_controllable:
+                        non_equivalent_events.add(g_event.name)
+                    if observable and g_event.observable != is_observable:
+                        non_equivalent_events.add(g_event.name)
+        if not non_equivalent_events: 
+            return True
+        else:
+            return non_equivalent_events
+                
 
     def _merge_events(self, *args):
         "Add events from *args into self, self may already have events"
@@ -985,8 +994,12 @@ class Automaton(Base):
         if len(args) < 2:
             raise expt.TooFewArgumentsError
 
+        eq_events = args[0].check_equivalent_events(True, True, *args)
+        if eq_events is not True:
+            raise expt.NotEquivalentEventsError(eq_events)
+
         G = args[0].__class__()  # function output
-        print(G)
+
         G._merge_events(*args)
 
         state_stack = list()
