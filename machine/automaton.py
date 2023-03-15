@@ -826,6 +826,123 @@ class Automaton(Base):
     def tct_export(self, file_path_name):
         pass
 
+    def legacy_nadzoru_import(self, file_path_name, load_layout=True):
+
+        def get_data(extract:str, extract_from:str):
+            ''' Returns a list of properties and their given description from a NZA file'''
+            object_data = list()
+            data = list()
+            for line in extract_from:
+                line = line.strip("\n")
+                for obj_property, req_data in extract:
+                    if req_data in line:
+                        if req_data == ' = {':
+                            line = line.replace('[', '')
+                            line = line.replace('] = {', '')
+                        else:
+                            line = line.replace(req_data, '')
+                            line = line.replace(',', '')
+                            line = line.replace('}', "")
+                        data.append((obj_property, line))
+                if len(data) == len(extract):
+                    object_data.append(data)
+                    data = list()
+            return object_data
+
+
+        with open(file_path_name, 'r') as infile:
+            for line_count, line in enumerate(infile):
+                if line.startswith('["events"]'):
+                    line_index_events = line_count
+                elif line.startswith('["states"]'):
+                    line_index_states = line_count
+                elif line.startswith('["transitions"]'):
+                    line_index_transitions = line_count
+            infile.seek(0)
+
+            content = infile.readlines()
+            event_content_str = content[line_index_events+1:line_index_transitions]
+            transition_content_str = content[line_index_transitions+1:line_index_states]
+            state_content_str = content[line_index_states+1:]
+
+
+        event_data_str = get_data({ ('id', ' = {'),
+                                    ('observable', '["observable"] = '),
+                                    ('name', '["name"] ='),
+                                    ('controllable', '["controllable"] = ')},
+                                    event_content_str)
+
+        transition_data_str = get_data({('id', ' = {'),
+                                        ('target', '["target"] = '),
+                                        ('source', '["source"] = '),
+                                        ('event', '["event"] = ')},
+                                        transition_content_str)
+
+        states_data_str = get_data({('id', ' = {'), 
+                                    ('marked', '["marked"] = '), 
+                                    ('initial', '["initial"] = '),
+                                    ('name', '["name"] = '),
+                                    ('x', '["x"] ='),
+                                    ('y', '["y"] = ')},
+                                    state_content_str)
+
+        id_to_state_map = dict()
+        id_to_event_map = dict()
+
+        # Adding states
+        for data_str in states_data_str:
+            for prop_name, prop in data_str:
+                if prop_name == 'id':
+                    state_id = prop
+                elif prop_name == 'marked':
+                    is_marked = prop.lower() == 'true'
+                elif prop_name == 'initial':
+                    is_initial = prop.lower() == 'true'
+                elif prop_name == 'name':
+                    name = prop.replace('"', "")
+                elif prop_name == 'x':
+                    x = int(prop)
+                elif prop_name == 'y':
+                    y = int(prop)
+
+            s = self.state_add(name, marked=is_marked, initial=is_initial, x=x, y=y)
+            id_to_state_map[state_id] = s
+
+        # Adding events
+        for data_str in event_data_str:
+            is_controllable = False
+            for prop_name, prop in data_str:
+                if prop_name == 'id':
+                    ev_id = prop
+                elif prop_name == 'observable':
+                    is_observable = prop.lower() == 'true'
+                elif prop_name == 'controllable':
+                    is_controllable = prop.lower() == 'true'
+                elif prop_name == 'name':
+                    prop = prop.lstrip()
+                    ev_name = prop.replace('"', "")
+            event = self.event_add(ev_name, observable=is_observable, controllable=is_controllable)
+            id_to_event_map[ev_id] = event
+
+        # Adding transitions
+        for data_str in transition_data_str:
+            for prop_name, prop in data_str:
+                if prop_name == 'id':
+                    st_id = prop
+                elif prop_name == 'event':
+                    event_id = prop
+                elif prop_name == 'source':
+                    source_state_id = prop
+                elif prop_name == 'target':
+                    target_state_id = prop
+            event = id_to_event_map[event_id]
+            source_state = id_to_state_map[source_state_id]
+            target_state = id_to_state_map[target_state_id]
+            self.transition_add(source_state, target_state, event)
+
+        return self
+
+
     # Basic operations (e.g., sync, supC)
 
     def clone(self):
