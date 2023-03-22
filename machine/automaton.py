@@ -1068,24 +1068,21 @@ class Automaton(Base):
     def selfloop(self, event_set):
         pass
 
-    def check_equivalent_events(self, controllable=True, observable=True, *args): #todo
+
+    def check_equivalent_events(self, *args):
         events = dict()
         non_equivalent_events = set()
         for g in args:
             for g_event in g.events:
                 if g_event.name not in events.keys():
-                    events[g_event.name] = [g_event.controllable, g_event.observable]
+                    events[g_event.name] = g_event
                 else:
-                    is_controllable, is_observable = events[g_event.name]
-                    if controllable and g_event.controllable != is_controllable:
+                    if not g_event.equivalent_properties(events[g_event.name]):
                         non_equivalent_events.add(g_event.name)
-                    if observable and g_event.observable != is_observable:
-                        non_equivalent_events.add(g_event.name)
-        if not non_equivalent_events: 
-            return True
-        else:
-            return non_equivalent_events
-                
+
+        if not non_equivalent_events:
+            return True, None
+        return False, non_equivalent_events       
 
     def _merge_events(self, *args):
         "Add events from *args into self, self may already have events"
@@ -1111,9 +1108,9 @@ class Automaton(Base):
         if len(args) < 2:
             raise expt.TooFewArgumentsError
 
-        eq_events = args[0].check_equivalent_events(True, True, *args)
-        if eq_events is not True:
-            raise expt.NotEquivalentEventsError(eq_events)
+        is_equivalent, eq_events = args[0].check_equivalent_events(*args)
+        if is_equivalent is not True:
+            raise expt.ErrorMultiplePropetiesForEventName(*eq_events)
 
         G = args[0].__class__()  # function output
 
@@ -1184,7 +1181,7 @@ class Automaton(Base):
     def univocal(G, R, return_status=False):
         equivalent_events, event_map = G.check_equivalent_event_set(R)
         if not equivalent_events:
-            raise expt.NotEquivalentEventsError # TODO: custom error that can be catch by application
+            raise expt.ErrorMultiplePropetiesForEventName # TODO: custom error that can be catch by application
 
         univocal_map = {R.initial_state: G.initial_state} # [state in R] to [state in G]
         state_stack = [(R.initial_state, G.initial_state)]

@@ -24,15 +24,17 @@ class TooFewArgumentsError(NadzoruError):
     def __str__(self):
         return "Error: Too few arguments"
 
-class NotEquivalentEventsError(NadzoruError):
+class ErrorMultiplePropetiesForEventName(NadzoruError):
     def __init__(self, *args):
         self.args = args
 
     def __str__(self):
-        print(self.args[0])
-        print(type(self.args[0]))
-        names = ", ".join(str(s) for s in self.args[0])
+        if not self.args:
+            return f"Error: There are multiple properties for the same event name"
+        names = ", ".join(str(s) for s in self.args)
         return f"Error: The following events does not have the same parameters in all automata: {names} "
+
+        
         
 
  
