@@ -6,7 +6,7 @@ from gi.repository import GLib, Gio, Gtk, GObject
 from renderer import AutomatonRenderer
 from gui.base import PageMixin
 from gui.property_box import PropertyBox
-
+import machine.exceptions as expt
 
 class AutomatonEditor(PageMixin, Gtk.Box):
     def __init__(self, automaton, *args, **kwargs):
@@ -91,6 +91,8 @@ class AutomatonEditor(PageMixin, Gtk.Box):
 
     def validate_events(self, widget):
         print(self.automaton.name_validation())
+        if self.automaton.name_validation():
+            raise expt.InvalidEventNameError
 
     def update_treeview(self):
         cursor_path, cursor_focus_column = self.treeview.get_cursor()

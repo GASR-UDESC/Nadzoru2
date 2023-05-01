@@ -372,7 +372,7 @@ class Automaton(Base):
 
     def set_file_path_name(self, file_path_name):
         self._file_path_name = file_path_name
-        self._name = None
+        self._name = self.get_name()
 
     def clear_file_path_name(self):
         self._file_path_name = None
@@ -393,6 +393,14 @@ class Automaton(Base):
 
     def event_name_exists(self, event_name):
         return self.event_get_by_name(event_name) is not None
+    
+    def name_validation(self):  # funcao de verificacao
+        event_dict = dict()
+        for event in self.events:
+            if event.name in event_dict.values():
+                return False
+            event_dict[event] = event.name
+        return True
 
     def event_add(self, *args, **kwargs):
         event = self.event_class(*args, **kwargs)
@@ -487,15 +495,12 @@ class Automaton(Base):
     def state_remove(self, state):
         if self.initial_state == state:
             self.initial_state = None
-        in_transitions = set()
+        transitions = set()
         for r in state.in_transitions:
-            in_transitions.add(r)
-        out_transitions = set()
+            transitions.add(r)
         for r in state.out_transitions:
-            out_transitions.add(r)
-        for transition in in_transitions:
-            self.transition_remove(transition)
-        for transition in out_transitions:
+            transitions.add(r)
+        for transition in transitions:
             self.transition_remove(transition)
         try:
             self.states.remove(state)

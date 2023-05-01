@@ -35,6 +35,9 @@ class ErrorMultiplePropetiesForEventName(NadzoruError):
         return f"Error: The following events does not have the same parameters in all automata: {names} "
 
         
-        
+class InvalidEventNameError(NadzoruError):
+    def __init__(self, *args):
+        self.args = args
 
- 
+    def __str__(self):
+        return "Error: There are more than one event with the same name" 
