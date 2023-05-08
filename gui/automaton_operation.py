@@ -56,7 +56,7 @@ class AutomatonOperation(PageMixin, Gtk.Box):
             {
                 'label': "Supervisor Reduction", 'fn': Automaton.supervisor_reduction, 'params': [
                     {'label': "Automaton", 'type': 'combobox', 'name': 'self'},
-                    {'label': "G", 'type': 'combobox', 'name': 'G'},
+                    {'label': "G", 'type': 'combautomaton_testobox', 'name': 'G'},
                     {'label': "Criteria", 'type': 'explicit_combobox', 'cb_content': [("Minimum dependancies", 'b'), ("Target state intersection", 'c'), ("Future agregation", 'd'), ("Random", 'e')], 'name': 'criteria'}]},
             {
                 'label': "Labeller", 'fn': Automaton.labeller, 'params': [
@@ -147,6 +147,7 @@ class AutomatonOperation(PageMixin, Gtk.Box):
             result.set_name(self.result_name)
             self.get_application().add_to_automatonlist(result)
             self.result_name = ""
+            result.automaton_reposition_prototipo()
 
             if not (self.result_open):
                 return

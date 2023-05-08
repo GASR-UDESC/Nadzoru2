@@ -947,6 +947,16 @@ class Automaton(Base):
 
         return self
 
+    def automaton_reposition_prototipo(self): # aprender a pegar o tamanho da tela, e mudar nome das variaveis
+        inicial_x = 100
+        inicial_y = 90 
+        
+        for i, state in enumerate(self.states):
+            value_x = (inicial_x + i*90)
+            state.x = inicial_x  + (i*90 % 540)
+            state.y = inicial_y + 90*(value_x // 640)
+        return
+
 
     # Basic operations (e.g., sync, supC)
 
