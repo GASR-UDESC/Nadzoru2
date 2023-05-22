@@ -147,7 +147,7 @@ class AutomatonOperation(PageMixin, Gtk.Box):
             result.set_name(self.result_name)
             self.get_application().add_to_automatonlist(result)
             self.result_name = ""
-            result.automaton_reposition_prototipo()
+            result.arrange_states_position()
 
             if not (self.result_open):
                 return

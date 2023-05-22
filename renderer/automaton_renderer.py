@@ -193,7 +193,8 @@ class AutomatonRenderer(Gtk.DrawingArea):
         super().__init__(*args, **kwargs)
         self.automaton = automaton
         self.set_events(Gdk.EventMask.BUTTON_MOTION_MASK |
-                        Gdk.EventMask.BUTTON_PRESS_MASK
+                        Gdk.EventMask.BUTTON_PRESS_MASK |
+                        Gdk.EventMask.BUTTON_RELEASE_MASK
         )
 
         self.cache_reset()
@@ -405,24 +406,11 @@ class AutomatonRenderer(Gtk.DrawingArea):
 
         # draw states
         state_radius = dict()
-        width, height = 0, 0
-        delta_x, delta_y = 0, 0
+
         
-        min_x = min(state.x for state in self.automaton.states)
-        min_y = min(state.y for state in self.automaton.states)
-        
-        if min_x <= margin:
-            delta_x = margin - min_x 
-        if min_y <= margin:
-            delta_y = margin - min_y
-        
+
         for state in self.automaton.states:
-            state.x = state.x + delta_x
-            state.y = state.y + delta_y
-            if state.x >= width:
-                width = state.x
-            if state.y >= height:
-                height = state.y
+
             if state == highlight_state:
                 state_radius[state] = self.draw_state(cr, state, arc_color=(1, 0, 0))
             else:
@@ -430,12 +418,41 @@ class AutomatonRenderer(Gtk.DrawingArea):
 
         for state in self.automaton.states:
             self.draw_state_transitions(cr, state, state_radius, ccw=True, factor=2.0, selected_transitions=highlight_transitions)
-            
-        width = width + 300
-        height = height + 300
+        
+        # self.renderer_set_size_request()
+
+        
+    def renderer_set_size_request(self, margin=50):
+        width, height = 0, 0
+        delta_x, delta_y = 0, 0
+
+        if not self.automaton.states:
+            return delta_x, delta_y
+        
+        x_values, y_values = zip(*[(state.x, state.y) for state in self.automaton.states])
+        min_x, min_y = min(x_values), min(y_values)
+        max_x, max_y = max(x_values), max(y_values)
+
+        if min_x <= margin:
+            delta_x = margin - min_x 
+        if min_y <= margin:
+            delta_y = margin - min_y
+
+        for states in self.automaton.states:
+            states.x += delta_x
+            states.y += delta_y
+
+        x_values, y_values = zip(*[(state.x, state.y) for state in self.automaton.states])
+        min_x, min_y = min(x_values), min(y_values)
+        max_x, max_y = max(x_values), max(y_values)
+
+        width = max_x + 300
+        height = max_y + 300
+        
         
         self.set_size_request(width, height)
-        
+        return delta_x, delta_y
+
         
     def get_connected_states(self, state, forward_deep, backward_deep):
         states = [state]

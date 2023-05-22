@@ -947,16 +947,15 @@ class Automaton(Base):
 
         return self
 
-    def automaton_reposition_prototipo(self, num_columns = 5, initial_x = 100, initial_y = 90, spacing_x = 90, spacing_y = 90): # aprender a pegar o tamanho da tela, e mudar nome das variaveis
-        
+    def arrange_states_position(self, num_columns=7, initial_x=100, initial_y=90, spacing_x=90, spacing_y=90):
+
         for i, state in enumerate(self.states):
             column = i % num_columns
             row = i // num_columns
-            
-            state.x = initial_x  + column * spacing_x
+
+            state.x = initial_x + column * spacing_x
             state.y = initial_y + row * spacing_y
         return
-
 
     # Basic operations (e.g., sync, supC)
 

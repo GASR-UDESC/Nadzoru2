@@ -33,6 +33,7 @@ class AutomatonEditor(PageMixin, Gtk.Box):
         self.paned.pack1(self.scrolled, True, False)
         self.paned.pack2(self.sidebox, False, False)
         self.scrolled.add(self.automaton_render)
+        self.automaton_render.renderer_set_size_request()
 
         self.build_treeview()
         self.sidebox.pack_start(self.frame_props, False, False, 0)
@@ -41,7 +42,7 @@ class AutomatonEditor(PageMixin, Gtk.Box):
         self.automaton_render.connect('draw', self.on_draw)
         self.automaton_render.connect('motion-notify-event', self.on_motion_notify)
         self.automaton_render.connect('button-press-event', self.on_button_press)
-        # self.automaton_render.connect("button-release-event", self.on_button_release)
+        self.automaton_render.connect("button-release-event", self.on_button_release)
         self.propbox.connect('nadzoru-property-change', self.prop_edited)
 
 
@@ -219,6 +220,19 @@ class AutomatonEditor(PageMixin, Gtk.Box):
                 self.automaton_render.queue_draw()
                 self.update_properties_box()
                 self.trigger_change()
+                self.update_scrolled_window()
+
+
+    def update_scrolled_window(self):
+        hadj = self.scrolled.get_hadjustment()
+        vadj = self.scrolled.get_vadjustment()
+
+        delta_x, delta_y = self.automaton_render.renderer_set_size_request()
+
+        hadj.set_value(hadj.get_value() + delta_x)
+        vadj.set_value(vadj.get_value() + delta_y)
+        self.scrolled.set_hadjustment(hadj)
+        self.scrolled.set_vadjustment(vadj)
 
 
     def on_button_press(self, automaton_render, event):
@@ -283,7 +297,13 @@ class AutomatonEditor(PageMixin, Gtk.Box):
 
         self.update_properties_box()
         self.automaton_render.queue_draw()
-
+    
+    def on_button_release(self, automaton_render, event):
+        window = self.get_ancestor_window()
+        tool_name = window.toolpallet.get_selected_tool()
+        
+        if tool_name == 'move':
+            self.update_scrolled_window()
     def on_tool_clicked(self, toolpallet, tool_id, tab):
         window = self.get_ancestor_window()
         tab = window.get_current_tab_widget()
