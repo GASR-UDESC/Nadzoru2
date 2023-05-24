@@ -32,8 +32,6 @@ class Base:
 
         # self.__dict__.update(kwargs)
 
-    def copy(self):
-        return copy.deepcopy(self)
 
     @classmethod
     def plugin_append(cls, plugin):
@@ -43,6 +41,24 @@ class Base:
     def plugin_prepend(cls, plugin):
         cls.__bases__ = (plugin, ) + cls.__bases__
 
+    def copy(self, memo=None):
+        return_memo = True
+        if memo is None:
+            return_memo = False
+            memo = {}
+
+        if id(self) in memo:
+            if return_memo:
+                return memo[id(self)], memo
+            return memo[id(self)]
+        
+        new_obj = copy.deepcopy(self, memo)
+        
+        memo[id(self)] = new_obj
+
+        if return_memo:
+            return memo[id(self)], memo
+        return memo[id(self)]
 
 class Event(Base):
     def __init__(self, name='', controllable=False, observable=True, tex=None, *args, **kwargs):
@@ -52,6 +68,28 @@ class Event(Base):
         self.observable = observable
         self.transitions = set()
         super().__init__(*args, **kwargs)
+
+    def copy(self, memo=None):
+        return_memo = True
+        if memo is None:
+            return_memo = False
+            memo = {}
+
+        if id(self) in memo:
+            if return_memo:
+                return memo[id(self)], memo
+            return memo[id(self)]
+        
+        
+        if isinstance(self, Event):
+            new_obj = Event(str(self.name), self.controllable, self.observable, str(self.tex))
+        else:
+            new_obj, memo = super().copy(memo)
+        
+        memo[id(self)] = new_obj
+        if return_memo:
+            return memo[id(self)], memo
+        return memo[id(self)]
 
     def __str__(self):
         return self.name
@@ -179,17 +217,40 @@ class State(Base):
         self.transition_layouts = dict()  # maps a destination state, with the layout for all transitions in this ordened pair
         super().__init__(*args, **kwargs)
 
+    def copy(self, memo=None):
+        return_memo = True
+        if memo is None:
+            return_memo = False
+            memo = {}
+
+        if id(self) in memo:
+            if return_memo:
+                return memo[id(self)], memo
+            return memo[id(self)]
+        
+        
+        if isinstance(self, State):
+            new_obj = State(name=self.name, marked=self.marked, x=self.x, y=self.y, diagnoser_type=self.diagnoser_type, diagnoser_bad=self.diagnoser_bad)
+            # for transition in self.in_transitions: # It isn't possible to copy the transitions here because of recursion
+            #     new_trans, memo = transition.copy(memo)
+            #     new_obj.in_transitions.add(new_trans)
+            # for transition in self.out_transitions:
+            #     new_trans, memo = transition.copy(memo)
+            #     new_obj.out_transitions.add(new_trans)
+        else:
+            new_obj, memo = super().copy(memo)
+        
+        memo[id(self)] = new_obj
+        if return_memo:
+            return memo[id(self)], memo
+        return memo[id(self)]
+
+
     def __str__(self):
         if self.marked:
             return "(" + self.name + ")"
         else:
             return "[" + self.name + "]"
-
-    # -------------------------------- def __repr__(self):
-    #         if self.marked:
-    #             return "(" + self.name + ")"
-    #         else:
-    #             return "[" + self.name + "]"-------------
 
     def __repr__(self):
         if self.marked:
@@ -299,6 +360,31 @@ class Transition(Base):
         self.event = event
         super().__init__(*args, **kwargs)
 
+    def copy(self, memo=None):
+        return_memo = True
+        if memo is None:
+            return_memo = False
+            memo = {}
+
+        if id(self) in memo:
+            if return_memo:
+                return memo[id(self)], memo
+            return memo[id(self)]
+        
+        
+        if isinstance(self, Transition):
+            from_state, memo = self.from_state.copy(memo)
+            to_state, memo = self.to_state.copy(memo)
+            event, memo = self.event.copy(memo)
+            new_obj = Transition(from_state=from_state, to_state=to_state, event=event)
+        else:
+            new_obj, memo = super().copy(memo)
+        
+        memo[id(self)] = new_obj
+        if return_memo:
+            return memo[id(self)], memo
+        return memo[id(self)]
+
     def __str__(self):
         return "{from_state:<8}, {event:<8} --> {to_state}".format(from_state=str(self.from_state), event=str(self.event), to_state=str(self.to_state))
 
@@ -323,6 +409,7 @@ class Transition(Base):
 
     def __str__(self):
         return "{from_state}, {event} --> {to_state}".format(from_state=self.from_state, to_state=self.to_state, event=self.event)
+        
 
 
 class Automaton(Base):
@@ -520,6 +607,12 @@ class Automaton(Base):
         if isinstance(value, self.state_class) or (value is None):
             self._initial_state = value
 
+    def _transition_add(self, transition, *args, **kwargs):
+        transition.from_state.transition_out_add(transition)
+        transition.to_state.transition_in_add(transition)
+        transition.event.transition_add(transition)
+        return transition
+
     def transition_add(self, from_state, to_state, event, *args, **kwargs):
         # TODO: check if from_state, to_state, and event belong to self
         t = self.transition_class(from_state, to_state, event, *args, **kwargs)
@@ -538,6 +631,42 @@ class Automaton(Base):
         for _id, state in enumerate(self.states):
             state.name = str(_id+1)
 
+    def copy(self, memo=None):
+        return_memo = True
+        if memo is None:
+            return_memo = False
+            memo = {}
+
+        if id(self) in memo:
+            if return_memo:
+                return memo[id(self)], memo
+            return memo[id(self)]
+        
+        
+        if isinstance(self, Automaton):
+            new_obj = Automaton()
+            for state in self.states:
+                new_state, memo = state.copy(memo)
+                new_obj.states.add(new_state)
+                if state is self.initial_state:
+                    new_obj.initial_state = new_state
+
+            for event in self.events:
+                new_event, memo = event.copy(memo)
+                new_obj.events.add(new_event) 
+            for state in self.states:
+                for transition in state.out_transitions:
+                    new_transition, memo = transition.copy(memo)
+                    new_obj._transition_add(new_transition)
+
+        else:
+            new_obj, memo = super().copy(memo)
+
+        memo[id(self)] = new_obj
+        if return_memo:
+            return memo[id(self)], memo
+        return memo[id(self)]
+    
     # Editor specific methods
 
     # These should be calculated by the renderer
@@ -1237,6 +1366,7 @@ class Automaton(Base):
         # Calculate TRIM and back to step 1
 
         sup = R.copy()
+
         flag_bad_state = True
         set_bad_state = set()
         visited_states_set = set()
