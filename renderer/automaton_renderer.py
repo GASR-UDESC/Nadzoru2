@@ -196,9 +196,14 @@ class AutomatonRenderer(Gtk.DrawingArea):
                         Gdk.EventMask.BUTTON_PRESS_MASK |
                         Gdk.EventMask.BUTTON_RELEASE_MASK
         )
-
+        self.offset_x, self.offset_y = 0, 0
         self.cache_reset()
+        self.connect('draw', self.on_draw)
 
+    def on_draw(self, widget, cr):
+        cr.set_source_rgb(1, 1, 1)
+        cr.paint()
+        
     def cache_reset(self):
         self.cache = dict()
 
@@ -234,6 +239,9 @@ class AutomatonRenderer(Gtk.DrawingArea):
             cfg['color'] = 'r'
 
         return cfg
+    
+    def get_state_position(self, state):
+        return state.x + self.offset_x, state.y + self.offset_y
 
     def write_text(
         self, cr, x, y, *texts, align=CENTER, font_size=FONT_SIZE,
@@ -284,10 +292,10 @@ class AutomatonRenderer(Gtk.DrawingArea):
             # radius of each state: 's'tart and 'e'nd states
             rs = states_radius[from_state]
             re = states_radius[to_state]
-
+            
             # centre of each state
-            Vs = Point2D(from_state.x, from_state.y)  # start state
-            Ve = Point2D(to_state.x, to_state.y)  # end state
+            Vs = Point2D(*self.get_state_position(from_state))  # start state
+            Ve = Point2D(*self.get_state_position(to_state))  # end state
             Vm = Ve.mid_point(Vs)  # middle point between states
 
             dist = Vs.distance(Ve)
@@ -375,19 +383,20 @@ class AutomatonRenderer(Gtk.DrawingArea):
 
     def draw_state(self, cr, state, txt_color=(0, 0, 0), arc_color=(0, 0, 0)):
             cr.set_source_rgb(*txt_color)
-            radius = self.write_text(cr, state.x, state.y, state.name)
+            state_x, state_y = self.get_state_position(state)
+            radius = self.write_text(cr, state_x, state_y, state.name)
             #~ self.cache['states'][state] = {'radius': radius}
             self.cache_set(radius, 'states', state, 'radius')
             cr.set_source_rgb(*arc_color)
-            cr.arc(state.x, state.y, radius, 0, 2 * math.pi)
+            cr.arc(state_x, state_y, radius, 0, 2 * math.pi)
             cr.stroke()
             if state.marked:
-                cr.arc(state.x, state.y, radius - self.DOUBLE_RADIUS_GAP, 0, 2 * math.pi)
+                cr.arc(state_x, state_y, radius - self.DOUBLE_RADIUS_GAP, 0, 2 * math.pi)
                 cr.stroke()
 
             if self.automaton.initial_state == state:
                 # Add arrow to the left of the initial state
-                tip_x, tip_y = state.x-radius, state.y
+                tip_x, tip_y = state_x-radius, state_y
 
                 cr.move_to(tip_x, tip_y)
                 cr.line_to(tip_x-50, tip_y)
@@ -422,33 +431,40 @@ class AutomatonRenderer(Gtk.DrawingArea):
         # self.renderer_set_size_request()
 
         
-    def renderer_set_size_request(self, margin=50):
+    def renderer_set_size_request(self, scrolled_allocation, margin=50):
         width, height = 0, 0
         delta_x, delta_y = 0, 0
+        old_offset_x, old_offset_y = self.offset_x, self.offset_y
+        self.offset_x, self.offset_y = 0, 0
 
         if not self.automaton.states:
             return delta_x, delta_y
         
-        x_values, y_values = zip(*[(state.x, state.y) for state in self.automaton.states])
+        x_values, y_values = zip(*[self.get_state_position(state) for state in self.automaton.states])
         min_x, min_y = min(x_values), min(y_values)
         max_x, max_y = max(x_values), max(y_values)
 
         if min_x <= margin:
-            delta_x = margin - min_x 
+            delta_x = margin - min_x - old_offset_x
+            self.offset_x = margin - min_x 
         if min_y <= margin:
-            delta_y = margin - min_y
+            delta_y = margin - min_y - old_offset_y
+            self.offset_y = margin - min_y 
 
-        for states in self.automaton.states:
-            states.x += delta_x
-            states.y += delta_y
+        # for states in self.automaton.states:
+        #     states.x += delta_x
+        #     states.y += delta_y
 
-        x_values, y_values = zip(*[(state.x, state.y) for state in self.automaton.states])
+        x_values, y_values = zip(*[self.get_state_position(state) for state in self.automaton.states])
         min_x, min_y = min(x_values), min(y_values)
         max_x, max_y = max(x_values), max(y_values)
 
         width = max_x + 300
         height = max_y + 300
-        
+        if scrolled_allocation.width > width:
+            width = scrolled_allocation.width
+        if scrolled_allocation.height > height:
+            height = scrolled_allocation.height
         
         self.set_size_request(width, height)
         return delta_x, delta_y
@@ -507,7 +523,8 @@ class AutomatonRenderer(Gtk.DrawingArea):
 
     def get_state_at(self, x, y):
         for state in self.automaton.states:
-            sq_dist = (x - state.x)**2 + (y - state.y)**2
+            state_x, state_y = self.get_state_position(state)
+            sq_dist = (x - state_x)**2 + (y - state_y)**2
             #~ r = self.cache['states'][state]['radius']**2
             r = self.cache_get('states', state, 'radius', default=0)**2
             if sq_dist < r:

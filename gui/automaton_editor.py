@@ -33,7 +33,7 @@ class AutomatonEditor(PageMixin, Gtk.Box):
         self.paned.pack1(self.scrolled, True, False)
         self.paned.pack2(self.sidebox, False, False)
         self.scrolled.add(self.automaton_render)
-        self.automaton_render.renderer_set_size_request()
+        self.automaton_render.renderer_set_size_request(self.scrolled.get_allocation())
 
         self.build_treeview()
         self.sidebox.pack_start(self.frame_props, False, False, 0)
@@ -170,7 +170,7 @@ class AutomatonEditor(PageMixin, Gtk.Box):
                 elif prop['gtk_control'] == 'switch':
                     self.propbox.add_switch(label_text, value, property_name)
                 elif prop['gtk_control'] == 'spinbutton':
-                    self.propbox.add_spinbutton(label_text, value, property_name)
+                    self.propbox.add_spinbutton(label_text, value, property_name, lower=-5000, upper=5000)
             self.propbox.show_all()
             self.frame_props.show()
 
@@ -215,8 +215,8 @@ class AutomatonEditor(PageMixin, Gtk.Box):
 
         if tool_name == 'move':
             if not self.selected_state is None:
-                self.selected_state.x = x
-                self.selected_state.y = y
+                self.selected_state.x = x-automaton_render.offset_x
+                self.selected_state.y = y-automaton_render.offset_y
                 self.automaton_render.queue_draw()
                 self.update_properties_box()
                 self.trigger_change()
@@ -227,7 +227,7 @@ class AutomatonEditor(PageMixin, Gtk.Box):
         hadj = self.scrolled.get_hadjustment()
         vadj = self.scrolled.get_vadjustment()
 
-        delta_x, delta_y = self.automaton_render.renderer_set_size_request()
+        delta_x, delta_y = self.automaton_render.renderer_set_size_request(self.scrolled.get_allocation())
 
         hadj.set_value(hadj.get_value() + delta_x)
         vadj.set_value(vadj.get_value() + delta_y)
@@ -242,7 +242,7 @@ class AutomatonEditor(PageMixin, Gtk.Box):
         state = self.automaton_render.get_state_at(x, y)
 
         if tool_name == 'state_add':
-            state = self.automaton.state_add(None, x=x, y=y)
+            state = self.automaton.state_add(None, x=x-automaton_render.offset_x, y=y-automaton_render.offset_y)
             self.selected_state = state
             self.trigger_change()
         elif tool_name == 'state_initial':
