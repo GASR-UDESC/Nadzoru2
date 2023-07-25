@@ -31,7 +31,7 @@ class AutomatonOperation(PageMixin, Gtk.Box):
                     ]},
             {
                 'label': "Sync", 'fn': Automaton.synchronization, 'params': [
-                    {'label': "Automaton", 'type': 'chooser', 'name': 'args'},
+                    {'label': "Automaton", 'type': 'duallistselector', 'name': 'args'},
                     ]},
             {
                 'label': "Observer", 'fn': Automaton.observer, 'params': [
@@ -69,23 +69,32 @@ class AutomatonOperation(PageMixin, Gtk.Box):
                 ]},
         ]
 
-        self.build_treeview()   # Build the treeview in the left side
-        
+        left_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        self.pack_start(left_box, True, True, 0)
         separator = Gtk.Separator(orientation=Gtk.Orientation.VERTICAL)
         self.pack_start(separator, False, False, 0)
+        right_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        self.pack_start(right_box, True, True, 0)
 
-        self.right = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-        self.pack_start(self.right, True, True, 0)
+        # Treeview with the list of operations
+        treeview = self.build_treeview()  
+        left_box.pack_start(treeview, True, True, 0)
 
-        # execute button
+        # Add operation button
+        add_button = Gtk.Button(label='ADD')
+        add_button.connect('clicked', self.on_add_btn)
+        left_box.pack_end(add_button, False, False, 0)
+
+
+        # Operation execute button
         execute_button = Gtk.Button(label='EXECUTE')
         execute_button.connect('clicked', self.on_execute_btn)
-        self.right.pack_end(execute_button, False, False, 0)
+        right_box.pack_end(execute_button, False, False, 0)
 
-        # property BOX
+        # Parameter editor box
         self.property_box = PropertyBox()
         self.property_box.connect('nadzoru-property-change', self.prop_edited)
-        self.right.pack_start(self.property_box, True, True, 0)
+        right_box.pack_start(self.property_box, True, True, 0)
 
     def on_parent_set(self, widget, oldparent):     # Widget is self
         # GTK removes self's parent first when a tab is moved to another window or
@@ -101,19 +110,24 @@ class AutomatonOperation(PageMixin, Gtk.Box):
         self.argumentslist_op = list()
 
     def build_treeview(self):
-        self.liststore = Gtk.ListStore(str, object, object)
-        treeview = Gtk.TreeView(model=self.liststore, headers_visible=False)
+        liststore = Gtk.ListStore(str, object, object)
+        treeview = Gtk.TreeView(model=liststore, headers_visible=False)
         selected_row = treeview.get_selection()
         selected_row.connect("changed", self.on_operation_selected)
         cell = Gtk.CellRendererText()
         column = Gtk.TreeViewColumn('Operation', cell, text=0)
         treeview.append_column(column)
-        self.pack_start(treeview, True, True, 0)
+        
 
         for op in self.operations:
             row = [op['label'], op['fn'], op['params']]
-            self.liststore.append(row)
-
+            liststore.append(row)
+        
+        return treeview
+    
+    def on_add_btn(self, widget):
+        print(widget)
+    
     def prop_edited(self, widget, value, property_name):
         if property_name == 'output':
             self.result_name = value
@@ -202,6 +216,8 @@ class AutomatonOperation(PageMixin, Gtk.Box):
                 self.property_box.add_chooser(obj['label'], [], open_automata, data=obj['name'], scrollable=True, scroll_hmax=300, scroll_hmin=200) # Check if list is really needed
             elif obj['type'] == 'checkbutton':
                 self.property_box.add_checkbutton(obj['label'],self.result_open, data=obj['name'])
+            elif obj['type'] == 'duallistselector':
+                self.property_box.add_dualListSelector(obj['label'], open_automata, data=obj['name'])
 
         # build the default widgets: entry for naming the new automaton; checkbutton asking if it should be opened in editor
         self.property_box.add_entry("Result", "", data='output', placeholder="type a name")

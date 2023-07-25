@@ -2,6 +2,7 @@ from gi.repository import Gtk
 from gui.base import PageMixin
 from codegen.code_gen import ArduinoGenerator
 from gui.property_box import PropertyBox
+from gui.dual_list_selector import DualListSelector
 
 
 class AutomatonGenerator(PageMixin, Gtk.Box):
@@ -51,7 +52,10 @@ class AutomatonGenerator(PageMixin, Gtk.Box):
     def on_automatonlist_change(self, widget, automatonlist):
         self.automatonlist = [(automaton.get_name(), automaton)
                               for automaton in automatonlist]
-        self.chooser.update(self.automatonlist)
+        self.list_selector.reset_list(self.automatonlist)
+
+        
+        # self.list_selector.add_new_available(label, obj)
 
     def build_options_box(self):
         scrolled = Gtk.ScrolledWindow()
@@ -68,16 +72,14 @@ class AutomatonGenerator(PageMixin, Gtk.Box):
         vbox.pack_start(upper_prop_box, False, False, 0)
         vbox.pack_start(self.prop_box, False, False, 0)
 
-        self.chooser = upper_prop_box.add_chooser(None, None, self.automatonlist,
-                                                  data='selected_automatons',  scrollable=True, scroll_hmin=150)
+        self.list_selector = upper_prop_box.add_dualListSelector(None, self.automatonlist, data='selected_automatons', scroll_hmin=150)
+
         upper_prop_box.add_combobox("Select a device",
                                     [(dev_key, dev_class) for dev_key, dev_class in self.devices.items()], data='selected_device')
         upper_prop_box.add_filechooserbutton(
             "Select a destination folder", None, data='selected_folder', action=Gtk.FileChooserAction.SELECT_FOLDER)
         scrolled.set_size_request(300, -1)
 
-    def on_chooser_change(self, chooser, selected, data):
-        self.selected_automatons = selected
 
     def on_device_changed(self, widget):
         tree_iter = widget.get_active_iter()

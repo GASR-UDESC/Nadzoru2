@@ -5,3 +5,14 @@
 .label-black {
     color: #000000;
 }
+
+#dual-list-selector-button {
+    min-height: 3px;
+    padding-top: 0px;
+    padding-bottom: 0px;
+    border-style: none;
+}
+#dual-list-selector-button:hover {
+    background-color: #c9c9c9; /* Hover background color */
+    color: #000; /* Hover text color */
+}

@@ -1,4 +1,7 @@
+import gi
+gi.require_version('Gtk', '3.0')
 from gi.repository import GLib, Gio, Gtk, GObject
+from gui.dual_list_selector import DualListSelector
 
 class PropertyBox(Gtk.ListBox):
     def __init__(self, orientation=Gtk.Orientation.HORIZONTAL, *args, **kwargs):
@@ -64,19 +67,11 @@ class PropertyBox(Gtk.ListBox):
         self._add_row(label, widget)
         return widget
 
-    # def add_combobox(self, label, options,value=None, data=None, callback=None):  
-    #     store = Gtk.ListStore(str)
-    #     for option in options:
-    #         store.append([option[0]])
-    #     widget = Gtk.ComboBox()
-    #     tree = Gtk.TreeView(store)
-    #     tree.connect('button-press-event', self.prop_edited, None, data, callback)
-    #     selector = tree.get_selection()
-    #     widget_cell_text = Gtk.CellRendererText()
-    #     column_text = Gtk.TreeViewColumn(f"{label}", widget_cell_text, text=0)
-    #     tree.append_column(column_text)
-    #     widget.add(tree)
-    #     self._add_row(label, widget)
+    def add_dualListSelector(self, label, options, value=None, data=None, callback=None, *args, **kwargs):
+        widget = DualListSelector(data=options, *args, **kwargs)     
+        widget.connect('selected-changed', self.prop_edited, None, data, callback, None)
+        self._add_row(label, widget)
+        return widget
 
 
     def add_chooser(self, label, value, options, data=None, callback=None, scrollable=False, scroll_hmax=200, scroll_hmin=200):
@@ -97,7 +92,10 @@ class PropertyBox(Gtk.ListBox):
     def chooser_changed(self, chooser, selected, data, callback):
         self.prop_edited(chooser, None, data, callback, selected)
 
-    def prop_edited(self, widget, gparam, data, callback, values):
+    def prop_edited(self, widget, gparam, data, callback, values, *args, **kwargs):
+        # print("PropertyBox.prop_edited: ", widget, gparam, data, callback, values, args)
+        # for kwarg in kwargs:
+        #     print(kwarg)
         if type(widget) == Gtk.CheckButton:
             value = widget.get_active()
         elif type(widget) == Gtk.Switch:
@@ -115,9 +113,10 @@ class PropertyBox(Gtk.ListBox):
                 value = selected_value
         elif type(widget) == Gtk.FileChooserButton:
             value = widget.get_filename()
-                
         elif type(widget) == Chooser:
             value = values
+        elif type(widget) == DualListSelector:
+            value = widget.get_selected_objects()
         else:
             value = None
 
