@@ -126,7 +126,7 @@ class AutomatonOperation(PageMixin, Gtk.Box):
         return treeview
     
     def on_add_btn(self, widget):
-        print(widget)
+        self.get_ancestor_window().add_tab_operationdesigner()
     
     def prop_edited(self, widget, value, property_name):
         if property_name == 'output':

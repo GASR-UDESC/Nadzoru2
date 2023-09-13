@@ -12,6 +12,7 @@ from gui.automaton_generator import AutomatonGenerator
 from gui.statusbar import StatusBar
 from gui.tool_palette import ToolPalette
 from gui.automaton_operation import AutomatonOperation
+from gui.operation_designer import OperationDesigner
 
 
 class MainWindow(Gtk.ApplicationWindow):
@@ -138,6 +139,9 @@ class MainWindow(Gtk.ApplicationWindow):
             window.note.set_current_page(tab_id)
             window.present()
 
+    def add_tab_operationdesigner(self):
+        operation_designer = OperationDesigner()
+        self.add_tab(operation_designer, 'Operation Designer')
 
     def add_tab_simulator(self, automaton, label):
         simulator = AutomatonSimulator(automaton)
