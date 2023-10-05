@@ -1,4 +1,5 @@
 import gi
+import re #teste
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 from gui.base import PageMixin
@@ -96,9 +97,6 @@ class OperationDesigner(PageMixin, Gtk.Box):
         # development only
         btn = Gtk.Button(label='Execute')
         btn.connect('clicked', self._on_exec_btn)
-        self.vbox.pack_end(btn, False, False, 0)
-        btn = Gtk.Button(label='teste')
-        btn.connect('clicked', self._on_teste_btn)
         self.vbox.pack_end(btn, False, False, 0)
         
         self.operation_vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, margin=5)
@@ -223,32 +221,25 @@ class OperationDesigner(PageMixin, Gtk.Box):
         start_iter = self.buffer.get_start_iter()
         end_iter = self.buffer.get_end_iter()
         code = self.buffer.get_text(start_iter, end_iter, True)
+
+        file_paths = re.findall(r"'(.*?\.xml)'", code)
+
+        automatons = []
+        for path in file_paths:
+            try:
+                automaton = Automaton()
+                automaton.load(path)
+                automatons.append(automaton)
+            except Exception as e:
+                print(f"Erro durante a leitura do autômato em {path}: {e}")
+                return
+
+        exec_scope = {'Automaton': Automaton, 'automatons': automatons}
+
         try:
-            exec(code)
+            exec(code, exec_scope)
         except Exception as e:
             print("Error:", e)
-
-    def _on_teste_btn(self, button):
-        text = self.buffer.get_text(self.buffer.get_start_iter(), self.buffer.get_end_iter(), False)
-        print(text)
-
-        list_automatons = list()
-        for automaton in self.automatonlist:
-            if automaton.get_name() in text:
-                list_automatons.append(automaton)
-
-        for op in self.operations:
-            if op['label'] in text:
-                operation = op['fn']
-
-        result = operation(*list_automatons)
-        result.clear_file_path_name()
-        result.set_name('aaaaaaaaaaaaaa')
-        self.get_application().add_to_automatonlist(result)
-        result.arrange_states_position()
-        window = self.get_ancestor_window()
-        window.add_tab_editor(result, result.get_name())
-        window.set_tab_label_color(window.get_current_tab_widget(), 'label-red')
 
 
 if __name__ == "__main__":
