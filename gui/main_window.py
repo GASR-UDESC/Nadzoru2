@@ -13,6 +13,7 @@ from gui.statusbar import StatusBar
 from gui.tool_palette import ToolPalette
 from gui.automaton_operation import AutomatonOperation
 from gui.operation_designer import OperationDesigner
+from gui.automaton_script_operation import AutomatonScriptOperation
 
 
 class MainWindow(Gtk.ApplicationWindow):
@@ -64,6 +65,7 @@ class MainWindow(Gtk.ApplicationWindow):
         self._create_action('edit-automaton', self.on_edit_automaton)
         self._create_action('simulate-automaton', self.on_simulate_automaton)
         self._create_action('operation-automaton', self.on_operation)
+        self._create_action('script-operation-automaton', self.on_script_operation)
         self._create_action('generate-code-automaton', self.on_generate_code)
 
         self._create_action('close-tab', self.on_close_tab)
@@ -383,6 +385,10 @@ class MainWindow(Gtk.ApplicationWindow):
         #app = self.get_application()
         operation = AutomatonOperation()
         self.add_tab(operation, "Operation")
+
+    def on_script_operation(self,action, param):
+        operation = AutomatonScriptOperation()
+        self.add_tab(operation, "Script Operation")
     
     def on_generate_code(self, action, param):
         generator = AutomatonGenerator()

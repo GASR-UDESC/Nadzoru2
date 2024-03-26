@@ -83,6 +83,7 @@ class OperationDesigner(PageMixin, Gtk.Box):
                 {'label': "Labeller", 'type': 'combobox', 'name': 'labeller'}
             ]},
     ]
+     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -221,21 +222,25 @@ class OperationDesigner(PageMixin, Gtk.Box):
         start_iter = self.buffer.get_start_iter()
         end_iter = self.buffer.get_end_iter()
         code = self.buffer.get_text(start_iter, end_iter, True)
-
         file_paths = re.findall(r"'(.*?\.xml)'", code)
 
-        automatons = []
-        for path in file_paths:
-            try:
-                automaton = Automaton()
-                automaton.load(path)
-                automatons.append(automaton)
-            except Exception as e:
-                print(f"Erro durante a leitura do autômato em {path}: {e}")
-                return
-
-        exec_scope = {'Automaton': Automaton, 'automatons': automatons}
-
+        app = self.get_application()
+        
+        def keep(element, name=None):
+            if name is not None:
+                element.set_name(name)
+            app.elements.append(element)
+            # TODO: reload Automaton>Edit and Automaton>Simulate quick names, open does this, how? 
+        exec_scope = {'Automaton': Automaton, 'keep': keep}
+        for element in app.elements:
+            element_id_name = element.get_id_name()
+            if element_id_name in exec_scope:
+                print(f"Erro: O nome '{element_id_name}' já está em exec_scope.")
+            else:
+            # TODO: check if the name already in exec_scope, if so it's an error -- feito acima a principio
+                exec_scope[element.get_id_name()] = element
+        # print(exec_scope)
+        
         try:
             exec(code, exec_scope)
         except Exception as e:

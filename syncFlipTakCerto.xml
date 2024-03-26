@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<model version="0.0" type="FSA" id="Untitled">
+<data>
+	<state id="0" name="1,1" initial ="True" marked="False" x="100" y="90" />
+	<state id="1" name="2,1" initial ="False" marked="False" x="110" y="450" />
+	<state id="2" name="2,2" initial ="False" marked="False" x="454" y="461" />
+	<state id="3" name="1,2" initial ="False" marked="False" x="460" y="94" />
+	<event id="0" name="flop" controllable="False" observable="True"/>
+	<event id="1" name="" controllable="False" observable="True"/>
+	<event id="2" name="tic" controllable="False" observable="True"/>
+	<event id="3" name="flip" controllable="False" observable="True"/>
+	<event id="4" name="tac" controllable="False" observable="True"/>
+	<transition source="0" target="0" event="1"/>
+	<transition source="0" target="3" event="2"/>
+	<transition source="0" target="1" event="3"/>
+	<transition source="1" target="2" event="2"/>
+	<transition source="1" target="0" event="0"/>
+	<transition source="1" target="1" event="1"/>
+	<transition source="2" target="2" event="1"/>
+	<transition source="2" target="1" event="4"/>
+	<transition source="2" target="3" event="0"/>
+	<transition source="3" target="3" event="1"/>
+	<transition source="3" target="2" event="3"/>
+	<transition source="3" target="0" event="4"/>
+</data>
+</model>

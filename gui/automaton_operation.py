@@ -80,12 +80,6 @@ class AutomatonOperation(PageMixin, Gtk.Box):
         treeview = self.build_treeview()  
         left_box.pack_start(treeview, True, True, 0)
 
-        # Add operation button
-        add_button = Gtk.Button(label='ADD')
-        add_button.connect('clicked', self.on_add_btn)
-        left_box.pack_end(add_button, False, False, 0)
-
-
         # Operation execute button
         execute_button = Gtk.Button(label='EXECUTE')
         execute_button.connect('clicked', self.on_execute_btn)

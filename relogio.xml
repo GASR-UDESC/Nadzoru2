@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<model version="0.0" type="FSA" id="Untitled">
+<data>
+	<state id="0" name="2" initial ="False" marked="False" x="251" y="208" />
+	<state id="1" name="1" initial ="True" marked="False" x="133" y="110" />
+	<event id="0" name="" controllable="False" observable="True"/>
+	<event id="1" name="tic" controllable="False" observable="True"/>
+	<event id="2" name="tac" controllable="False" observable="True"/>
+	<transition source="0" target="0" event="0"/>
+	<transition source="0" target="1" event="2"/>
+	<transition source="1" target="1" event="0"/>
+	<transition source="1" target="0" event="1"/>
+</data>
+</model>
