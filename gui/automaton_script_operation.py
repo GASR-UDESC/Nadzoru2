@@ -77,11 +77,12 @@ class AutomatonScriptOperation(PageMixin, Gtk.Box):
         start_iter = buffer.get_start_iter()
         end_iter = buffer.get_end_iter()
         command_input = buffer.get_text(start_iter, end_iter, True)
+        self.execute_script(command_input) 
+        # result = self.execute_script(command_input)
+        # if result:
+        #    self.handle_new_automaton(result)
 
-        result = self.execute_script(command_input)
-        if result:
-            self.handle_new_automaton(result)
-
+    """
     def handle_new_automaton(self, automaton):
         user_defined_name = self.result_name_entry.get_text().strip()
         if not user_defined_name:
@@ -98,6 +99,7 @@ class AutomatonScriptOperation(PageMixin, Gtk.Box):
             if window is not None:
                 window.add_tab_editor(automaton, automaton.get_name()) 
                 window.set_tab_label_color(window.get_current_tab_widget(), 'label-red') 
+    """
 
     def execute_script(self, script):
         loc = {
@@ -117,16 +119,20 @@ class AutomatonScriptOperation(PageMixin, Gtk.Box):
             automaton_id = automaton.get_id_name()
             loc[automaton_id] = automaton
 
-        new_automaton = None
-
         try:
             exec(script, {}, loc)
-            for key, value in loc.items():
-                if isinstance(value, Automaton) and value not in self.automatonlist:
-                    new_automaton = value 
-                    break 
-            return new_automaton
+            window = self.get_ancestor_window()
+            if window is not None and self.open_result_checkbutton.get_active():
+                for name, automaton in loc.items():
+                    if isinstance(automaton, Automaton) and automaton not in self.automatonlist:
+                        automaton.set_name(name)
+                        automaton.set_file_path_name(f"{name}.xml")
+                        automaton.save()
+                        self.automatonlist.append(automaton)  #  adding obj to app.elements
+                        window.add_tab_editor(automaton, automaton.get_name()) 
+                        window.set_tab_label_color(window.get_current_tab_widget(), 'label-red') 
+            self.update_automaton_loader_panel()
+
             
         except expt.NadzoruError as e:
             self.push_msg_statusbar(str(e))
-            return None
