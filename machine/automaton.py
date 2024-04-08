@@ -470,12 +470,9 @@ class Automaton(Base):
 
     def get_id_name(self):
         name = self.get_name()
-        # TODO remove .xml from the end -- feito abaixo a principio
-        name = name.rsplit('.', 1)[0]
-        id_name = re.sub(r'\W+', '', name)  # The \W is equivalent of [^a-zA-Z0-9_]
-        if (len(id_name) == 0) or (id_name[0] in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']):
-            id_name = '_' + id_name
-        return id_name
+        if name.lower().endswith('.xml'):
+            name = name[:-4]
+        return name
 
 
     # ------------------------------------------------------------------------ #

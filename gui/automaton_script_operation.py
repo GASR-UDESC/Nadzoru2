@@ -18,6 +18,18 @@ class AutomatonScriptOperation(PageMixin, Gtk.Box):
         self.pack_start(self.automaton_loader_panel, True, True, 0)
         self.script_panel = self.script_panel()
         self.pack_start(self.script_panel, True, True, 0)
+        self.loc = {
+            'Sync': Automaton.synchronization,
+            'SupC': Automaton.sup_c,
+            'Observer': Automaton.observer,
+            'Accessible': Automaton.accessible,
+            'Coaccessible': Automaton.coaccessible,
+            'Trim': Automaton.trim,
+            'Minimize': Automaton.minimize,
+            'Supervisor Reduction': Automaton.supervisor_reduction,
+            'Labeller': Automaton.labeller,
+            'Diagnoser': Automaton.diagnoser,
+        }
 
     def on_parent_set(self, widget, oldparent):     # Widget is self
         # GTK removes self's parent first when a tab is moved to another window or
@@ -27,6 +39,7 @@ class AutomatonScriptOperation(PageMixin, Gtk.Box):
             app = widget.get_application()          
             app.connect('nadzoru-automatonlist-change', self.on_automatonlist_change)
             self.automatonlist = app.get_automatonlist()
+        self.update_automaton_loader_panel()
 
     def automaton_panel(self):
         panel = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
@@ -39,7 +52,11 @@ class AutomatonScriptOperation(PageMixin, Gtk.Box):
             self.automaton_list_box.remove(child)
 
         for automaton in self.automatonlist:
-            label = Gtk.Label(label=automaton.get_name())
+            label = Gtk.Label(label=automaton.get_id_name())
+            self.automaton_list_box.add(label)
+
+        for op_name in self.loc:
+            label = Gtk.Label(label=op_name)
             self.automaton_list_box.add(label)
 
         self.automaton_list_box.show_all()
@@ -54,10 +71,6 @@ class AutomatonScriptOperation(PageMixin, Gtk.Box):
         command_entry_scrolled = Gtk.ScrolledWindow()
         command_entry_scrolled.add(self.command_entry)
         panel.pack_start(command_entry_scrolled, True, True, 0)
-
-        self.result_name_entry = Gtk.Entry()
-        self.result_name_entry.set_placeholder_text("Result")
-        panel.pack_start(self.result_name_entry, False, False, 0)
 
         self.open_result_checkbutton = Gtk.CheckButton(label="Open Result")
         panel.pack_start(self.open_result_checkbutton, False, False, 0)
@@ -78,42 +91,9 @@ class AutomatonScriptOperation(PageMixin, Gtk.Box):
         end_iter = buffer.get_end_iter()
         command_input = buffer.get_text(start_iter, end_iter, True)
         self.execute_script(command_input) 
-        # result = self.execute_script(command_input)
-        # if result:
-        #    self.handle_new_automaton(result)
-
-    """
-    def handle_new_automaton(self, automaton):
-        user_defined_name = self.result_name_entry.get_text().strip()
-        if not user_defined_name:
-            user_defined_name = f"automaton_{len(self.automatonlist) + 1}"
-        automaton.set_name(user_defined_name)
-        automaton.set_file_path_name(f"{user_defined_name}.xml")
-        automaton.save()
-        
-        self.automatonlist.append(automaton)
-        self.update_automaton_loader_panel()
-
-        if self.open_result_checkbutton.get_active():
-            window = self.get_ancestor_window()
-            if window is not None:
-                window.add_tab_editor(automaton, automaton.get_name()) 
-                window.set_tab_label_color(window.get_current_tab_widget(), 'label-red') 
-    """
 
     def execute_script(self, script):
-        loc = {
-            'Sync': Automaton.synchronization,
-            'SupC': Automaton.sup_c,
-            'Observer': Automaton.observer,
-            'Accessible': Automaton.accessible,
-            'Coaccessible': Automaton.coaccessible,
-            'Trim': Automaton.trim,
-            'Minimize': Automaton.minimize,
-            'Supervisor Reduction': Automaton.supervisor_reduction,
-            'Labeller': Automaton.labeller,
-            'Diagnoser': Automaton.diagnoser,
-        }
+        loc = dict(self.loc)  # copy of self.loc, as local loc will be updated
 
         for automaton in self.automatonlist:
             automaton_id = automaton.get_id_name()
@@ -122,17 +102,16 @@ class AutomatonScriptOperation(PageMixin, Gtk.Box):
         try:
             exec(script, {}, loc)
             window = self.get_ancestor_window()
-            if window is not None and self.open_result_checkbutton.get_active():
-                for name, automaton in loc.items():
-                    if isinstance(automaton, Automaton) and automaton not in self.automatonlist:
-                        automaton.set_name(name)
-                        automaton.set_file_path_name(f"{name}.xml")
-                        automaton.save()
-                        self.automatonlist.append(automaton)  #  adding obj to app.elements
+            for name, automaton in loc.items():
+                if isinstance(automaton, Automaton) and automaton not in self.automatonlist:
+                    automaton.set_name(name)
+                    automaton.set_file_path_name(f"{name}.xml")
+                    automaton.save()
+                    self.automatonlist.append(automaton)  #  adding obj to app.elements
+                    if window is not None and self.open_result_checkbutton.get_active():
                         window.add_tab_editor(automaton, automaton.get_name()) 
                         window.set_tab_label_color(window.get_current_tab_widget(), 'label-red') 
             self.update_automaton_loader_panel()
-
             
         except expt.NadzoruError as e:
             self.push_msg_statusbar(str(e))
