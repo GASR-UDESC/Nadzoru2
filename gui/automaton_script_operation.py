@@ -1,5 +1,5 @@
 
-from gi.repository import Gtk
+from gi.repository import Gtk, GtkSource
 from gui.base import PageMixin
 from machine.automaton import Automaton
 import machine.exceptions as expt
@@ -14,10 +14,6 @@ class AutomatonScriptOperation(PageMixin, Gtk.Box):
         self.automatonlist = list()
         self.set_orientation(Gtk.Orientation.HORIZONTAL)
         self.connect('parent-set', self.on_parent_set)
-        self.automaton_loader_panel = self.automaton_panel()
-        self.pack_start(self.automaton_loader_panel, True, True, 0)
-        self.script_panel = self.script_panel()
-        self.pack_start(self.script_panel, True, True, 0)
         self.loc = {
             'Sync': Automaton.synchronization,
             'SupC': Automaton.sup_c,
@@ -30,6 +26,15 @@ class AutomatonScriptOperation(PageMixin, Gtk.Box):
             'Labeller': Automaton.labeller,
             'Diagnoser': Automaton.diagnoser,
         }
+        self.vertical_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        self.operations_panel = self.operations_panel()
+        self.vertical_box.pack_start(self.operations_panel, True, True, 0)
+        self.automaton_loader_panel = self.automaton_panel()
+        self.vertical_box.pack_start(self.automaton_loader_panel, True, True, 0)
+        self.pack_start(self.vertical_box, False, True, 0) 
+        self.script_panel = self.script_panel()
+        self.pack_start(self.script_panel, True, True, 0)
+
 
     def on_parent_set(self, widget, oldparent):     # Widget is self
         # GTK removes self's parent first when a tab is moved to another window or
@@ -47,16 +52,21 @@ class AutomatonScriptOperation(PageMixin, Gtk.Box):
         panel.pack_start(self.automaton_list_box, True, True, 0)
         return panel
     
+    def operations_panel(self):
+        panel = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        self.op_list_box = Gtk.ListBox()
+        panel.pack_start(self.op_list_box, True, True, 0)
+        for op_name in self.loc:
+            label = Gtk.Label(label=op_name)
+            self.op_list_box.add(label)
+        return panel
+    
     def update_automaton_loader_panel(self):
         for child in self.automaton_list_box.get_children():
             self.automaton_list_box.remove(child)
 
         for automaton in self.automatonlist:
             label = Gtk.Label(label=automaton.get_id_name())
-            self.automaton_list_box.add(label)
-
-        for op_name in self.loc:
-            label = Gtk.Label(label=op_name)
             self.automaton_list_box.add(label)
 
         self.automaton_list_box.show_all()
@@ -67,7 +77,9 @@ class AutomatonScriptOperation(PageMixin, Gtk.Box):
 
     def script_panel(self):
         panel = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
-        self.command_entry = Gtk.TextView()
+        self.command_entry = GtkSource.View()
+        self.command_entry.set_show_line_numbers(True)
+
         command_entry_scrolled = Gtk.ScrolledWindow()
         command_entry_scrolled.add(self.command_entry)
         panel.pack_start(command_entry_scrolled, True, True, 0)
@@ -113,5 +125,5 @@ class AutomatonScriptOperation(PageMixin, Gtk.Box):
                         window.set_tab_label_color(window.get_current_tab_widget(), 'label-red') 
             self.update_automaton_loader_panel()
             
-        except expt.NadzoruError as e:
+        except expt.NadzoruError as e: #TODO: statusbar error
             self.push_msg_statusbar(str(e))
