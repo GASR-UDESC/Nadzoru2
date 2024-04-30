@@ -31,7 +31,7 @@ class AutomatonScriptOperation(PageMixin, Gtk.Box):
         self.vertical_box.pack_start(self.operations_panel, True, True, 0)
         self.automaton_loader_panel = self.automaton_panel()
         self.vertical_box.pack_start(self.automaton_loader_panel, True, True, 0)
-        self.pack_start(self.vertical_box, False, True, 0) 
+        self.pack_start(self.vertical_box, True, True, 0) 
         self.script_panel = self.script_panel()
         self.pack_start(self.script_panel, True, True, 0)
 
@@ -46,6 +46,37 @@ class AutomatonScriptOperation(PageMixin, Gtk.Box):
             self.automatonlist = app.get_automatonlist()
         self.update_automaton_loader_panel()
 
+    def operations_tree_view(self, items):
+        list_store = Gtk.ListStore(str)
+        for item in items:
+            list_store.append([item])
+
+        tree_view = Gtk.TreeView(model=list_store)
+        renderer = Gtk.CellRendererText()
+        column = Gtk.TreeViewColumn("Operations", renderer, text=0)
+        tree_view.append_column(column)
+
+        tree_view.connect("row-activated", self.on_operations_activated)
+
+        return tree_view
+    
+    def on_operations_activated(self, tree_view, path, column):
+        model = tree_view.get_model()
+        iter_ = model.get_iter(path)
+        
+        operation_name = model.get_value(iter_, 0)
+        
+        text_buffer = self.command_entry.get_buffer()
+        
+        operation_text = f"{operation_name}()"
+
+        end_iter = text_buffer.get_end_iter()
+        text_buffer.insert(end_iter, operation_text)
+
+        cursor_iter = text_buffer.get_end_iter()
+        cursor_iter.backward_chars(1)
+        text_buffer.place_cursor(cursor_iter)
+
     def automaton_panel(self):
         panel = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
         self.automaton_list_box = Gtk.ListBox()
@@ -54,11 +85,11 @@ class AutomatonScriptOperation(PageMixin, Gtk.Box):
     
     def operations_panel(self):
         panel = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
-        self.op_list_box = Gtk.ListBox()
-        panel.pack_start(self.op_list_box, True, True, 0)
-        for op_name in self.loc:
-            label = Gtk.Label(label=op_name)
-            self.op_list_box.add(label)
+        operations_tree_view = self.operations_tree_view(list(self.loc.keys()))
+        operations_scrolled_window = Gtk.ScrolledWindow()
+        operations_scrolled_window.set_min_content_height(200)
+        operations_scrolled_window.add(operations_tree_view)
+        panel.pack_start(operations_scrolled_window, True, True, 0)
         return panel
     
     def update_automaton_loader_panel(self):
