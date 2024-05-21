@@ -12,6 +12,8 @@ class AutomatonScriptOperation(PageMixin, Gtk.Box):
             kwargs['spacing'] = 2
         super().__init__(*args, **kwargs)
         self.automatonlist = list()
+        self.automaton_tree_store = Gtk.ListStore(str)
+        self.automaton_loader_panel = self.automaton_panel()
         self.set_orientation(Gtk.Orientation.HORIZONTAL)
         self.connect('parent-set', self.on_parent_set)
         self.loc = {
@@ -63,26 +65,20 @@ class AutomatonScriptOperation(PageMixin, Gtk.Box):
     def on_operations_activated(self, tree_view, path, column):
         model = tree_view.get_model()
         iter_ = model.get_iter(path)
-        
         operation_name = model.get_value(iter_, 0)
         
         text_buffer = self.command_entry.get_buffer()
-        
+        insert_mark = text_buffer.get_insert()
+        cursor_iter = text_buffer.get_iter_at_mark(insert_mark)
+
         operation_text = f"{operation_name}()"
 
         end_iter = text_buffer.get_end_iter()
-        text_buffer.insert(end_iter, operation_text)
+        text_buffer.insert(cursor_iter, operation_text)
 
-        cursor_iter = text_buffer.get_end_iter()
-        cursor_iter.backward_chars(1)
+        cursor_iter = text_buffer.get_iter_at_mark(insert_mark)
         text_buffer.place_cursor(cursor_iter)
 
-    def automaton_panel(self):
-        panel = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
-        self.automaton_list_box = Gtk.ListBox()
-        panel.pack_start(self.automaton_list_box, True, True, 0)
-        return panel
-    
     def operations_panel(self):
         panel = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
         operations_tree_view = self.operations_tree_view(list(self.loc.keys()))
@@ -92,19 +88,39 @@ class AutomatonScriptOperation(PageMixin, Gtk.Box):
         panel.pack_start(operations_scrolled_window, True, True, 0)
         return panel
     
+    def automaton_panel(self):
+        panel = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        automaton_view = Gtk.TreeView(model=self.automaton_tree_store)
+        renderer = Gtk.CellRendererText()
+        column = Gtk.TreeViewColumn("Automatons", renderer, text=0)
+        automaton_view.append_column(column)
+        automaton_view.connect("row-activated", self.on_automaton_activated)
+        panel.pack_start(automaton_view, True, True, 0)
+        return panel
+    
     def update_automaton_loader_panel(self):
-        for child in self.automaton_list_box.get_children():
-            self.automaton_list_box.remove(child)
-
+        self.automaton_tree_store.clear()
         for automaton in self.automatonlist:
-            label = Gtk.Label(label=automaton.get_id_name())
-            self.automaton_list_box.add(label)
-
-        self.automaton_list_box.show_all()
+            self.automaton_tree_store.append([automaton.get_id_name()])
     
     def on_automatonlist_change(self, widget, automatonlist):
         self.automatonlist = automatonlist
-        self.update_automaton_loader_panel()  
+        self.update_automaton_loader_panel() 
+
+    def on_automaton_activated(self, tree_view, path, column):
+        model = tree_view.get_model()
+        iter_ = model.get_iter(path)
+        automaton_name = model.get_value(iter_, 0)
+        
+        text_buffer = self.command_entry.get_buffer()
+        insert_mark = text_buffer.get_insert()
+        cursor_iter = text_buffer.get_iter_at_mark(insert_mark)
+
+        automaton_text = f"{automaton_name}"
+        text_buffer.insert(cursor_iter, automaton_text)
+
+        cursor_iter = text_buffer.get_iter_at_mark(insert_mark)
+        text_buffer.place_cursor(cursor_iter)
 
     def script_panel(self):
         panel = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
