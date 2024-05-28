@@ -28,15 +28,24 @@ class AutomatonScriptOperation(PageMixin, Gtk.Box):
             'Labeller': Automaton.labeller,
             'Diagnoser': Automaton.diagnoser,
         }
-        self.vertical_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
-        self.operations_panel = self.operations_panel()
-        self.vertical_box.pack_start(self.operations_panel, True, True, 0)
-        self.automaton_loader_panel = self.automaton_panel()
-        self.vertical_box.pack_start(self.automaton_loader_panel, True, True, 0)
-        self.pack_start(self.vertical_box, True, True, 0) 
-        self.script_panel = self.script_panel()
-        self.pack_start(self.script_panel, True, True, 0)
+        self.paned = Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL)
+        self.pack_start(self.paned, True, True, 0)
 
+        self.left_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        self.left_box.set_size_request(170, -1)
+        self.operations_panel = self.operations_panel()
+        self.left_box.pack_start(self.operations_panel, True, True, 0)
+        self.automaton_loader_panel = self.automaton_panel()
+        self.left_box.pack_start(self.automaton_loader_panel, True, True, 0)
+        #self.pack_start(self.left_box, True, True, 0)
+        self.paned.add1(self.left_box)
+
+        self.right_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        self.right_box.set_size_request(400, -1)
+        self.script_panel = self.script_panel()
+        self.right_box.pack_start(self.script_panel, True, True, 0)
+        #self.pack_start(self.right_box, True, True, 0)
+        self.paned.add2(self.right_box)
 
     def on_parent_set(self, widget, oldparent):     # Widget is self
         # GTK removes self's parent first when a tab is moved to another window or
