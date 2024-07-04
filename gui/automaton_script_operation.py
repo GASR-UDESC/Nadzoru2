@@ -38,14 +38,16 @@ class AutomatonScriptOperation(PageMixin, Gtk.Box):
         self.automaton_loader_panel = self.automaton_panel()
         self.left_box.pack_start(self.automaton_loader_panel, True, True, 0)
         #self.pack_start(self.left_box, True, True, 0)
-        self.paned.add1(self.left_box)
+        #self.paned.add1(self.left_box)
+        self.paned.pack1(self.left_box, True, False)
 
         self.right_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
         self.right_box.set_size_request(400, -1)
         self.script_panel = self.script_panel()
         self.right_box.pack_start(self.script_panel, True, True, 0)
         #self.pack_start(self.right_box, True, True, 0)
-        self.paned.add2(self.right_box)
+        #self.paned.add2(self.right_box)
+        self.paned.pack2(self.right_box, True, False)
 
     def on_parent_set(self, widget, oldparent):     # Widget is self
         # GTK removes self's parent first when a tab is moved to another window or
@@ -81,12 +83,13 @@ class AutomatonScriptOperation(PageMixin, Gtk.Box):
         cursor_iter = text_buffer.get_iter_at_mark(insert_mark)
 
         operation_text = f"{operation_name}()"
-
-        end_iter = text_buffer.get_end_iter()
         text_buffer.insert(cursor_iter, operation_text)
 
-        cursor_iter = text_buffer.get_iter_at_mark(insert_mark)
+        position = cursor_iter.get_offset() - 1
+        cursor_iter = text_buffer.get_iter_at_offset(position)
         text_buffer.place_cursor(cursor_iter)
+        
+        self.command_entry.grab_focus()
 
     def operations_panel(self):
         panel = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
@@ -125,11 +128,11 @@ class AutomatonScriptOperation(PageMixin, Gtk.Box):
         insert_mark = text_buffer.get_insert()
         cursor_iter = text_buffer.get_iter_at_mark(insert_mark)
 
-        automaton_text = f"{automaton_name}"
-        text_buffer.insert(cursor_iter, automaton_text)
+        text_buffer.insert(cursor_iter, automaton_name)  
 
         cursor_iter = text_buffer.get_iter_at_mark(insert_mark)
         text_buffer.place_cursor(cursor_iter)
+        self.command_entry.grab_focus()
 
     def script_panel(self):
         panel = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
