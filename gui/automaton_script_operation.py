@@ -150,6 +150,14 @@ class AutomatonScriptOperation(PageMixin, Gtk.Box):
         execute_button.connect("clicked", self.on_exec_btn)
         panel.pack_start(execute_button, False, False, 0)
 
+        open_button = Gtk.Button(label="OPEN SCRIPT")
+        open_button.connect("clicked", self.on_open_btn)
+        panel.pack_start(open_button, False, False, 0)
+
+        save_button = Gtk.Button(label="SAVE SCRIPT")
+        save_button.connect("clicked", self.on_save_btn)
+        panel.pack_start(save_button, False, False, 0)
+
         return panel
 
     def push_msg_statusbar(self, message):
@@ -186,3 +194,75 @@ class AutomatonScriptOperation(PageMixin, Gtk.Box):
             
         except expt.NadzoruError as e: #TODO: statusbar error
             self.push_msg_statusbar(str(e))
+
+    def on_open_btn(self, button):
+        buffer = self.command_entry.get_buffer()
+        start_iter = buffer.get_start_iter()
+        end_iter = buffer.get_end_iter()
+        command_input = buffer.get_text(start_iter, end_iter, True)
+        
+        dialog = Gtk.FileChooserDialog(
+            title="Open File",
+            parent=self.get_ancestor_window(),
+            action=Gtk.FileChooserAction.OPEN,
+            buttons=(
+                Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+                Gtk.STOCK_SAVE, Gtk.ResponseType.OK
+            )
+        )
+
+        filter_text = Gtk.FileFilter()
+        filter_text.set_name("Text files")
+        filter_text.add_pattern("*.txt")
+        dialog.add_filter(filter_text)
+        
+        filter_any = Gtk.FileFilter()
+        filter_any.set_name("All files")
+        filter_any.add_pattern("*")
+        dialog.add_filter(filter_any)
+        
+        response = dialog.run()
+        if response == Gtk.ResponseType.OK:
+            filename = dialog.get_filename()
+            with open(filename, 'r') as file:
+                command_input = file.read()
+                buffer = self.command_entry.get_buffer()
+                buffer.set_text(command_input)
+
+        dialog.destroy()
+
+    def on_save_btn(self, button):
+        buffer = self.command_entry.get_buffer()
+        start_iter = buffer.get_start_iter()
+        end_iter = buffer.get_end_iter()
+        command_input = buffer.get_text(start_iter, end_iter, True)
+        
+        dialog = Gtk.FileChooserDialog(
+            title="Save File",
+            parent=self.get_ancestor_window(),
+            action=Gtk.FileChooserAction.SAVE,
+            buttons=(
+                Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+                Gtk.STOCK_SAVE, Gtk.ResponseType.OK
+            )
+        )
+
+        filter_text = Gtk.FileFilter()
+        filter_text.set_name("Text files")
+        filter_text.add_pattern("*.txt")
+        dialog.add_filter(filter_text)
+        
+        filter_any = Gtk.FileFilter()
+        filter_any.set_name("All files")
+        filter_any.add_pattern("*")
+        dialog.add_filter(filter_any)
+        
+        dialog.set_current_name("script.txt")
+
+        response = dialog.run()
+        if response == Gtk.ResponseType.OK:
+            filename = dialog.get_filename()
+            with open(filename, 'w') as file:
+                file.write(command_input)
+
+        dialog.destroy()
