@@ -279,6 +279,16 @@ class AutomatonRenderer(Gtk.DrawingArea):
         # cr.stroke()
         cr.fill()
 
+    def get_transition_texts_and_colors(self, event):
+        event_texts = list()
+        event_texts.append(event.name)
+
+        event_colors = list()
+        event_cfg = self.get_event_display_cfg(event)
+        event_colors.append(event_cfg['color'])
+
+        return event_texts, event_colors
+
     def draw_state_transitions(self, cr, from_state, states_radius, factor=1.0, ccw=True, selected_transitions=None):
         arcs = dict()
         for trans in from_state.out_transitions:
@@ -338,9 +348,9 @@ class AutomatonRenderer(Gtk.DrawingArea):
                     texts.append(", ")
                     colors.append('K')
                 event = transition.event
-                texts.append(event.name)
-                event_cfg = self.get_event_display_cfg(event)
-                colors.append(event_cfg['color'])
+                event_texts, event_colors = self.get_transition_texts_and_colors(event)
+                texts.extend(event_texts)
+                colors.extend(event_colors)
             self.write_text(cr, Vtext.x, Vtext.y, *texts, colors=colors,
                             font_weight=cairo.FONT_WEIGHT_BOLD)
 

@@ -15,6 +15,8 @@ from gui.automaton_operation import AutomatonOperation
 from gui.operation_designer import OperationDesigner
 from gui.automaton_script_operation import AutomatonScriptOperation
 
+from machine.automaton_extensions import AutomatonPublic
+from gui.automaton_editor_extensions import AutomatonEditorPublic
 
 class MainWindow(Gtk.ApplicationWindow):
     def __init__(self, *args, **kwargs):

@@ -69,6 +69,9 @@ class Event(Base):
         self.transitions = set()
         super().__init__(*args, **kwargs)
 
+    def copy_new_object(self):
+        return Event(str(self.name), self.controllable, self.observable, str(self.tex))
+
     def copy(self, memo=None):
         return_memo = True
         if memo is None:
@@ -82,7 +85,7 @@ class Event(Base):
         
         
         if isinstance(self, Event):
-            new_obj = Event(str(self.name), self.controllable, self.observable, str(self.tex))
+            new_obj = self.copy_new_object()
         else:
             new_obj, memo = super().copy(memo)
         
@@ -683,6 +686,9 @@ class Automaton(Base):
     def transition_get_at(self, x, y):
         pass
 
+    def get_write_event_string(self, event_id, event):
+        return f'\t<event id="{event_id}" name="{event.name}" controllable="{event.controllable}" observable="{event.observable}"/>\n'
+
     def save(self, file_path_name=None):
         if file_path_name is None:
             if self._file_path_name is None:
@@ -706,7 +712,8 @@ class Automaton(Base):
 
         for event_id, event in enumerate(self.events):
             event_to_id_map[event] = event_id
-            f.write(f'\t<event id="{event_id}" name="{event.name}" controllable="{event.controllable}" observable="{event.observable}"/>\n')
+            write_event_str = self.get_write_event_string(event_id, event)
+            f.write(write_event_str)
 
         for source_state in self.states:
             for transition in source_state.out_transitions:
@@ -720,11 +727,15 @@ class Automaton(Base):
 
         return True
 
+    @staticmethod
+    def str2bool(_str):
+        return (_str.lower() in ['true'])
+
+    def load_add_event(self, name, event_tag, is_observable, is_controllable):
+        return self.event_add(name, observable=is_observable, controllable=is_controllable)
+
     def load(self, file_path_name):
         self.set_file_path_name(file_path_name)
-
-        def str2bool(_str):
-            return (_str.lower() in ['true'])
 
         xml = parse(file_path_name).documentElement
         data_tag = xml.getElementsByTagName('data')[0]
@@ -739,8 +750,8 @@ class Automaton(Base):
         for state_tag in state_tags:
             state_id = state_tag.getAttribute('id')
             name = state_tag.getAttribute('name')
-            is_marked = str2bool(state_tag.getAttribute('marked'))
-            is_initial = str2bool(state_tag.getAttribute('initial'))
+            is_marked = self.str2bool(state_tag.getAttribute('marked'))
+            is_initial = self.str2bool(state_tag.getAttribute('initial'))
             x = state_tag.getAttribute('x')
             y = state_tag.getAttribute('y')
 
@@ -750,10 +761,9 @@ class Automaton(Base):
         for event_tag in event_tags:
             event_id = event_tag.getAttribute('id')
             name = event_tag.getAttribute('name')
-            is_observable = str2bool(event_tag.getAttribute('observable'))
-            is_controllable = str2bool(event_tag.getAttribute('controllable'))
-
-            event = self.event_add(name, observable=is_observable, controllable=is_controllable)
+            is_observable = self.str2bool(event_tag.getAttribute('observable'))
+            is_controllable = self.str2bool(event_tag.getAttribute('controllable'))
+            event = self.load_add_event(name, event_tag, is_observable, is_controllable)
             id_to_event_map[event_id] = event
 
         for transition_tag in transition_tags:
@@ -967,29 +977,52 @@ class Automaton(Base):
     def tct_export(self, file_path_name):
         pass
 
+    @staticmethod
+    def get_data(extract:str, extract_from:str):
+        ''' Returns a list of properties and their given description from a NZA file'''
+        object_data = list()
+        data = list()
+        for line in extract_from:
+            line = line.strip("\n")
+            for obj_property, req_data in extract:
+                if req_data in line:
+                    if req_data == ' = {':
+                        line = line.replace('[', '')
+                        line = line.replace('] = {', '')
+                    else:
+                        line = line.replace(req_data, '')
+                        line = line.replace(',', '')
+                        line = line.replace('}', "")
+                    data.append((obj_property, line))
+            if len(data) == len(extract):
+                object_data.append(data)
+                data = list()
+        return object_data
+
+    def get_event_data_str(self, event_content_str):
+        event_data_str = self.get_data({ ('id', ' = {'),
+                                         ('observable', '["observable"] = '),
+                                         ('name', '["name"] ='),
+                                         ('controllable', '["controllable"] = ')},
+                                         event_content_str)
+        return event_data_str
+
+    def legacy_nadzoru_import_add_events(self, data_str):
+        is_controllable = False
+        for prop_name, prop in data_str:
+            if prop_name == 'id':
+                ev_id = prop
+            elif prop_name == 'observable':
+                is_observable = prop.lower() == 'true'
+            elif prop_name == 'controllable':
+                is_controllable = prop.lower() == 'true'
+            elif prop_name == 'name':
+                prop = prop.lstrip()
+                ev_name = prop.replace('"', "")
+        event = self.event_add(ev_name, observable=is_observable, controllable=is_controllable)
+        return ev_id, event
+
     def legacy_nadzoru_import(self, file_path_name, load_layout=True):
-
-        def get_data(extract:str, extract_from:str):
-            ''' Returns a list of properties and their given description from a NZA file'''
-            object_data = list()
-            data = list()
-            for line in extract_from:
-                line = line.strip("\n")
-                for obj_property, req_data in extract:
-                    if req_data in line:
-                        if req_data == ' = {':
-                            line = line.replace('[', '')
-                            line = line.replace('] = {', '')
-                        else:
-                            line = line.replace(req_data, '')
-                            line = line.replace(',', '')
-                            line = line.replace('}', "")
-                        data.append((obj_property, line))
-                if len(data) == len(extract):
-                    object_data.append(data)
-                    data = list()
-            return object_data
-
 
         with open(file_path_name, 'r') as infile:
             for line_count, line in enumerate(infile):
@@ -1006,20 +1039,15 @@ class Automaton(Base):
             transition_content_str = content[line_index_transitions+1:line_index_events]
             state_content_str = content[line_index_states+1:]
 
+        event_data_str = self.get_event_data_str(event_content_str)
 
-        event_data_str = get_data({ ('id', ' = {'),
-                                    ('observable', '["observable"] = '),
-                                    ('name', '["name"] ='),
-                                    ('controllable', '["controllable"] = ')},
-                                    event_content_str)
-
-        transition_data_str = get_data({('id', ' = {'),
+        transition_data_str = self.get_data({('id', ' = {'),
                                         ('target', '["target"] = '),
                                         ('source', '["source"] = '),
                                         ('event', '["event"] = ')},
                                         transition_content_str)
 
-        states_data_str = get_data({('id', ' = {'), 
+        states_data_str = self.get_data({('id', ' = {'), 
                                     ('marked', '["marked"] = '), 
                                     ('initial', '["initial"] = '),
                                     ('name', '["name"] = '),
@@ -1051,18 +1079,7 @@ class Automaton(Base):
 
         # Adding events
         for data_str in event_data_str:
-            is_controllable = False
-            for prop_name, prop in data_str:
-                if prop_name == 'id':
-                    ev_id = prop
-                elif prop_name == 'observable':
-                    is_observable = prop.lower() == 'true'
-                elif prop_name == 'controllable':
-                    is_controllable = prop.lower() == 'true'
-                elif prop_name == 'name':
-                    prop = prop.lstrip()
-                    ev_name = prop.replace('"', "")
-            event = self.event_add(ev_name, observable=is_observable, controllable=is_controllable)
+            ev_id, event = self.legacy_nadzoru_import_add_events(data_str)
             id_to_event_map[ev_id] = event
 
         # Adding transitions
@@ -1433,6 +1450,9 @@ class Automaton(Base):
     def empty_closure(self):
         pass
 
+    def determinize_event_add(self, determinized_automaton, event):
+        return determinized_automaton.event_add(event.name, event.controllable, event.observable)
+
     def determinize(self):
 
         determinized_automaton = Automaton()
@@ -1497,7 +1517,7 @@ class Automaton(Base):
             for event in transition_function.keys():
                 target_state = merge_states(transition_function[event])
                 if event.name not in det_event_dict.keys():
-                    ev = determinized_automaton.event_add(event.name, event.controllable, event.observable)
+                    ev = self.determinize_event_add(determinized_automaton, event)
                     det_event_dict[ev.name] = event
                 else:
                     ev = det_event_dict[event.name]
