@@ -1002,8 +1002,8 @@ class Automaton(Base):
             infile.seek(0)
 
             content = infile.readlines()
-            event_content_str = content[line_index_events+1:line_index_transitions]
-            transition_content_str = content[line_index_transitions+1:line_index_states]
+            event_content_str = content[line_index_events+1:line_index_states]
+            transition_content_str = content[line_index_transitions+1:line_index_events]
             state_content_str = content[line_index_states+1:]
 
 
@@ -1042,9 +1042,9 @@ class Automaton(Base):
                 elif prop_name == 'name':
                     name = prop.replace('"', "")
                 elif prop_name == 'x':
-                    x = int(prop)
+                    x = float(prop)
                 elif prop_name == 'y':
-                    y = int(prop)
+                    y = float(prop)
 
             s = self.state_add(name, marked=is_marked, initial=is_initial, x=x, y=y)
             id_to_state_map[state_id] = s
