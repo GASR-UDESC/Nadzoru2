@@ -6,7 +6,7 @@ class EventPublic(Event):
         super().__init__(name, controllable, observable, tex, *args, **kwargs)
     
     def copy_new_object(self):
-        return Event(str(self.name), self.controllable, self.observable, self.public, str(self.tex))
+        return EventPublic(str(self.name), self.controllable, self.observable, self.public, str(self.tex))
     
     @property
     def public(self):
