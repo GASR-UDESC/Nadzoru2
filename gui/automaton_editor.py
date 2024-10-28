@@ -9,12 +9,22 @@ from gui.property_box import PropertyBox
 import machine.exceptions as expt
 
 from renderer import AutomatonRendererPublic
+from gui.parse_argument import Extension
 
 class AutomatonEditor(PageMixin, Gtk.Box):
     def __init__(self, automaton, *args, **kwargs):
         if 'spacing' not in kwargs:
             kwargs['spacing'] = 2
         super().__init__(*args, **kwargs)
+
+        # Select extension to use
+        self.automaton_renderer_class = AutomatonRenderer
+        if Extension.mode == 'prob':      # probabilistic events
+            pass # 'TODO'
+        elif Extension.mode == 'public':  # public events
+            self.automaton_renderer_class = AutomatonRendererPublic
+        elif Extension.mode == 'probpub': # probabilistic and public events
+            pass # 'TODO'
 
         self.connect('parent-set', self.on_parent_set)
 
@@ -25,7 +35,7 @@ class AutomatonEditor(PageMixin, Gtk.Box):
 
         self.paned = Gtk.Paned(wide_handle=True)
         self.scrolled = Gtk.ScrolledWindow.new()
-        self.automaton_render = AutomatonRenderer(self.automaton)
+        self.automaton_render = self.automaton_renderer_class(self.automaton)
         self.sidebox = Gtk.Box(orientation = Gtk.Orientation.VERTICAL)
         self.frame_props = Gtk.Frame(label="Properties", visible=False, no_show_all=True)
 

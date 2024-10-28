@@ -5,9 +5,15 @@ from gui.property_box import PropertyBox
 from gui.dual_list_selector import DualListSelector
 
 from codegen.code_gen_extensions import ArduinoGeneratorPublic
+from gui.parse_argument import Extension
 
 class AutomatonGenerator(PageMixin, Gtk.Box):
-    devices = {"Arduino": ArduinoGenerator}
+    devices = {}
+    if Extension.mode == 'public':
+        devices['Arduino'] = ArduinoGeneratorPublic
+    else:
+        devices['Arduino'] = ArduinoGenerator
+
     def __init__(self, *args, **kwargs):
         if 'spacing' not in kwargs:
             kwargs['spacing'] = 2

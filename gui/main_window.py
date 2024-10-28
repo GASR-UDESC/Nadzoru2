@@ -17,10 +17,22 @@ from gui.automaton_script_operation import AutomatonScriptOperation
 
 from machine.automaton_extensions import AutomatonPublic
 from gui.automaton_editor_extensions import AutomatonEditorPublic
+from gui.parse_argument import Extension
 
 class MainWindow(Gtk.ApplicationWindow):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        # Select extension to use
+        self.automaton_class = Automaton
+        self.automaton_editor_class = AutomatonEditor
+        if Extension.mode == 'prob':      # probabilistic events
+            pass # 'TODO'
+        elif Extension.mode == 'public':  # public events
+            self.automaton_class = AutomatonPublic
+            self.automaton_editor_class = AutomatonEditorPublic
+        elif Extension.mode == 'probpub': # probabilistic and public events
+            pass # 'TODO'
 
         self.vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
         self.hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
@@ -133,9 +145,9 @@ class MainWindow(Gtk.ApplicationWindow):
         ''' Checks if automaton is already open in another tab/window.
             creates a new editor instance if it isn't or focus the tab if it is
         '''
-        already_open_in = self.get_application().is_automaton_open(automaton, AutomatonEditor)
+        already_open_in = self.get_application().is_automaton_open(automaton, self.automaton_editor_class)
         if already_open_in is None:
-            editor = AutomatonEditor(automaton)
+            editor = self.automaton_editor_class(automaton)
             editor.connect('nadzoru-editor-change', self.props.application.on_editor_change)
             self.add_tab(editor, label)
         else:
@@ -214,7 +226,7 @@ class MainWindow(Gtk.ApplicationWindow):
         logging.debug("")
         for page_num in range(self.note.get_n_pages()):
             widget = self.note.get_nth_page(page_num)
-            if type(widget) == AutomatonEditor:
+            if type(widget) == self.automaton_editor_class:
                 widget.reset_selection()
 
     def _popup(self, tab_name):
@@ -237,7 +249,7 @@ class MainWindow(Gtk.ApplicationWindow):
 
     def on_new_automaton(self, action, param=None):
         logging.debug("")
-        automaton = Automaton()
+        automaton = self.automaton_class()
         self.get_application().add_to_automatonlist(automaton)
         self.add_tab_editor(automaton, 'Untitled')
 
@@ -259,7 +271,7 @@ class MainWindow(Gtk.ApplicationWindow):
         if result in [Gtk.ResponseType.ACCEPT, Gtk.ResponseType.OK]:
             for file_path_name in dialog.get_filenames():
                 file_name = os.path.basename(file_path_name)
-                automaton = Automaton()
+                automaton = self.automaton_class()
                 try:
                     automaton.load(file_path_name)
                 except error:
@@ -298,7 +310,7 @@ class MainWindow(Gtk.ApplicationWindow):
         if (widget is None):
             return
 
-        if isinstance(widget, AutomatonEditor):
+        if isinstance(widget, self.automaton_editor_class):
             automata = widget.automaton
             file_path_name = automata.get_file_path_name()
             if file_path_name == None:
@@ -316,7 +328,7 @@ class MainWindow(Gtk.ApplicationWindow):
     def on_save_as_automaton(self, action, param=None):
         logging.debug("")
         widget = self.get_current_tab_widget()
-        if (widget is None) or type(widget) != AutomatonEditor:
+        if (widget is None) or type(widget) != self.automaton_editor_class:
             return
         automata = widget.automaton
         self._save_dialog(widget)
@@ -332,7 +344,7 @@ class MainWindow(Gtk.ApplicationWindow):
         if result in [Gtk.ResponseType.ACCEPT, Gtk.ResponseType.OK]:
             for full_path_name in dialog.get_filenames():
                 file_name = os.path.basename(full_path_name)
-                automaton = Automaton()
+                automaton = self.automaton_class()
                 automaton.ides_import(full_path_name)
                 self.get_application().add_to_automatonlist(automaton)
                 if result == Gtk.ResponseType.OK:
@@ -348,7 +360,7 @@ class MainWindow(Gtk.ApplicationWindow):
             file_path = dialog.get_filename()
             file_path = f'{file_path}.xmd'
             widget = self.get_current_tab_widget()
-            if type(widget) == AutomatonEditor:
+            if type(widget) == self.automaton_editor_class:
                 automata = widget.automaton
                 automata.ides_export(file_path)
         dialog.destroy()
@@ -361,7 +373,7 @@ class MainWindow(Gtk.ApplicationWindow):
         if result in [Gtk.ResponseType.ACCEPT, Gtk.ResponseType.OK]:
             for full_path_name in dialog.get_filenames():
                 file_name = os.path.basename(full_path_name)
-                automaton = Automaton()
+                automaton = self.automaton_class()
                 automaton.legacy_nadzoru_import(full_path_name)
                 self.get_application().add_to_automatonlist(automaton)
                 if result == Gtk.ResponseType.OK:
