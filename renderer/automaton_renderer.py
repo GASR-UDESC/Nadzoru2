@@ -279,7 +279,7 @@ class AutomatonRenderer(Gtk.DrawingArea):
         # cr.stroke()
         cr.fill()
 
-    def get_transition_texts_and_colors(self, event):
+    def get_transition_texts_and_colors(self, event, transition):
         event_texts = list()
         event_texts.append(event.name)
 
@@ -348,7 +348,7 @@ class AutomatonRenderer(Gtk.DrawingArea):
                     texts.append(", ")
                     colors.append('K')
                 event = transition.event
-                event_texts, event_colors = self.get_transition_texts_and_colors(event)
+                event_texts, event_colors = self.get_transition_texts_and_colors(event, transition)
                 texts.extend(event_texts)
                 colors.extend(event_colors)
             self.write_text(cr, Vtext.x, Vtext.y, *texts, colors=colors,

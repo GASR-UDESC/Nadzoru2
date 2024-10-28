@@ -15,8 +15,8 @@ from gui.automaton_operation import AutomatonOperation
 from gui.operation_designer import OperationDesigner
 from gui.automaton_script_operation import AutomatonScriptOperation
 
-from machine.automaton_extensions import AutomatonPublic
-from gui.automaton_editor_extensions import AutomatonEditorPublic
+from machine.automaton_extensions import AutomatonPublic, AutomatonProbabilistic
+from gui.automaton_editor_extensions import AutomatonEditorPublic, AutomatonEditorProbabilistic
 from gui.parse_argument import Extension
 
 class MainWindow(Gtk.ApplicationWindow):
@@ -27,7 +27,8 @@ class MainWindow(Gtk.ApplicationWindow):
         self.automaton_class = Automaton
         self.automaton_editor_class = AutomatonEditor
         if Extension.mode == 'prob':      # probabilistic events
-            pass # 'TODO'
+            self.automaton_class = AutomatonProbabilistic
+            self.automaton_editor_class = AutomatonEditorProbabilistic
         elif Extension.mode == 'public':  # public events
             self.automaton_class = AutomatonPublic
             self.automaton_editor_class = AutomatonEditorPublic

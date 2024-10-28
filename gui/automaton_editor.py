@@ -8,7 +8,8 @@ from gui.base import PageMixin
 from gui.property_box import PropertyBox
 import machine.exceptions as expt
 
-from renderer import AutomatonRendererPublic
+from renderer import AutomatonRendererPublic, AutomatonRendererProbabilistic
+from gui.property_box_extensions import PropertyBoxProbabilistic
 from gui.parse_argument import Extension
 
 class AutomatonEditor(PageMixin, Gtk.Box):
@@ -18,13 +19,18 @@ class AutomatonEditor(PageMixin, Gtk.Box):
         super().__init__(*args, **kwargs)
 
         # Select extension to use
-        self.automaton_renderer_class = AutomatonRenderer
         if Extension.mode == 'prob':      # probabilistic events
-            pass # 'TODO'
+            self.automaton_renderer_class = AutomatonRendererProbabilistic
+            self.propbox = PropertyBoxProbabilistic()
+            self.propbox.connect('nadzoru-property-change-with-event', self.prop_edited)
         elif Extension.mode == 'public':  # public events
             self.automaton_renderer_class = AutomatonRendererPublic
         elif Extension.mode == 'probpub': # probabilistic and public events
             pass # 'TODO'
+        else:
+            self.automaton_renderer_class = AutomatonRenderer
+            self.propbox = PropertyBox()
+            self.propbox.connect('nadzoru-property-change', self.prop_edited)
 
         self.connect('parent-set', self.on_parent_set)
 
@@ -38,8 +44,6 @@ class AutomatonEditor(PageMixin, Gtk.Box):
         self.automaton_render = self.automaton_renderer_class(self.automaton)
         self.sidebox = Gtk.Box(orientation = Gtk.Orientation.VERTICAL)
         self.frame_props = Gtk.Frame(label="Properties", visible=False, no_show_all=True)
-
-        self.propbox = PropertyBox()
 
         self.pack_start(self.paned, True, True, 0)
         self.paned.pack1(self.scrolled, True, False)
@@ -55,7 +59,6 @@ class AutomatonEditor(PageMixin, Gtk.Box):
         self.automaton_render.connect('motion-notify-event', self.on_motion_notify)
         self.automaton_render.connect('button-press-event', self.on_button_press)
         self.automaton_render.connect("button-release-event", self.on_button_release)
-        self.propbox.connect('nadzoru-property-change', self.prop_edited)
 
         self.index_object = 3
 
@@ -199,7 +202,7 @@ class AutomatonEditor(PageMixin, Gtk.Box):
             self.propbox.show_all()
             self.frame_props.show()
 
-    def prop_edited(self, propbox, value, data):
+    def prop_edited(self, propbox, value, data, widget_name):
         selected_object = self._get_selected_object()
         if selected_object is not None:
             setattr(selected_object, data, value)

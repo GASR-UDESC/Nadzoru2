@@ -357,6 +357,8 @@ class State(Base):
 
 
 class Transition(Base):
+    properties = [{}] # Place holder properties
+
     def __init__(self, from_state, to_state, event, *args, **kwargs):
         self.from_state = from_state
         self.to_state = to_state

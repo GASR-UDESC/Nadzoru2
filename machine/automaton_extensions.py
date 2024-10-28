@@ -1,4 +1,6 @@
-from machine.automaton import Event, Automaton
+from machine.automaton import Event, Transition, Automaton
+
+##### PUBLIC EVENTS #####
 
 class EventPublic(Event):
     def __init__(self, name='', controllable=False, observable=True, public=False, tex=None, *args, **kwargs):
@@ -59,4 +61,53 @@ class AutomatonPublic(Automaton):
     
     def determinize_event_add(self, determinized_automaton, event):
         return determinized_automaton.event_add(event.name, event.controllable, event.observable, event.public)
+    
+
+##### PROBABILISTIC EVENTS #####
+
+class TransitionProbabilistic(Transition):
+    properties = [{'label': "probability", 'property': 'probability', 'gtk_control': 'entry'}]
+
+    def __init__(self, from_state, to_state, event, probability, *args, **kwargs):
+        self.probability = probability
+        super().__init__(from_state, to_state, event, probability, *args, **kwargs)
+
+    def copy(self, memo=None):
+        return_memo = True
+        if memo is None:
+            return_memo = False
+            memo = {}
+
+        if id(self) in memo:
+            if return_memo:
+                return memo[id(self)], memo
+            return memo[id(self)]
+        
+        if isinstance(self, TransitionProbabilistic):
+            from_state, memo = self.from_state.copy(memo)
+            to_state, memo = self.to_state.copy(memo)
+            event, memo = self.event.copy(memo)
+            probability, memo = self.probability.copy(memo)
+            new_obj = TransitionProbabilistic(from_state=from_state, to_state=to_state, event=event, probability=probability)
+        else:
+            new_obj, memo = super().copy(memo)
+        
+        memo[id(self)] = new_obj
+        if return_memo:
+            return memo[id(self)], memo
+        return memo[id(self)]
+
+    def __str__(self):
+        return "{from_state}, {event} --> {to_state}, prob = {prob}".format(from_state=self.from_state, to_state=self.to_state, event=self.event, prob=self.probability)
+
+
+class AutomatonProbabilistic(Automaton):
+    transition_class = TransitionProbabilistic
+
+    def transition_add(self, from_state, to_state, event, probability=1, *args, **kwargs):
+        t = self.transition_class(from_state, to_state, event, probability, *args, **kwargs)
+        from_state.transition_out_add(t)
+        to_state.transition_in_add(t)
+        event.transition_add(t)
+        return t
     

@@ -92,6 +92,9 @@ class PropertyBox(Gtk.ListBox):
     def chooser_changed(self, chooser, selected, data, callback):
         self.prop_edited(chooser, None, data, callback, selected)
 
+    def emit_nadzoru_property_change(self, value, data, name=None):
+        self.emit('nadzoru-property-change', value, data)
+
     def prop_edited(self, widget, gparam, data, callback, values, *args, **kwargs):
         # print("PropertyBox.prop_edited: ", widget, gparam, data, callback, values, args)
         # for kwarg in kwargs:
@@ -120,7 +123,7 @@ class PropertyBox(Gtk.ListBox):
         else:
             value = None
 
-        self.emit('nadzoru-property-change', value, data)
+        self.emit_nadzoru_property_change(value, data, widget.get_name())
         if callback is not None:
             callback(widget, value, data)
 
