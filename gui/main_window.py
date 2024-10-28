@@ -24,8 +24,6 @@ class MainWindow(Gtk.ApplicationWindow):
         super().__init__(*args, **kwargs)
 
         # Select extension to use
-        self.automaton_class = Automaton
-        self.automaton_editor_class = AutomatonEditor
         if Extension.mode == 'prob':      # probabilistic events
             self.automaton_class = AutomatonProbabilistic
             self.automaton_editor_class = AutomatonEditorProbabilistic
@@ -34,6 +32,9 @@ class MainWindow(Gtk.ApplicationWindow):
             self.automaton_editor_class = AutomatonEditorPublic
         elif Extension.mode == 'probpub': # probabilistic and public events
             pass # 'TODO'
+        else:   # no extension
+            self.automaton_class = Automaton
+            self.automaton_editor_class = AutomatonEditor
 
         self.vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
         self.hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
