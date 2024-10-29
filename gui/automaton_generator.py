@@ -1,6 +1,6 @@
 from gi.repository import Gtk
 from gui.base import PageMixin
-from codegen.code_gen import ArduinoGenerator
+from codegen.code_gen import ArduinoGenerator, PythonGenerator
 from gui.property_box import PropertyBox
 from gui.dual_list_selector import DualListSelector
 
@@ -19,9 +19,14 @@ class AutomatonGenerator(PageMixin, Gtk.Box):
 
         # DEVICES
         if Extension.mode == 'public':
-            self.__class__.devices['Arduino'] = ArduinoGeneratorPublic
+            self.__class__.devices = {
+                'Arduino': ArduinoGeneratorPublic,
+            }
         else:
-            self.__class__.devices['Arduino'] = ArduinoGenerator
+            self.__class__.devices = {
+                'Arduino': ArduinoGenerator,
+                'Python': PythonGenerator,
+            }
 
         self.selected_automatons = None
         self.generator = None
