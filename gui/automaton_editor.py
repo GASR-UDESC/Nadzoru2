@@ -25,6 +25,8 @@ class AutomatonEditor(PageMixin, Gtk.Box):
             self.propbox.connect('nadzoru-property-change-with-event', self.prop_edited)
         elif Extension.mode == 'public':  # public events
             self.automaton_renderer_class = AutomatonRendererPublic
+            self.propbox = PropertyBox()
+            self.propbox.connect('nadzoru-property-change', self.prop_edited)
         elif Extension.mode == 'probpub': # probabilistic and public events
             pass # 'TODO'
         else:   # no extension
