@@ -9,10 +9,6 @@ from gui.parse_argument import Extension
 
 class AutomatonGenerator(PageMixin, Gtk.Box):
     devices = {}
-    if Extension.mode == 'public':
-        devices['Arduino'] = ArduinoGeneratorPublic
-    else:
-        devices['Arduino'] = ArduinoGenerator
 
     def __init__(self, *args, **kwargs):
         if 'spacing' not in kwargs:
@@ -20,6 +16,12 @@ class AutomatonGenerator(PageMixin, Gtk.Box):
         super().__init__(*args, **kwargs)
         self.connect('parent-set', self.on_parent_set)
         self.set_orientation(Gtk.Orientation.VERTICAL)
+
+        # DEVICES
+        if Extension.mode == 'public':
+            self.__class__.devices['Arduino'] = ArduinoGeneratorPublic
+        else:
+            self.__class__.devices['Arduino'] = ArduinoGenerator
 
         self.selected_automatons = None
         self.generator = None
