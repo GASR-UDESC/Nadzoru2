@@ -691,6 +691,9 @@ class Automaton(Base):
     def get_write_event_string(self, event_id, event):
         return f'\t<event id="{event_id}" name="{event.name}" controllable="{event.controllable}" observable="{event.observable}"/>\n'
 
+    def get_write_transition_string(self, source_state_id, target_state_id, event_id, transition):
+        return f'\t<transition source="{source_state_id}" target="{target_state_id}" event="{event_id}"/>\n'
+
     def save(self, file_path_name=None):
         if file_path_name is None:
             if self._file_path_name is None:
@@ -722,7 +725,8 @@ class Automaton(Base):
                 source_state_id = state_to_id_map[transition.from_state]
                 target_state_id = state_to_id_map[transition.to_state]
                 event_id = event_to_id_map[transition.event]
-                f.write(f'\t<transition source="{source_state_id}" target="{target_state_id}" event="{event_id}"/>\n')
+                write_transition_str = self.get_write_transition_string(source_state_id, target_state_id, event_id, transition)
+                f.write(write_transition_str)
 
         f.write('</data>\n')
         f.write("</model>\n")
@@ -735,6 +739,9 @@ class Automaton(Base):
 
     def load_add_event(self, name, event_tag, is_observable, is_controllable):
         return self.event_add(name, observable=is_observable, controllable=is_controllable)
+
+    def load_add_transition(self, transition_tag, source_state, target_state, event):
+        return self.transition_add(source_state, target_state, event)
 
     def load(self, file_path_name):
         self.set_file_path_name(file_path_name)
@@ -775,7 +782,7 @@ class Automaton(Base):
             event = id_to_event_map[event_id]
             source_state = id_to_state_map[source_state_id]
             target_state = id_to_state_map[target_state_id]
-            self.transition_add(source_state, target_state, event)
+            self.load_add_transition(transition_tag, source_state, target_state, event)
 
         return self
 

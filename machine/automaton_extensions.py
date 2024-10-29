@@ -97,6 +97,18 @@ class TransitionProbabilistic(Transition):
             return memo[id(self)], memo
         return memo[id(self)]
 
+    @property
+    def probability(self):
+        return self._probability
+    
+    @probability.setter
+    def probability(self, value):
+        try:
+            value = float(value)
+            self._probability = value
+        except ValueError:
+            raise ValueError(f"Probability must be a float, got {value} of type {type(value)}")
+
     def __str__(self):
         return "{from_state}, {event} --> {to_state}, prob = {prob}".format(from_state=self.from_state, to_state=self.to_state, event=self.event, prob=self.probability)
 
@@ -111,3 +123,10 @@ class AutomatonProbabilistic(Automaton):
         event.transition_add(t)
         return t
     
+    def load_add_transition(self, transition_tag, source_state, target_state, event):
+        prob = transition_tag.getAttribute('probability')
+        # TODO Check if the parsed number is a number e.g. int/float
+        return self.transition_add(source_state, target_state, event, probability=prob)
+
+    def get_write_transition_string(self, source_state_id, target_state_id, event_id, transition):
+        return f'\t<transition source="{source_state_id}" target="{target_state_id}" event="{event_id}" probability="{transition.probability}"/>\n'
