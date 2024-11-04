@@ -315,7 +315,7 @@ class AutomatonRenderer(Gtk.DrawingArea):
                 It's also used for self loops.
                 It's a unit vector based on the transition render_angle
                 """
-                a = layout.render_angle + 180  # we need the vetor pointing to the opposite direction we want as the rm_length will invert for small lengths
+                a = layout.render_angle + 270  # we need the vetor pointing to the opposite direction we want as the rm_length will invert for small lengths
                 while a > 360:
                     a = a - 360
                 V2 = Point2D.from_angle(a)
@@ -352,7 +352,7 @@ class AutomatonRenderer(Gtk.DrawingArea):
                 texts.extend(event_texts)
                 colors.extend(event_colors)
             self.write_text(cr, Vtext.x, Vtext.y, *texts, colors=colors,
-                            font_weight=cairo.FONT_WEIGHT_BOLD)
+                            font_weight=cairo.FONT_WEIGHT_NORMAL, font_size=14)
 
             # start and end angles of the transition's arc. Initially from centre of start state to centre of end state
             Acs = Vs.angle(Vc, r)  # angle from (1, 0) to the point Vs using Vc as the origin
