@@ -1,6 +1,6 @@
 from gi.repository import Gtk
 from gui.base import PageMixin
-from codegen.code_gen import ArduinoGenerator, CGenerator, PythonGenerator
+from codegen.code_gen import ArduinoGenerator, CGenerator, CPPGenerator, PythonGenerator
 from gui.property_box import PropertyBox
 from gui.dual_list_selector import DualListSelector
 
@@ -26,6 +26,7 @@ class AutomatonGenerator(PageMixin, Gtk.Box):
             self.__class__.devices = {
                 'Arduino': ArduinoGenerator,
                 'C': CGenerator,
+                'C++': CPPGenerator,
                 'Python': PythonGenerator,
             }
 
