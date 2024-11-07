@@ -201,6 +201,71 @@ class ArduinoGenerator(GenericMcu):
             result[k] = v
         return result
 
+class KilobotGenerator(GenericMcu):
+    templates_name = ['kilobotAtmega328.c']
+    template_path = 'codegen/templates'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.set_device('kilobot')
+        self.set_template_path(self.template_path) 
+
+    def write(self, automatons, vars_dict, output_path):
+        output_dict = self.generate_strings(automatons)
+        output_dict.update(vars_dict)
+        self._write(output_path, output_dict)
+
+    @staticmethod
+    def _gen_str(data_to_gen):
+        aux = list()
+        if type(data_to_gen) == dict:
+            for v in data_to_gen.values():
+                aux.append(str(v))
+        elif type(data_to_gen) == list:
+            for element in data_to_gen:
+                aux.append(str(element))
+        res = ', '.join(aux)
+        res = res.replace("[", "{")
+        res = res.replace("]", "}")
+        res = f'{{{res}}}'
+        return res
+
+    def add_extra_properties(self, events): # By default, do nothing. Overwrite this function in the extensions to add more properties.
+        return dict()
+
+    def generate_strings(self, automatons):
+        data, data_pos, state_map, events, event_map, initial_state = self.generate_sup(automatons)
+
+        sup_data_pos = self._gen_str(data_pos)
+        sup_data = self._gen_str(data)
+        sup_init_state = self._gen_str(initial_state)
+        sup_current_state = sup_init_state
+
+        str_controllable = ['1' if event.controllable else '0'  for event in events]
+        ev_controllable = self._gen_str(str_controllable)
+
+        ev_extra_properties = dict()
+        ev_extra_properties.update(self.add_extra_properties(events))
+
+        str_event_map = list()
+        for automaton_event_list in event_map:
+            str_event_map.append([1 if event else 0 for event in automaton_event_list])
+        sup_event_map = self._gen_str(str_event_map)
+        result = {'automaton_list': automatons,
+                  'events': events,
+                  'data': data,
+                  'ev_controllable': ev_controllable,
+                  'sup_init_state': sup_init_state,
+                  'sup_current_state': sup_current_state,
+                  'sup_data_pos': sup_data_pos,
+                  'sup_data': sup_data,
+                  'sup_event_map': sup_event_map}
+        
+        # Loop ev_extra_properties and add to result
+        for k, v in ev_extra_properties.items():
+            result[k] = v
+        return result
+
 class CGenerator(GenericMcu):
     templates_name = ['generic_mic.c', 'generic_mic.h']
     template_path = 'codegen/templates'
