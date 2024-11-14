@@ -107,7 +107,10 @@ class AutomatonScriptOperation(PageMixin, Gtk.Box):
         column = Gtk.TreeViewColumn("Automatons", renderer, text=0)
         automaton_view.append_column(column)
         automaton_view.connect("row-activated", self.on_automaton_activated)
-        panel.pack_start(automaton_view, True, True, 0)
+        automaton_scrolled_window = Gtk.ScrolledWindow()
+        automaton_scrolled_window.set_min_content_height(200)
+        automaton_scrolled_window.add(automaton_view)
+        panel.pack_start(automaton_scrolled_window, True, True, 0)
         return panel
     
     def update_automaton_loader_panel(self):
