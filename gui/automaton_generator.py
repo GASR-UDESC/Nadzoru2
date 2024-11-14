@@ -118,7 +118,7 @@ class AutomatonGenerator(PageMixin, Gtk.Box):
                         opts['label'], opts['options'], data=opt_name)
                     combobox.set_active(0)
 
-    def on_prop_change(self, prop_box, value, property_name):
+    def on_prop_change(self, prop_box, value, property_name, name=None):
         if property_name == 'selected_device':
             self.codegen_args = dict()
             self.generator = value()
