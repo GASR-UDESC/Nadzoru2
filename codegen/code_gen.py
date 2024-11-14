@@ -355,9 +355,9 @@ class CPPGenerator(GenericMcu):
             for element in data_to_gen:
                 aux.append(str(element))
         res = ', '.join(aux)
-        res = res.replace("[", "{")
-        res = res.replace("]", "}")
-        res = f'{{{res}}}'
+        # res = res.replace("[", "{")
+        # res = res.replace("]", "}")
+        # res = f'{{{res}}}'
         return res
 
     def add_extra_properties(self, events): # By default, do nothing. Overwrite this function in the extensions to add more properties.
@@ -468,9 +468,9 @@ class PythonGenerator(GenericMcu):
             for element in data_to_gen:
                 aux.append(str(element))
         res = ', '.join(aux)
-        res = res.replace("[", "{")
-        res = res.replace("]", "}")
-        res = f'{{{res}}}'
+        # res = res.replace("[", "{")
+        # res = res.replace("]", "}")
+        # res = f'{{{res}}}'
         return res
 
     def add_extra_properties(self, events): # By default, do nothing. Overwrite this function in the extensions to add more properties.
