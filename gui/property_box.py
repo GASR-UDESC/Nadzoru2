@@ -93,7 +93,7 @@ class PropertyBox(Gtk.ListBox):
         self.prop_edited(chooser, None, data, callback, selected)
 
     def emit_nadzoru_property_change(self, value, data, name=None):
-        self.emit('nadzoru-property-change', value, data)
+        self.emit('nadzoru-property-change', value, data, name)
 
     def prop_edited(self, widget, gparam, data, callback, values, *args, **kwargs):
         # print("PropertyBox.prop_edited: ", widget, gparam, data, callback, values, args)
@@ -239,10 +239,10 @@ GObject.signal_new('nadzoru-chooser-change',
     Chooser,
     GObject.SignalFlags.RUN_LAST,
     GObject.TYPE_PYOBJECT,
-    (GObject.TYPE_PYOBJECT, GObject.TYPE_PYOBJECT,))
+    (GObject.TYPE_PYOBJECT, GObject.TYPE_PYOBJECT, GObject.TYPE_PYOBJECT,))
 
 GObject.signal_new('nadzoru-property-change',
     PropertyBox,
     GObject.SignalFlags.RUN_LAST,
     GObject.TYPE_PYOBJECT,
-    (GObject.TYPE_PYOBJECT, GObject.TYPE_PYOBJECT,))
+    (GObject.TYPE_PYOBJECT, GObject.TYPE_PYOBJECT, GObject.TYPE_PYOBJECT,))
