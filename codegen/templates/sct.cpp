@@ -263,9 +263,9 @@ unsigned char SCT::get_active_controllable_events( unsigned char *events ){
 
 SCTPub::SCTPub(const std::string& yaml_path) : SCT(yaml_path) {
     YAML::Node node = YAML::LoadFile(yaml_path);
-    ev_shared = node["ev_shared"].as<std::vector<size_t>>();
+    ev_public = node["ev_public"].as<std::vector<size_t>>();
 
-    // for(const auto& ev : ev_shared)
+    // for(const auto& ev : ev_public)
     //     std::cout << ev << std::endl;
 }
 
@@ -299,7 +299,7 @@ void SCTPub::update_input(){
     for(i=0;i<num_events;i++){
         if( !ev_controllable[i] ){  /* Check the UCEs only */
             if( input_read( i ) ){
-                if( ev_shared[i] ){ /* Check whether the UCE is public or private */
+                if( ev_public[i] ){ /* Check whether the UCE is public or private */
                     input_buffer_pub.push(i);
                 } else {
                     input_buffer.push(i);

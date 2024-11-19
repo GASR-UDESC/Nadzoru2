@@ -149,7 +149,7 @@ protected:
     std::queue<unsigned char> input_buffer_pub;
 
     /* Public event info of supervisors */
-    std::vector<size_t> ev_shared;
+    std::vector<size_t> ev_public;
 
 };
 

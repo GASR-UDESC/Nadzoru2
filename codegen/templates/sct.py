@@ -184,7 +184,7 @@ class SCTPub(SCT):
 
     def __init__(self, filename):
         super().__init__(filename)
-        self.ev_shared = self.f['ev_shared']
+        self.ev_public = self.f['ev_public']
 
 
     def run_step(self):
@@ -218,7 +218,7 @@ class SCTPub(SCT):
         for i in range(0,self.num_events):
             if not self.ev_controllable[i]: # Check the UCEs only
                 if self.input_read(i):
-                    if self.ev_shared[i]:
+                    if self.ev_public[i]:
                         self.input_buffer_pub.append(i)
                     else:
                         self.input_buffer.append(i)
