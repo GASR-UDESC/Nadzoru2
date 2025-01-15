@@ -122,7 +122,7 @@ class AutomatonOperation(PageMixin, Gtk.Box):
     def on_add_btn(self, widget):
         self.get_ancestor_window().add_tab_operationdesigner()
     
-    def prop_edited(self, widget, value, property_name):
+    def prop_edited(self, widget, value, property_name, widget_name=None):
         if property_name == 'output':
             self.result_name = value
         elif property_name == 'open':
