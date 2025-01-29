@@ -51,9 +51,9 @@ class Base:
             if return_memo:
                 return memo[id(self)], memo
             return memo[id(self)]
-        
+
         new_obj = copy.deepcopy(self, memo)
-        
+
         memo[id(self)] = new_obj
 
         if return_memo:
@@ -72,6 +72,9 @@ class Event(Base):
     def copy_new_object(self):
         return Event(str(self.name), self.controllable, self.observable, str(self.tex))
 
+    def clone(self):
+        return self.copy_new_object()
+
     def copy(self, memo=None):
         return_memo = True
         if memo is None:
@@ -82,13 +85,13 @@ class Event(Base):
             if return_memo:
                 return memo[id(self)], memo
             return memo[id(self)]
-        
-        
+
+
         if isinstance(self, Event):
             new_obj = self.copy_new_object()
         else:
             new_obj, memo = super().copy(memo)
-        
+
         memo[id(self)] = new_obj
         if return_memo:
             return memo[id(self)], memo
@@ -230,8 +233,8 @@ class State(Base):
             if return_memo:
                 return memo[id(self)], memo
             return memo[id(self)]
-        
-        
+
+
         if isinstance(self, State):
             new_obj = State(name=self.name, marked=self.marked, x=self.x, y=self.y, diagnoser_type=self.diagnoser_type, diagnoser_bad=self.diagnoser_bad)
             # for transition in self.in_transitions: # It isn't possible to copy the transitions here because of recursion
@@ -242,7 +245,7 @@ class State(Base):
             #     new_obj.out_transitions.add(new_trans)
         else:
             new_obj, memo = super().copy(memo)
-        
+
         memo[id(self)] = new_obj
         if return_memo:
             return memo[id(self)], memo
@@ -375,8 +378,8 @@ class Transition(Base):
             if return_memo:
                 return memo[id(self)], memo
             return memo[id(self)]
-        
-        
+
+
         if isinstance(self, Transition):
             from_state, memo = self.from_state.copy(memo)
             to_state, memo = self.to_state.copy(memo)
@@ -384,7 +387,7 @@ class Transition(Base):
             new_obj = Transition(from_state=from_state, to_state=to_state, event=event)
         else:
             new_obj, memo = super().copy(memo)
-        
+
         memo[id(self)] = new_obj
         if return_memo:
             return memo[id(self)], memo
@@ -414,7 +417,7 @@ class Transition(Base):
 
     def __str__(self):
         return "{from_state}, {event} --> {to_state}".format(from_state=self.from_state, to_state=self.to_state, event=self.event)
-        
+
 
 
 class Automaton(Base):
@@ -492,7 +495,7 @@ class Automaton(Base):
 
     def event_name_exists(self, event_name):
         return self.event_get_by_name(event_name) is not None
-    
+
     def name_validation(self):  # funcao de verificacao
         event_dict = dict()
         for event in self.events:
@@ -507,6 +510,11 @@ class Automaton(Base):
        ##    raise EventNameDuplicateException
         self.events.add(event)
         return event
+
+    def event_add_copy(self, event):
+        new_event = event.clone()
+        self.events.add(new_event)
+        return new_event
 
     def event_remove(self, event):
         if event not in self.events:
@@ -653,8 +661,8 @@ class Automaton(Base):
             if return_memo:
                 return memo[id(self)], memo
             return memo[id(self)]
-        
-        
+
+
         if isinstance(self, Automaton):
             new_obj = Automaton()
             for state in self.states:
@@ -665,7 +673,7 @@ class Automaton(Base):
 
             for event in self.events:
                 new_event, memo = event.copy(memo)
-                new_obj.events.add(new_event) 
+                new_obj.events.add(new_event)
             for state in self.states:
                 for transition in state.out_transitions:
                     new_transition, memo = transition.copy(memo)
@@ -678,7 +686,7 @@ class Automaton(Base):
         if return_memo:
             return memo[id(self)], memo
         return memo[id(self)]
-    
+
     # Editor specific methods
 
     # These should be calculated by the renderer
@@ -1056,8 +1064,8 @@ class Automaton(Base):
                                         ('event', '["event"] = ')},
                                         transition_content_str)
 
-        states_data_str = self.get_data({('id', ' = {'), 
-                                    ('marked', '["marked"] = '), 
+        states_data_str = self.get_data({('id', ' = {'),
+                                    ('marked', '["marked"] = '),
                                     ('initial', '["initial"] = '),
                                     ('name', '["name"] = '),
                                     ('x', '["x"] ='),
@@ -1158,12 +1166,11 @@ class Automaton(Base):
 
     def accessible(self, inplace=False):
         if not inplace:
-            pass
+            self = self.copy()
             """
             TODO: create non-inplace version (adding states rather than
             copy everythin and then removing
             """
-        self = self.copy()
 
         states_dict, states_number, accessible_states = self.detect_accessible_state()
 
@@ -1212,12 +1219,11 @@ class Automaton(Base):
 
     def coaccessible(self, inplace=False):
         if not inplace:
-            pass
+            self = self.copy()
             """
             TODO: create non-inplace version (adding states rather than
             copy everythin and then removing
             """
-        self = self.copy()
 
         states_dict, states_number, coaccessible_states = self.detect_coaccessible_state()
 
@@ -1235,8 +1241,8 @@ class Automaton(Base):
 
         return self
 
-    def trim(self, copy=False):
-        return self.coaccessible(copy).accessible()
+    def trim(self, inplace=True):
+        return self.coaccessible(inplace).accessible(True)
 
     def non_coaccessible_states_join(self):
         pass
@@ -1258,7 +1264,7 @@ class Automaton(Base):
 
         if not non_equivalent_events:
             return True, None
-        return False, non_equivalent_events       
+        return False, non_equivalent_events
 
     def _merge_events(self, *args):
         "Add events from *args into self, self may already have events"
