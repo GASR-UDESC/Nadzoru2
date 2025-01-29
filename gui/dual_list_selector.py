@@ -3,7 +3,8 @@ gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, GObject, Gdk
 
 class DualListSelector(Gtk.Box):
-    def __init__(self, data:list[tuple[str, object]]=None,
+    #~ def __init__(self, data:list[tuple[str, object]]=None,
+    def __init__(self, data=None,
                  btn_spacing=5, sort=True, use_filter=True, scrollable=True, scroll_hmax=300, scroll_hmin=50,
                  *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -22,38 +23,41 @@ class DualListSelector(Gtk.Box):
             self.selected_liststore.set_sort_column_id(0, Gtk.SortType.ASCENDING)
             self.available_liststore.set_sort_column_id(0, Gtk.SortType.ASCENDING)
 
-        
+
         for item in data:
             self.available_liststore.append((item[0], item[1]))
 
         self._draw_layout(btn_spacing, use_filter, scrollable, scroll_hmax, scroll_hmin)
-        
-    def reset_list(self, data:list[tuple[str, object]]):
+
+    #~ def reset_list(self, data:list[tuple[str, object]]):
+    def reset_list(self, data):
         self.available_liststore.clear()
         self.selected_liststore.clear()
         for item in data:
             self.available_liststore.append((item[0], item[1]))
 
-    def add_new_available(self, label:str, obj:object, *args, **kwargs):
+    #~ def add_new_available(self, label:str, obj:object, *args, **kwargs):
+    def add_new_available(self, label, obj, *args, **kwargs):
         self.available_liststore.append((label, obj))
 
-    def add_new_selected(self, label:str, obj:object, *args, **kwargs):
+    #~ def add_new_selected(self, label:str, obj:object, *args, **kwargs):
+    def add_new_selected(self, label, obj, *args, **kwargs):
         self.selected_liststore.append((label, obj))
         self.emit('selected-changed')
 
     def get_selected_objects(self):
         return [row[1] for row in self.selected_liststore]
-    
+
     def get_available_objects(self):
         return [row[1] for row in self.available_liststore]
-    
+
     def get_selected(self):
         return [(row[0], row[1]) for row in self.selected_liststore]
-    
+
     def get_available(self):
         return [(row[0], row[1]) for row in self.available_liststore]
-    
-    
+
+
     def _draw_layout(self, btn_spacing, use_filter, scrollable, scroll_hmax, scroll_hmin):
 
         def _create_button(label, callback, *args, **kwargs):
@@ -70,7 +74,7 @@ class DualListSelector(Gtk.Box):
 
 
             return button
-        
+
         def _create_treeview(liststore, column_label):
             treeview = Gtk.TreeView(model=liststore)
             treeview.get_selection().set_mode(Gtk.SelectionMode.MULTIPLE)
@@ -79,7 +83,7 @@ class DualListSelector(Gtk.Box):
             treeview.append_column(column)
             treeview.set_enable_search(True)
             return treeview
-        
+
         def _add_filter_to_treeview(tv_box, treeview):
             tv_and_filter_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
             filter_entry = Gtk.Entry()
@@ -89,7 +93,7 @@ class DualListSelector(Gtk.Box):
             tv_and_filter_box.pack_start(filter_entry, False, False, 0)
             tv_and_filter_box.pack_start(tv_box, True, True, 0)
 
-  
+
             treeview.set_headers_visible(False)
 
             label.set_xalign(0)
@@ -110,7 +114,7 @@ class DualListSelector(Gtk.Box):
         self.available_treeview = _create_treeview(self.available_liststore, "Available")
         self.selected_treeview = _create_treeview(self.selected_liststore, "Selected")
 
-        
+
 
         btn_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, halign=Gtk.Align.CENTER, valign=Gtk.Align.CENTER)
         available_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
@@ -150,7 +154,7 @@ class DualListSelector(Gtk.Box):
         else:
             available_box.pack_start(self.available_treeview, True, True, 0)
             selected_box.pack_start(self.selected_treeview, True, True, 0)
-            
+
         self.pack_start(available_box, True, True, 0)
         self.pack_start(btn_box, False, False, btn_spacing)
         self.pack_start(selected_box, True, True, 0)
@@ -168,7 +172,7 @@ class DualListSelector(Gtk.Box):
         for item in self.available_liststore:
             available.append((item[0], item[1]))
         return selected, available
-    
+
     def _update_lists(self, selected, available):
         for item in available:
             obj_label, obj = item[0], item[1]
@@ -207,10 +211,10 @@ class DualListSelector(Gtk.Box):
                 if (row[0], row[1]) == (src_row[0], src_row[1]):
                     rows_to_remove.append(row.iter)
                     break
-        
+
         for _iter in rows_to_remove:
             source_liststore.remove(_iter)
-        
+
         self.autosize_columns()
         self.emit('selected-changed')
 
@@ -222,7 +226,7 @@ class DualListSelector(Gtk.Box):
             entry.set_icon_from_icon_name(Gtk.EntryIconPosition.SECONDARY, "edit-clear-symbolic")
         else:
             entry.set_icon_from_icon_name(Gtk.EntryIconPosition.SECONDARY, None)
-        
+
     def _filter_tree(self, model, iter, filter_entry):
         label = model.get_value(iter, 0)
 
@@ -230,13 +234,13 @@ class DualListSelector(Gtk.Box):
             return True
 
         return filter_entry.get_text().lower() in label.lower()
-    
+
     def _on_row_changed(self, liststore, path, iter, widget, *args):
         self.scrolled_set_size_request(widget)
 
     def scrolled_set_size_request(self, scrolled):
         if not self.scrollable:
-            return 
+            return
         num_rows = max(len(self.available_liststore), len(self.selected_liststore))
         desired_height = num_rows * 25
         if desired_height > self.scroll_hmax:
@@ -245,7 +249,7 @@ class DualListSelector(Gtk.Box):
             desired_height = self.scroll_hmin
         scrolled.set_size_request(-1, desired_height)
 
-        
+
 
 GObject.signal_new('selected-changed',
     DualListSelector,
