@@ -573,6 +573,15 @@ class Automaton(Base):
 
     def check_equivalent_event_set(self, other):
         if len(self.events) != len(other.events):
+            print(f'Not same events length ({len(self.events)} and {len(other.events)})')
+
+            # Find if there are events that appear in one but not the other (self.events, other.events)
+            self_event_names = self.event_get_name_list()
+            other_event_names = other.event_get_name_list()
+            unique_to_self = self_event_names - other_event_names
+            unique_to_other = other_event_names - self_event_names
+            print(f'Event causing error: {unique_to_self.union(unique_to_other)}')
+
             return False, None
 
         event_map, self_only_events, other_only_events = self.event_map(other)
