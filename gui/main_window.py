@@ -14,6 +14,8 @@ from gui.tool_palette import ToolPalette
 from gui.automaton_operation import AutomatonOperation
 from gui.operation_designer import OperationDesigner
 from gui.automaton_script_operation import AutomatonScriptOperation
+from gui.automaton_multiple_simulator import AutomatonSimulatorController
+
 
 from machine.automaton_extensions import AutomatonPublic, AutomatonProbabilistic
 from gui.automaton_editor_extensions import AutomatonEditorPublic, AutomatonEditorProbabilistic
@@ -82,6 +84,7 @@ class MainWindow(Gtk.ApplicationWindow):
         self._create_action('simulate-automaton', self.on_simulate_automaton)
         self._create_action('operation-automaton', self.on_operation)
         self._create_action('script-operation-automaton', self.on_script_operation)
+        self._create_action('simulate-multiple-automata', self.on_simulate_multiple_automata)
         self._create_action('generate-code-automaton', self.on_generate_code)
 
         self._create_action('close-tab', self.on_close_tab)
@@ -405,6 +408,11 @@ class MainWindow(Gtk.ApplicationWindow):
     def on_script_operation(self,action, param):
         operation = AutomatonScriptOperation()
         self.add_tab(operation, "Script Operation")
+    
+    def on_simulate_multiple_automata(self,action, param):
+        operation = AutomatonSimulatorController()
+        self.add_tab(operation, "Simulate Automata")
+    
     
     def on_generate_code(self, action, param):
         generator = AutomatonGenerator()
