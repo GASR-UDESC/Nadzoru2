@@ -62,7 +62,6 @@ def xmlParser(path):
             pass
         ev = G.event_add(name,observable=isObservable, controllable=isControllable)
         eventDict[id] = ev
-
     for transition in transitions:
         tEvent = transition.getAttribute('event')
         tSource = transition.getAttribute('source')
@@ -71,6 +70,8 @@ def xmlParser(path):
         ss = stateDict[tSource]
         st = stateDict[tTarget]
         G.transition_add(ss, st, ev)
+
+
 
     return G
 

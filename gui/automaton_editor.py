@@ -117,9 +117,10 @@ class AutomatonEditor(PageMixin, Gtk.Box):
         self.update_treeview()
 
     def validate_events(self, widget):
-        print(self.automaton.name_validation())
-        if self.automaton.name_validation():
-            raise expt.InvalidEventNameError
+        result = self.automaton.name_validation()
+        if not result:
+            raise expt.InvalidEventNameError("Error: There are more than one event with the same name")
+
 
     def update_treeview_add_events(self, rows):
         for event in self.automaton.events:
