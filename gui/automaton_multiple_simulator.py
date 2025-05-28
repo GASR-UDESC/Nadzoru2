@@ -141,25 +141,31 @@ class AutomatonSimulatorController(PageMixin, Gtk.Box):
         panel.pack_start(scrolled_window, True, True, 0)
 
         # buttons
-        run_button = Gtk.Button(label="Run")
-        run_button.connect("clicked", self.on_run_clicked)
-        panel.pack_start(run_button, False, False, 0)
+        self.run_button = Gtk.Button(label="Run")
+        self.run_button.connect("clicked", self.on_run_clicked)
+        panel.pack_start(self.run_button, False, False, 0)
 
-        reset_button = Gtk.Button(label="Reset")
-        reset_button.connect("clicked", self.on_reset_clicked)
-        panel.pack_start(reset_button, False, False, 0)
+        self.reset_button = Gtk.Button(label="Reset")
+        self.reset_button.connect("clicked", self.on_reset_clicked)
+        panel.pack_start(self.reset_button, False, False, 0)
 
-        stop_button = Gtk.Button(label="Stop")
-        stop_button.connect("clicked", self.on_stop_clicked)
-        panel.pack_start(stop_button, False, False, 0)
+        self.stop_button = Gtk.Button(label="Stop")
+        self.stop_button.connect("clicked", self.on_stop_clicked)
+        panel.pack_start(self.stop_button, False, False, 0)
 
-        show_button = Gtk.Button(label="Show")
-        show_button.connect("clicked", self.on_show_clicked)
-        panel.pack_start(show_button, False, False, 0)
+        self.show_button = Gtk.Button(label="Show")
+        self.show_button.connect("clicked", self.on_show_clicked)
+        panel.pack_start(self.show_button, False, False, 0)
 
-        hide_button = Gtk.Button(label="Hide")
-        hide_button.connect("clicked", self.on_hide_clicked)
-        panel.pack_start(hide_button, False, False, 0)
+        self.hide_button = Gtk.Button(label="Hide")
+        self.hide_button.connect("clicked", self.on_hide_clicked)
+        panel.pack_start(self.hide_button, False, False, 0)
+
+        self.run_button.set_sensitive(True)
+        self.reset_button.set_sensitive(False)
+        self.stop_button.set_sensitive(False)
+        self.show_button.set_sensitive(False)
+        self.hide_button.set_sensitive(False)
 
         return panel
     
@@ -213,6 +219,13 @@ class AutomatonSimulatorController(PageMixin, Gtk.Box):
 
 
     def on_run_clicked(self, button):
+
+        self.run_button.set_sensitive(False)
+        self.reset_button.set_sensitive(True)
+        self.stop_button.set_sensitive(True)
+        self.show_button.set_sensitive(True)
+        self.hide_button.set_sensitive(True)
+
         if self.simulation_active:
             return
 
@@ -232,6 +245,11 @@ class AutomatonSimulatorController(PageMixin, Gtk.Box):
         # print("simulação iniciada com:", [a.get_id_name() for a in self.selected_automata]) #log
     
     def on_stop_clicked(self, button):
+        self.run_button.set_sensitive(True)
+        self.reset_button.set_sensitive(False)
+        self.stop_button.set_sensitive(False)
+        self.show_button.set_sensitive(False)
+        self.hide_button.set_sensitive(False)
         if not self.simulation_active:
             return
 
