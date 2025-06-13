@@ -140,6 +140,13 @@ class AutomatonSimulatorController(PageMixin, Gtk.Box):
         scrolled_window.add(self.selected_tree_view)
         panel.pack_start(scrolled_window, True, True, 0)
 
+        self.selected_tree_view.connect("row-activated", self.on_row_activated)
+        
+        self.open_all_checkbox = Gtk.CheckButton(label="Open All")
+        self.open_all_checkbox.set_sensitive(False)
+        self.open_all_checkbox.connect("toggled", self.on_open_all_toggled)
+        panel.pack_start(self.open_all_checkbox, False, False, 0)
+
         # buttons
         self.run_button = Gtk.Button(label="Run")
         self.run_button.connect("clicked", self.on_run_clicked)
@@ -217,14 +224,25 @@ class AutomatonSimulatorController(PageMixin, Gtk.Box):
                     self.events_tree_store.append([event_name])
                     events_added.add(event_name)
 
+    def on_row_activated(self, treeview, path, column):
+        model = treeview.get_model()
+        iter_ = model.get_iter(path)
+        automato = model.get_value(iter_, 1)
+
+        if automato in self.players:
+            self.players[automato].show_window()
+
+    def on_open_all_toggled(self, checkbox):
+        if checkbox.get_active():
+            for automato in self.selected_automata:
+                if automato in self.players:
+                    self.players[automato].show_window()
+        else:
+            for automato in self.selected_automata:
+                if automato in self.players:
+                    self.players[automato].hide_window()
 
     def on_run_clicked(self, button):
-
-        self.run_button.set_sensitive(False)
-        self.reset_button.set_sensitive(True)
-        self.stop_button.set_sensitive(True)
-        self.show_button.set_sensitive(True)
-        self.hide_button.set_sensitive(True)
 
         if self.simulation_active:
             return
@@ -232,6 +250,13 @@ class AutomatonSimulatorController(PageMixin, Gtk.Box):
         if not self.selected_automata:
             # print("nenhum autômato selecionado") #log
             return
+
+        self.run_button.set_sensitive(False)
+        self.reset_button.set_sensitive(True)
+        self.stop_button.set_sensitive(True)
+        self.show_button.set_sensitive(True)
+        self.hide_button.set_sensitive(True)
+        self.open_all_checkbox.set_sensitive(True)
 
         self.simulation_active = True
         self.property_box.set_sensitive(False)
@@ -250,6 +275,9 @@ class AutomatonSimulatorController(PageMixin, Gtk.Box):
         self.stop_button.set_sensitive(False)
         self.show_button.set_sensitive(False)
         self.hide_button.set_sensitive(False)
+        self.open_all_checkbox.set_sensitive(False)
+        self.open_all_checkbox.set_active(False) 
+        
         if not self.simulation_active:
             return
 
