@@ -110,6 +110,7 @@ class AutomatonSimulator(PageMixin, Gtk.Box):
 
         self.pack_start(self.box, True, True, 0)
         self.viewport.add(self.renderer)
+        self.viewport.connect("size-allocate", self.on_viewport_resize)
 
         self.renderer.connect("draw", self.on_draw)
         self.listbox.connect("row-activated", self.on_row_activated)
@@ -136,6 +137,9 @@ class AutomatonSimulator(PageMixin, Gtk.Box):
 
     def on_draw(self, wid, cr):
         self.renderer.draw_partial(cr, highlight_state=self.current_state, forward_deep=self.forward_depth, backward_deep=self.backward_depth)
+
+    def on_viewport_resize(self, widget, allocation):
+        self.renderer.renderer_set_size_request(allocation)
 
     def spin_event(self, event):
         self.forward_depth = self.forward_depth_spin.get_value_as_int()
