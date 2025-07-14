@@ -425,3 +425,7 @@ class MainWindow(Gtk.ApplicationWindow):
         generator = AutomatonGenerator()
         self.add_tab(generator, "Code Generator")
         self.statusbar.push("Opened Code Generator")
+    
+    def show_status_message(self, message):
+        self.statusbar.push("Erro: já existe um evento com esse nome.")
+

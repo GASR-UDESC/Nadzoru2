@@ -11,6 +11,9 @@ import machine.exceptions as expt
 from renderer import AutomatonRendererPublic, AutomatonRendererProbabilistic
 from gui.property_box_extensions import PropertyBoxProbabilistic
 from gui.parse_argument import Extension
+from machine.automaton import EventNameDuplicateException
+from gui.statusbar import StatusBar
+
 
 class AutomatonEditor(PageMixin, Gtk.Box):
     def __init__(self, automaton, *args, **kwargs):
@@ -56,6 +59,10 @@ class AutomatonEditor(PageMixin, Gtk.Box):
         self.build_treeview()
         self.sidebox.pack_start(self.frame_props, False, False, 0)
         self.frame_props.add(self.propbox)
+
+        self.statusbar_expander = Gtk.Expander(expanded=True)
+        self.statusbar = StatusBar()
+        self.statusbar_expander.add(self.statusbar)
 
         self.automaton_render.connect('draw', self.on_draw)
         self.automaton_render.connect('motion-notify-event', self.on_motion_notify)
@@ -142,12 +149,26 @@ class AutomatonEditor(PageMixin, Gtk.Box):
         
         if cursor_path:
             self.treeview.set_cursor(cursor_path, cursor_focus_column, False)
-        
+
     def text_edited(self, widget, path, event_name):
         event = self.liststore[path][self.index_object]
-        self.automaton.event_rename(event, event_name)
+        if self.safe_call(self.automaton.event_rename, event, event_name) is None:
+            return
         self.update_treeview()
         self.trigger_change()
+    def safe_call(self, func, *args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except (EventNameDuplicateException, expt.InvalidEventNameError) as e:
+            window = self.get_ancestor_window()
+            if window is not None:
+                window.show_status_message(str(e))  
+            return None
+    def get_ancestor_window(self):
+        parent = self.get_toplevel()
+        if isinstance(parent, Gtk.ApplicationWindow):  
+            return parent
+        return None
 
     def renderer_toggle_controllable(self, widget, path):
         event = self.liststore[path][self.index_object]

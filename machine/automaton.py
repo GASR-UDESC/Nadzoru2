@@ -13,6 +13,7 @@ from enum import Enum
 from xml.dom.minidom import parse
 import re
 import machine.exceptions as expt
+from machine.exceptions import ErrorMultiplePropertiesForEventName
 
 cur_path = os.path.realpath(__file__)
 base_path = os.path.dirname(os.path.dirname(cur_path))
@@ -418,8 +419,9 @@ class Transition(Base):
     def __str__(self):
         return "{from_state}, {event} --> {to_state}".format(from_state=self.from_state, to_state=self.to_state, event=self.event)
 
-
-
+def events_equivalent(ev1, ev2):
+        return (ev1.controllable == ev2.controllable and
+                ev1.observable == ev2.observable)
 class Automaton(Base):
     event_class = Event
     state_class = State
@@ -1274,7 +1276,7 @@ class Automaton(Base):
         if not non_equivalent_events:
             return True, None
         return False, non_equivalent_events
-
+    
     def _merge_events(self, *args):
         "Add events from *args into self, self may already have events"
 
@@ -1288,9 +1290,12 @@ class Automaton(Base):
                     added_events.append(new_event)
                     event_names.add(g_event.name)
                 else:
-                    pass  # TODO (1) check if g_event and self.get_event_by_name(g_event.name) are equivallent (method in Event) - controlabilly, observabilitty
-                    #      (2) if not undo previously added events (from added_events)
-                    #      (3) raise Error ErrorMultiplePropetiesForEventName
+                    existing_event = self.get_event_by_name(g_event.name)
+                    if not events_equivalent(existing_event, g_event):
+                        for ev in added_events:
+                            self.events.remove(ev)
+                        self.statusbar.push(f"Erro: conflito no evento '{g_event.name}', propriedades diferentes")
+                        raise ErrorMultiplePropertiesForEventName(f"Evento '{g_event.name}' com propriedades conflitantes.")
 
     def synchronization(*args, output_univocal=False):
         """ This function returns the accessible part of the synchronous composition. Instead of calculating all composed

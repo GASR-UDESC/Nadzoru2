@@ -23,8 +23,7 @@ class NoMarkedStateError(NadzoruError):
 class TooFewArgumentsError(NadzoruError):
     def __str__(self):
         return "Error: Too few arguments"
-
-class ErrorMultiplePropetiesForEventName(NadzoruError):
+class ErrorMultiplePropertiesForEventName(NadzoruError):
     def __init__(self, *args):
         self.args = args
 

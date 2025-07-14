@@ -51,7 +51,7 @@ class StatusBar(Gtk.Box):
         self.listbox.add(row)
         hbox.pack_start(label, True, True, 5)
         self.show_all()
-
+        
     def clear(self):
         for row in self.listbox:
             row.destroy()
