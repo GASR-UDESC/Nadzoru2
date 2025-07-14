@@ -143,7 +143,6 @@ class AutomatonEditor(PageMixin, Gtk.Box):
         if cursor_path:
             self.treeview.set_cursor(cursor_path, cursor_focus_column, False)
         
-
     def text_edited(self, widget, path, event_name):
         event = self.liststore[path][self.index_object]
         self.automaton.event_rename(event, event_name)

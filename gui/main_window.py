@@ -253,6 +253,7 @@ class MainWindow(Gtk.ApplicationWindow):
         return result
 
     def on_new_automaton(self, action, param=None):
+        self.statusbar.push("creating new automaton")
         logging.debug("")
         automaton = self.automaton_class()
         self.get_application().add_to_automatonlist(automaton)
@@ -279,13 +280,14 @@ class MainWindow(Gtk.ApplicationWindow):
                 automaton = self.automaton_class()
                 try:
                     automaton.load(file_path_name)
-                except error:
+                except Exception as error:
                     print("Fail to load", error)
                     dialog.destroy()
                     return
                 self.get_application().add_to_automatonlist(automaton)
                 if result == Gtk.ResponseType.ACCEPT:
                     self.add_tab_editor(automaton, automaton.get_file_name())
+                self.statusbar.push(f"Loaded automaton: {file_name}")
         dialog.destroy()
 
     def _save_dialog(self, widget):
@@ -391,29 +393,35 @@ class MainWindow(Gtk.ApplicationWindow):
         logging.debug("")
         manager = AutomatonManager()
         self.add_tab(manager, "Manager")
+        self.statusbar.push("Opened Automaton Manager")
 
     def on_simulate_automaton(self, action, param):
         manager = AutomatonManager()
         self.add_tab(manager, "Manager")
+        self.statusbar.push("Opened Automaton Manager")
 
     def on_close_tab(self, action, param):
         logging.debug("")
         self.remove_current_tab()
-
+        
     def on_operation(self,action, param):
         #app = self.get_application()
         operation = AutomatonOperation()
         self.add_tab(operation, "Operation")
+        self.statusbar.push("Opened Operation tab")
 
     def on_script_operation(self,action, param):
         operation = AutomatonScriptOperation()
         self.add_tab(operation, "Script Operation")
+        self.statusbar.push("Opened Script Operation tab")
     
     def on_simulate_multiple_automata(self,action, param):
         operation = AutomatonSimulatorController()
         self.add_tab(operation, "Simulate Automata")
+        self.statusbar.push("Opened Simulation tab")
     
     
     def on_generate_code(self, action, param):
         generator = AutomatonGenerator()
         self.add_tab(generator, "Code Generator")
+        self.statusbar.push("Opened Code Generator")

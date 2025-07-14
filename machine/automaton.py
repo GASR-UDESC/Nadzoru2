@@ -538,7 +538,7 @@ class Automaton(Base):
             raise EventNameDuplicateException
         event.name = new_event_name
         return True
-
+    
     def event_get_name_list(self):
         return {event.name for event in self.events}
 

@@ -141,7 +141,3 @@ class AutomatonSimulator(PageMixin, Gtk.Box):
         self.forward_depth = self.forward_depth_spin.get_value_as_int()
         self.backward_depth = self.backward_depth_spin.get_value_as_int()
         self.renderer.queue_draw()
-
-
-
-
