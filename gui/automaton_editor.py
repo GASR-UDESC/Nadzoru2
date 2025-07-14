@@ -123,10 +123,25 @@ class AutomatonEditor(PageMixin, Gtk.Box):
 
         self.update_treeview()
 
-    def validate_events(self, widget):
+    def validate_events(self, widget=None):
         result = self.automaton.name_validation()
+        window = self.get_ancestor_window()
         if not result:
-            raise expt.InvalidEventNameError("Error: There are more than one event with the same name")
+            return False
+        else:
+            if window:
+                window.show_status_message("All events are valid.")
+            return True
+
+
+    def name_validation(self):
+        event_names = set()
+        for event in self.events:
+            if event.name in event_names:
+                return False
+            event_names.add(event.name)
+        return True
+
 
 
     def update_treeview_add_events(self, rows):
@@ -156,17 +171,19 @@ class AutomatonEditor(PageMixin, Gtk.Box):
             return
         self.update_treeview()
         self.trigger_change()
+
     def safe_call(self, func, *args, **kwargs):
         try:
             return func(*args, **kwargs)
-        except (EventNameDuplicateException, expt.InvalidEventNameError) as e:
+        except (EventNameDuplicateException, expt.InvalidEventNameError):
             window = self.get_ancestor_window()
             if window is not None:
-                window.show_status_message(str(e))  
+                window.show_status_message("Error: event with duplicate name.")
             return None
+
     def get_ancestor_window(self):
         parent = self.get_toplevel()
-        if isinstance(parent, Gtk.ApplicationWindow):  
+        if isinstance(parent, Gtk.ApplicationWindow):
             return parent
         return None
 

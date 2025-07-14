@@ -280,10 +280,13 @@ class MainWindow(Gtk.ApplicationWindow):
                 automaton = self.automaton_class()
                 try:
                     automaton.load(file_path_name)
-                except Exception as error:
-                    print("Fail to load", error)
-                    dialog.destroy()
-                    return
+                except ValueError as e:
+                    self.statusbar.push(str(e))  
+                    continue  
+                except Exception as e:
+                    self.statusbar.push(f"Error loading: {e}")
+                    continue
+
                 self.get_application().add_to_automatonlist(automaton)
                 if result == Gtk.ResponseType.ACCEPT:
                     self.add_tab_editor(automaton, automaton.get_file_name())
@@ -427,5 +430,4 @@ class MainWindow(Gtk.ApplicationWindow):
         self.statusbar.push("Opened Code Generator")
     
     def show_status_message(self, message):
-        self.statusbar.push("Erro: já existe um evento com esse nome.")
-
+        self.statusbar.push(message)
