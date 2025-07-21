@@ -1290,7 +1290,7 @@ class Automaton(Base):
                     added_events.append(new_event)
                     event_names.add(g_event.name)
                 else:
-                    existing_event = self.get_event_by_name(g_event.name)
+                    existing_event = self.event_get_by_name(g_event.name)
                     if not events_equivalent(existing_event, g_event):
                         for ev in added_events:
                             self.events.remove(ev)
