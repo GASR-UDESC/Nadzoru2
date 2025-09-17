@@ -4,7 +4,7 @@ from codegen.code_gen import ArduinoGenerator, KilobotGenerator, CGenerator, CPP
 from gui.property_box import PropertyBox
 from gui.dual_list_selector import DualListSelector
 
-from codegen.code_gen_extensions import ArduinoGeneratorPublic, CPPGeneratorPublic, PythonGeneratorPublic
+from codegen.code_gen_extensions import ArduinoGeneratorPublic, CGeneratorPublic, CPPGeneratorPublic, KilobotGeneratorPublic, PythonGeneratorPublic
 from gui.parse_argument import Extension
 
 class AutomatonGenerator(PageMixin, Gtk.Box):
@@ -21,8 +21,14 @@ class AutomatonGenerator(PageMixin, Gtk.Box):
         if Extension.mode == 'public':
             self.__class__.devices = {
                 'Arduino': ArduinoGeneratorPublic,
+                'C': CGeneratorPublic,
                 'C++': CPPGeneratorPublic,
+                'Kilobot': KilobotGeneratorPublic,
                 'Python': PythonGeneratorPublic,
+            }
+        elif Extension.mode == 'probabilistic':
+            self.__class__.devices = {
+
             }
         else:
             self.__class__.devices = {

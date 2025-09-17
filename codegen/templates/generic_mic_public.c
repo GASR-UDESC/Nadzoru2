@@ -1,8 +1,9 @@
-#include "generic_mic.h"
+#include "generic_mic_public.h"
 
 {%- set n_events = events|count %}
 {%- set n_automatons = automaton_list|count %}
 const unsigned char ev_controllable[{{ n_events }}] = {{ ev_controllable }};
+const unsigned char ev_public[{{ n_events }}] = {{ ev_public }};
 const unsigned char sup_events[{{ n_automatons }}][{{ n_events }}] = {{ sup_event_map }};
 const unsigned long int sup_init_state[{{ n_automatons }}] = {{ sup_init_state }};
 unsigned long int sup_current_state[{{ n_automatons }}] = {{ sup_current_state }};
@@ -105,6 +106,10 @@ unsigned char input_buffer[256];
 unsigned char input_buffer_pnt_add = 0;
 unsigned char input_buffer_pnt_get = 0;
 
+unsigned char input_buffer_pub[256];
+unsigned char input_buffer_pub_pnt_add = 0;
+unsigned char input_buffer_pub_pnt_get = 0;
+
 unsigned char input_buffer_get( unsigned char *event ){
     if(input_buffer_pnt_add == input_buffer_pnt_get){
         return 0;
@@ -115,13 +120,32 @@ unsigned char input_buffer_get( unsigned char *event ){
     }
 }
 
+unsigned char input_buffer_pub_get(unsigned char *event){
+    if(input_buffer_pub_pnt_add == input_buffer_pub_pnt_get){
+        return 0;
+    } else {
+        *event = input_buffer_pub[ input_buffer_pub_pnt_get ];
+        input_buffer_pub_pnt_get++;
+        return 1;
+    }
+}
+
 void input_buffer_add( unsigned char event ){
     input_buffer[ input_buffer_pnt_add ] = event;
     input_buffer_pnt_add++;
 }
 
+void input_buffer_pub_add(unsigned char event){
+    input_buffer_pub[input_buffer_pub_pnt_add] = event;
+    input_buffer_pub_pnt_add++;
+}
+
 unsigned char input_buffer_check_empty(){
     return input_buffer_pnt_add == input_buffer_pnt_get;
+}
+
+unsigned char input_buffer_pub_check_empty(){
+    return input_buffer_pub_pnt_add == input_buffer_pub_pnt_get;
 }
 
 unsigned char input_read( unsigned char ev ){
@@ -134,17 +158,25 @@ unsigned char last_events[NUM_EVENTS];
 void update_input(){
     unsigned char i;
     for(i=0;i<NUM_EVENTS;i++){
-        if( !ev_controllable[i]){
-            if(  input_read( i ) ){
-                if( !last_events[i] ){
-                    input_buffer_add( i );
-                    last_events[i] = 1;
+        if( !ev_controllable[i] ){  /* Check the UCEs only */
+            if( input_read( i ) ){
+                if( ev_public[i] ){ /* Check whether the UCE is public or private */
+                    input_buffer_pub_add(i);
+                } else {
+                    input_buffer_add(i);
                 }
-            } else {
-                last_events[i] = 0;
             }
         }
     }
+}
+
+unsigned char get_next_uncontrollable_pub( unsigned char *event ){
+    if( !input_buffer_pub_check_empty() ) {
+        *event = input_buffer_pub[input_buffer_pub_pnt_get];
+        input_buffer_pub_pnt_get++;
+        return 1;
+    }
+    return 0;
 }
 
 /*choices*/
@@ -203,17 +235,21 @@ void SCT_add_callback( unsigned char event, void (*clbk)( void* ), unsigned char
 }
 
 void SCT_run_step(){
-    //AUTOMATA PLAYER
+    // AUTOMATA PLAYER
     update_input();
     unsigned char event;
+    while( input_buffer_pub_get( &event ) ){//clear buffer, executing all public uncontrollable events (NCE)
+        make_transition( event );
+        execCallback( event );
+    }
     while( input_buffer_get( &event ) ){//clear buffer, executing all no controllable events (NCE)
         make_transition( event );
         execCallback( event );
     }
     if( get_next_controllable( &event ) ){//find controllable event (CE)
-        //if( input_buffer_check_empty() ){ //Only execute CE if NCE input buffer is empty
-        make_transition( event );
-        execCallback( event );
-        //}
+        if( input_buffer_check_empty() ){ //Only execute CE if NCE input buffer is empty
+            make_transition( event );
+            execCallback( event );
+        }
     }
 }
