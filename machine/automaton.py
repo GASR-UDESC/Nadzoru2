@@ -675,7 +675,7 @@ class Automaton(Base):
 
 
         if isinstance(self, Automaton):
-            new_obj = Automaton()
+            new_obj = self.__class__()
             for state in self.states:
                 new_state, memo = state.copy(memo)
                 new_obj.states.add(new_state)
