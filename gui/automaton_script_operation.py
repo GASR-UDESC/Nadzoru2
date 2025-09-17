@@ -5,6 +5,9 @@ from machine.automaton import Automaton
 import machine.exceptions as expt
 import re
 
+from gui.parse_argument import Extension
+from machine.automaton_extensions import AutomatonProbabilistic
+
 class AutomatonScriptOperation(PageMixin, Gtk.Box):
 
     def __init__(self, *args, **kwargs):
@@ -16,8 +19,14 @@ class AutomatonScriptOperation(PageMixin, Gtk.Box):
         self.automaton_loader_panel = self.automaton_panel()
         self.set_orientation(Gtk.Orientation.HORIZONTAL)
         self.connect('parent-set', self.on_parent_set)
+
+        if Extension.mode == 'prob':
+            self.automaton_class = AutomatonProbabilistic
+        else:
+            self.automaton_class = Automaton
+
         self.loc = {
-            'Sync': Automaton.synchronization,
+            'Sync': self.automaton_class.synchronization,
             'SupC': Automaton.sup_c,
             'Observer': Automaton.observer,
             'Accessible': Automaton.accessible,

@@ -87,7 +87,7 @@ class TransitionProbabilistic(Transition):
             from_state, memo = self.from_state.copy(memo)
             to_state, memo = self.to_state.copy(memo)
             event, memo = self.event.copy(memo)
-            probability, memo = self.probability.copy(memo)
+            probability = self.probability
             new_obj = TransitionProbabilistic(from_state=from_state, to_state=to_state, event=event, probability=probability)
         else:
             new_obj, memo = super().copy(memo)
@@ -115,6 +115,30 @@ class TransitionProbabilistic(Transition):
 
 class AutomatonProbabilistic(Automaton):
     transition_class = TransitionProbabilistic
+
+    def transition_with_probability(G, source_state, target_state, event, state_tuple, args):
+        # Extract probabilities from the original transitions
+        probabilities = []
+        for g, s in zip(args, state_tuple):
+            prob = None
+            for t in s.out_transitions:
+                if t.event.name == event.name:
+                    prob = getattr(t, 'probability', None)
+                    break
+            probabilities.append(prob)
+        filtered_probs = [p for p in probabilities if p is not None]
+        combined_probability = None
+        if filtered_probs:
+            combined_probability = 1
+            for p in filtered_probs:
+                combined_probability *= p
+        if combined_probability is not None:
+            G.transition_add(source_state, target_state, event, probability=combined_probability)
+        else:
+            G.transition_add(source_state, target_state, event)
+
+    def synchronization(*args, output_univocal=False):
+        return Automaton.synchronization(*args, output_univocal=output_univocal, transition_callback=AutomatonProbabilistic.transition_with_probability)
 
     def transition_add(self, from_state, to_state, event, probability=1, *args, **kwargs):
         t = self.transition_class(from_state, to_state, event, probability, *args, **kwargs)

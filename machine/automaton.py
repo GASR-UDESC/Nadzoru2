@@ -1297,9 +1297,16 @@ class Automaton(Base):
                         self.statusbar.push(f"Erro: conflito no evento '{g_event.name}', propriedades diferentes")
                         raise ErrorMultiplePropertiesForEventName(f"Evento '{g_event.name}' com propriedades conflitantes.")
 
-    def synchronization(*args, output_univocal=False):
+    def synchronization(*args, output_univocal=False, transition_callback=None):
         """ This function returns the accessible part of the synchronous composition. Instead of calculating all composed
             states and then calculate the accessible part, we only add accessible states to the output."""
+
+        def default_transition_callback(G, source_state, target_state, event, state_tuple, args):
+            # Default: just call transition_add
+            return G.transition_add(source_state, target_state, event)
+
+        if transition_callback is None:
+            transition_callback = default_transition_callback
 
         if len(args) < 2:
             raise expt.TooFewArgumentsError
@@ -1365,7 +1372,7 @@ class Automaton(Base):
                         target_state = G_state_add(target_state_tuple, False)
                     else:
                         target_state = state_map[target_state_tuple]
-                    G.transition_add(source_state, target_state, event)
+                    transition_callback(G, source_state, target_state, event, state_tuple, args)
         return G
 
     def product(self, *args):

@@ -5,6 +5,9 @@ from machine.automaton import Automaton
 from gui.property_box import PropertyBox
 import machine.exceptions as expt
 
+from gui.parse_argument import Extension
+from machine.automaton_extensions import AutomatonProbabilistic
+
 class AutomatonOperation(PageMixin, Gtk.Box):
 
     def __init__(self, *args, **kwargs):
@@ -23,6 +26,11 @@ class AutomatonOperation(PageMixin, Gtk.Box):
 
         self.clear_oparguments()
 
+        if Extension.mode == 'prob':
+            self.automaton_class = AutomatonProbabilistic
+        else:
+            self.automaton_class = Automaton
+
         self.operations = [
             {
                 'label': "SupC", 'fn': Automaton.sup_c, 'params': [
@@ -30,7 +38,7 @@ class AutomatonOperation(PageMixin, Gtk.Box):
                     {'label': "K", 'type': 'combobox', 'name': 'R'},
                     ]},
             {
-                'label': "Sync", 'fn': Automaton.synchronization, 'params': [
+                'label': "Sync", 'fn': self.automaton_class.synchronization, 'params': [
                     {'label': "Automaton", 'type': 'duallistselector', 'name': 'args'},
                     ]},
             {
