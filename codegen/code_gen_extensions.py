@@ -100,3 +100,6 @@ class CPPGeneratorProbabilistic(BaseGeneratorProbabilistic, CPPGenerator):
 
 class KilobotGeneratorProbabilistic(BaseGeneratorProbabilistic, KilobotGenerator):
     templates_name = ['kilobotAtmega328_probabilistic.c']
+
+class PythonGeneratorProbabilistic(BaseGeneratorProbabilistic, PythonGenerator):
+    templates_name = ['supervisor_probabilistic.yaml', 'sct.py']

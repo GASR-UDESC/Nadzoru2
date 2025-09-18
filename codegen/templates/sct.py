@@ -63,8 +63,9 @@ class SCT:
 
 
     def input_read(self, ev):
-        if ev < self.num_events and self.callback[ev]:
-            return self.callback[ev]['check_input'](self.callback[ev]['sup_data'])
+        event_name = self.get_event_name(ev)
+        if ev < self.num_events and self.callback[event_name]:
+            return self.callback[event_name]['check_input'](self.callback[event_name]['sup_data'])
         return False
 
 
@@ -107,8 +108,9 @@ class SCT:
 
 
     def exec_callback(self, ev):
-        if ev < self.num_events and self.callback[ev]['callback']:
-            self.callback[ev]['callback'](self.callback[ev]['sup_data'])
+        event_name = self.get_event_name(ev)
+        if ev < self.num_events and self.callback[event_name]['callback']:
+            self.callback[event_name]['callback'](self.callback[event_name]['sup_data'])
 
 
     def get_next_controllable(self):
@@ -173,6 +175,12 @@ class SCT:
         if isinstance(index, str):
             return self.EV[index]    
         return index
+    
+
+    def get_event_name(self, index):
+        if isinstance(index, int):
+            return list(self.EV.keys())[list(self.EV.values()).index(index)]
+        return index
 
 
     # Get function that returns event information (event names and controllability)
@@ -223,3 +231,84 @@ class SCTPub(SCT):
                     else:
                         self.input_buffer.append(i)
                     self.last_events[i] = 1
+
+class SCTProb(SCT):
+
+    def __init__(self, filename):
+        super().__init__(filename)
+        self.sup_data_prob_pos = self.f['sup_data_prob_pos']
+        self.sup_data_prob = self.f['sup_data_prob']
+
+    
+    def get_state_position_prob(self, supervisor, state):
+        prob_position = self.sup_data_prob_pos[supervisor]  # Jump to the start position of the supervisor
+        for s in range(0, state):                           # Keep iterating until the state is reached
+            en = self.sup_data_prob[prob_position]          # The number of transitions in the state
+            prob_position += en + 1                         # Next state position (Number transitions * 3 + 1)
+        return prob_position
+
+
+    def get_active_controllable_events_prob(self):
+
+        events = []
+
+        # Disable all non controllable events
+        for i in range(0, self.num_events):
+            if not self.ev_controllable[i]:
+                events.append(0)
+            else:
+                events.append(1)
+
+        # Check disabled events for all supervisors
+        for i in range(0, self.num_supervisors):
+
+            # Init an array where all events are disabled
+            ev_disable = [1] * self.num_events
+
+            # Enable all events that are not part of this supervisor
+            for j in range(0, self.num_events):
+                if not self.sup_events[i][j]:
+                    ev_disable[j] = 0
+
+            # Get current state
+            position = self.get_state_position(i, self.sup_current_state[i])
+            position_prob = self.get_state_position_prob(i, self.sup_current_state[i])
+            num_transitions = self.sup_data[position]
+            position += 1
+            position_prob += 1
+
+            # Enable all events that have a transition from the current state
+            while num_transitions:
+                num_transitions -= 1
+                value = self.get_value(self.sup_data[position])
+
+                if self.ev_controllable[value] and self.sup_events[i][value]:
+                    ev_disable[value] = 0 # Transition with this event, do not disable it, just calculate its probability contribution
+                    events[value] = events[value] * self.sup_data_prob[position_prob]
+                    position_prob += 1
+
+                position += 3
+
+            for j in range(self.num_events):
+                if ev_disable[j] == 1:
+                    events[j] = 0
+
+        return events
+    
+
+    def get_next_controllable(self):
+        
+        # Get controllable events that are enabled -> events
+        events = self.get_active_controllable_events_prob()
+        prob_sum = sum(events)
+
+        if prob_sum > 0.0001: # If at least one event is enabled do
+            random_value = random.uniform(0, prob_sum)
+            random_sum = 0.0
+            for i in range(self.num_events):
+                random_sum += events[i]
+                if (random_value < random_sum) and self.ev_controllable[i]:
+                    return True, i
+
+        return False, None
+    
