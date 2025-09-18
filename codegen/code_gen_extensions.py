@@ -94,4 +94,6 @@ class BaseGeneratorProbabilistic(BaseGenerator):
 
 class CGeneratorProbabilistic(BaseGeneratorProbabilistic, CGenerator):
     templates_name = ['generic_mic_probabilistic.h', 'generic_mic_probabilistic.c']
-    
+
+class KilobotGeneratorProbabilistic(BaseGeneratorProbabilistic, KilobotGenerator):
+    templates_name = ['kilobotAtmega328_probabilistic.c']
