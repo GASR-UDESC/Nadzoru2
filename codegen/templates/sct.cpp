@@ -317,3 +317,108 @@ unsigned char SCTPub::get_next_uncontrollable_pub( unsigned char *event ){
     }
     return 0;
 }
+
+/****************************************/
+/*                SCTProb               */
+/****************************************/
+
+SCTProb::SCTProb(const std::string& yaml_path) : SCT(yaml_path) {
+    YAML::Node node = YAML::LoadFile(yaml_path);
+    sup_data_prob_pos = node["sup_data_prob_pos"].as<std::vector<size_t>>();
+    sup_data_prob     = node["sup_data_prob"].as<std::vector<size_t>>();
+}
+
+SCTProb::~SCTProb(){}
+
+unsigned long int SCTProb::get_state_position_prob( unsigned char supervisor, unsigned long int state ){
+    unsigned long int s, en;
+    unsigned long int prob_position = sup_data_prob_pos[ supervisor ];  /* Jump to the start position of the supervisor */
+    for(s=0; s<state; s++){                                             /* Keep iterating until the state is reached */
+        en            =  sup_data_prob[prob_position];                  /* The number of controllable events in the state */
+        prob_position += en + 1;                                        /* Next controllable event's probability position */
+    }
+    return prob_position;
+}
+
+float SCTProb::get_active_controllable_events_prob( float *events ){
+    unsigned char i,j;
+    float count_actives = 0;
+
+    /* Disable all non controllable events */
+    for( i=0; i<num_events; i++ ){
+        if( ev_controllable[i] ){
+            events[i] = 1.0;
+        } else {
+            events[i] = 0;
+        }
+    }
+
+    /* Check disabled events for all supervisors */
+    for(i=0; i<num_supervisors; i++){
+        unsigned long int position;
+        unsigned char num_transitions;
+        unsigned char ev_disable[num_events];
+        unsigned long int position_prob;
+
+        for( j=0; j<num_events; j++ ){
+            if( sup_events[i][j] ){
+                /* Unless this event has a transition in the current state, this event will be disabled*/
+                ev_disable[j] = 1;
+            } else {
+                /*if supervisor don't have this event, it can't disable the event*/
+                ev_disable[j] = 0;
+            }
+        }
+
+        /*if supervisor have a transition with the event in the current state, it can't disable the event */
+        position             = get_state_position(i, sup_current_state[i]); //Points to the byte that indicate the number of 3-bytes parts (each part describle one transition)
+        position_prob        = get_state_position_prob(i, sup_current_state[i]); //Points to the first probability
+        num_transitions      = sup_data[position];
+        position++;
+        position_prob++;
+
+        while(num_transitions--){
+            unsigned char event = sup_data[position];
+            if( ev_controllable[ event ] && sup_events[i][ event ] ){
+                ev_disable[ event ] = 0; /*Transition with this event, do not disable it, just calculate its probability contribution*/
+                events[ event ] = events[ event ] * sup_data_prob[position_prob];
+
+                position_prob++;
+            }
+            position += 3;
+        }
+
+        for( j=0; j<num_events; j++ ){
+            if( ev_disable[j] == 1 ){
+                events[ j ] = 0;
+            }
+        }
+    }
+
+    /* Sum the probabilities */
+    for( j=0; j<num_events; j++ ){
+        count_actives += events[ j ];
+    }
+    return count_actives;
+}
+
+unsigned char SCTProb::get_next_controllable( unsigned char *event ){
+    float events[num_events], random_sum = 0;
+
+    unsigned char i;
+
+    float prob_sum = get_active_controllable_events_prob(events);
+
+    if (prob_sum > 0.0001){ /* If at least one event is enabled do */
+        float random_value = (float) rand() / RAND_MAX * prob_sum; /* Pick a random index (event) */
+
+        for (i = 0; i < num_events; i++){
+            random_sum += events[i]; /* Add probability of each event until the random value is reached */
+            if ( (random_value < random_sum) && ev_controllable[ i ] ){
+                *event = i;
+                return 1;
+            }
+        }
+    }
+    return 0;
+}

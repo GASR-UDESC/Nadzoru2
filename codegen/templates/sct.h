@@ -30,6 +30,16 @@ public:
     virtual ~SCT();
 
     /* Add callback function for a controllable event */
+    void add_callback(std::string event, std::function<void(void*)> clbk, void* empty_ci, void* data) {
+        if (events.find(event) == events.end()) {
+            std::cerr << "ERROR: encountered unknown event " << event << std::endl;
+            exit(1);
+        }
+        callback[events[event]].callback    = clbk;
+        callback[events[event]].check_input = nullptr;
+        callback[events[event]].data        = data;
+    }
+    
     template<typename Class>
     void add_callback(Class* p, std::string event, void (Class::*clbk)( void* ), void* empty_ci, void* data) {
         if (events.find(event) == events.end()) {
@@ -43,6 +53,16 @@ public:
     }
 
     /* Add callback function for an uncontrollable event */
+    void add_callback(std::string event, void* clbk, std::function<unsigned char(void*)> ci, void* data) {
+        if (events.find(event) == events.end()) {
+            std::cerr << "ERROR: encountered unknown event " << event << std::endl;
+            exit(1);
+        }
+        callback[events[event]].callback    = nullptr;
+        callback[events[event]].check_input = ci;
+        callback[events[event]].data        = data;
+    }
+    
     template<typename Class>
     void add_callback(Class* p, std::string event, void* clbk, unsigned char (Class::*ci)( void* ), void* data) {
         if (events.find(event) == events.end()) {
@@ -56,6 +76,16 @@ public:
     }
 
     /* Add callback function for an uncontrollable event, while also triggering some robot function (e.g. turn LEDs on) */
+    void add_callback(std::string event, std::function<void(void*)> clbk, std::function<unsigned char(void*)> ci, void* data) {
+        if (events.find(event) == events.end()) {
+            std::cerr << "ERROR: encountered unknown event " << event << std::endl;
+            exit(1);
+        }
+        callback[events[event]].callback    = clbk;
+        callback[events[event]].check_input = ci;
+        callback[events[event]].data        = data;
+    }
+    
     template<typename Class>
     void add_callback(Class* p, std::string event, void (Class::*clbk)( void* ), unsigned char (Class::*ci)( void* ), void* data) {            
         if (events.find(event) == events.end()) {
@@ -151,6 +181,34 @@ protected:
     /* Public event info of supervisors */
     std::vector<size_t> ev_public;
 
+};
+
+/****************************************/
+/*                SCTProb               */
+/****************************************/
+
+class SCTProb : virtual public SCT {
+public:
+
+    /* Class constructor */
+    SCTProb(const std::string& yaml_path);
+
+    /* Class destructor */
+    virtual ~SCTProb();
+
+protected:
+
+    /* Given the supervisor and its state, return the position of the current probability in the data structure */
+    virtual unsigned long int get_state_position_prob( unsigned char supervisor, unsigned long int state );
+
+    /* Return all the enabled controllable events with probability */
+    virtual float get_active_controllable_events_prob( float *events );
+
+    /* Choose a controllale event from the list of enabled controllable events */ 
+    virtual unsigned char get_next_controllable( unsigned char *event );
+
+    std::vector<size_t> sup_data_prob_pos;
+    std::vector<size_t> sup_data_prob;
 };
 
 #endif

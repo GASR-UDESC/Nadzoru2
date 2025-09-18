@@ -1,0 +1,13 @@
+{%- set n_events = events|count %}
+{%- set n_automatons = automaton_list|count %}
+num_events: {{ n_events }}
+num_supervisors: {{ n_automatons }}
+events: [ {{ event_names }} ]
+ev_controllable: [ {{ ev_controllable }} ]
+sup_events: [ {{ sup_event_map }} ]
+sup_init_state: [ {{ sup_init_state }} ]
+sup_current_state: [ {{ sup_current_state }} ]
+sup_data_pos: [ {{ sup_data_pos }} ]
+sup_data: [ {{ sup_data }} ]
+sup_data_prob_pos: [ {{ sup_data_prob_pos }} ]
+sup_data_prob: [ {{ sup_data_prob }} ]
