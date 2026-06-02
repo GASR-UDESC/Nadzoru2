@@ -1,8 +1,5 @@
 from jinja2 import Environment, FileSystemLoader, meta
 import math
-
-
-
 class BaseGenerator():
     template_path = 'codegen/templates'
     def __init__(self, *args, **kwargs):
@@ -509,8 +506,164 @@ class PythonGenerator(GenericMcu):
                   'sup_data': sup_data,
                   'sup_event_map': sup_event_map}
         
-        # Loop ev_extra_properties and add to result
         for k, v in ev_extra_properties.items():
             result[k] = v
         return result
-    
+
+class RaspberryPiGenerator(GenericMcu):
+    templates_name = ['raspberry_logic.py']
+    template_path = 'codegen/templates'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.set_device('raspberry_pi')
+        self.set_template_path(self.template_path) 
+        
+        self.set_option(
+            opt_name='events_table', 
+            label='Event Configuration (Raspberry Pi)', 
+            widget_type='event_table', 
+            opt={'columns': self.get_columns_config()}
+        )
+        
+
+    def get_columns_config(self):
+        return {
+            'pin': {
+                'label': 'Pin',
+                'widget_type': 'choice',
+                'options': [
+                    ("GPIO 2", 2), ("GPIO 3", 3), ("GPIO 4", 4), 
+                    ("GPIO 5", 5), ("GPIO 6", 6),
+                    ("GPIO 7", 7),("GPIO 8", 8),("GPIO 9", 9),
+                    ("GPIO 10", 10), ("GPIO 11", 11), ("GPIO 12", 12), ("GPIO 13", 13), ("GPIO 14", 14), ("GPIO 15", 15),
+                    ("GPIO 16", 16),
+                    ("GPIO 17", 17), ("GPIO 18", 18),("GPIO 19", 19), ("GPIO 20", 20), ("GPIO 21", 21),("GPIO 22", 22),
+                    ("GPIO 23", 23),("GPIO 24", 24),
+                    ("GPIO 25", 25), ("GPIO 26", 26),("GPIO 27", 27)
+                ]
+            },
+            'signal_type': {
+                'label': 'Type',
+                'widget_type': 'dynamic_choice',
+                'options_yes': [
+                    ("Select Type", None),
+                    ("Output High", "HIGH"),
+                    ("Output Low", "LOW"),
+                    ("Pulse High → Low", "PULSE_HL"),
+                    ("Pulse Low → High", "PULSE_LH")
+                ],
+                'options_no': [
+                    ("Select Type", None),
+                    ("High to Low (Falling)", "FALLING"),
+                    ("Low to High (Rising)", "RISING"),
+                    ("Output High", "HIGH"),
+                    ("Output Low", "LOW"),
+                    ("Pulse High → Low", "PULSE_HL"),
+                    ("Pulse Low → High", "PULSE_LH")
+                ]
+            },
+            'pullup': {
+                'label': 'Pull-Up/Down',
+                'widget_type': 'choice',
+                'options': [
+                    ("Pull Up", "PUD_UP"),
+                    ("Pull Down", "PUD_DOWN"),
+                    ("Off", "PUD_OFF")
+                ]
+            },
+            'parameter': {
+                'label': 'Parameter (ms)',
+                'widget_type': 'text',
+                'default': ''
+            }
+        }
+
+    def write(self, automatons, vars_dict, output_path):
+        hardware_mapping = vars_dict.get('events_table', [])
+        output_dict = self.generate_data_dict(automatons, hardware_mapping)
+        self._write(output_path, output_dict)
+
+    def generate_data_dict(self, automatons, hardware_mapping):
+        data, data_pos, state_map, events, event_map, initial_state = self.generate_sup(automatons)
+        str_event_map = [[1 if event else 0 for event in aut_ev_list] for aut_ev_list in event_map]
+
+        n_events = len(events)
+        events_names = [e.name for e in events]
+        ev_controllable = [1 if e.controllable else 0 for e in events]
+        
+        ev_pin = []
+        ev_type = []
+        ev_pin_pull_up = []
+        ev_pulse_time = []
+        ev_pin_init_state = []
+
+        for ev_name in events_names:
+            hw_confs = [item for item in hardware_mapping if item.get('event') == ev_name]
+            
+            ev_pin_list = []
+            ev_type_list = []
+            ev_pull_list = []
+            ev_pulse_list = []
+            ev_init_list = []
+
+            for hw_conf in hw_confs:
+                if hw_conf and hw_conf.get('pin'):
+                    ev_pin_list.append(int(hw_conf['pin']))
+                    
+                    tipo = str(hw_conf.get('signal_type', 'none')).lower()
+                    ev_type_list.append(f"'{tipo}'") 
+                    
+                    pull = 1 if hw_conf.get('pullup', 'PUD_UP') == 'PUD_UP' else 0
+                    ev_pull_list.append(pull)
+                    
+                    ev_init_list.append(0) 
+                    
+                    try:
+                        param_ms = float(hw_conf.get('parameter', 1000))
+                        ev_pulse_list.append(param_ms / 1000.0)
+                    except ValueError:
+                        ev_pulse_list.append(1.0) 
+
+            if not ev_pin_list:
+                ev_pin.append([0])
+                ev_type.append("['none']")
+                ev_pin_pull_up.append([0])
+                ev_pin_init_state.append([0])
+                ev_pulse_time.append([0.0])
+            else:
+                ev_pin.append(ev_pin_list)
+                ev_type.append(f"[{', '.join(ev_type_list)}]")
+                ev_pin_pull_up.append(ev_pull_list)
+                ev_pin_init_state.append(ev_init_list)
+                ev_pulse_time.append(ev_pulse_list)
+   
+        clean_data = []
+        i = 0
+        while i < len(data):
+            if isinstance(data[i], str) and data[i].startswith('EV_'):
+                clean_data.append(data[i])    
+                clean_data.append(data[i+1])   
+                clean_data.append(data[i+2])   
+                i += 3 
+            else:
+                clean_data.append(data[i])     
+                i += 1
+
+        return {
+            'num_eventos': n_events,
+            'num_supervisores': len(data_pos),
+            'eventos': events_names,
+            'ev_controlavel': ev_controllable,
+            
+            'sup_matriz_eventos': str_event_map,  
+            'sup_estado_inicial': list(initial_state),
+            'sup_posicao_dados': list(data_pos.values()),
+            'sup_dados': clean_data,
+            
+            'ev_pino': ev_pin,
+            'ev_tipo': f"[{', '.join(ev_type)}]", 
+            'ev_pino_pull_up': ev_pin_pull_up,
+            'ev_pino_estado_inicial': ev_pin_init_state,
+            'ev_tempo_pulso': ev_pulse_time
+        }
