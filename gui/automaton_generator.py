@@ -1,6 +1,6 @@
 from gi.repository import Gtk
 from gui.base import PageMixin
-from codegen.code_gen import ArduinoGenerator, KilobotGenerator, CGenerator, CPPGenerator, PythonGenerator
+from codegen.code_gen import ArduinoGenerator, KilobotGenerator, CGenerator, CPPGenerator, PythonGenerator, RaspberryPiGenerator
 from gui.property_box import PropertyBox
 from gui.dual_list_selector import DualListSelector
 
@@ -25,6 +25,7 @@ class AutomatonGenerator(PageMixin, Gtk.Box):
                 'C++': CPPGeneratorPublic,
                 'Kilobot': KilobotGeneratorPublic,
                 'Python': PythonGeneratorPublic,
+                'Raspberry Pi': RaspberryPiGenerator,
             }
         elif Extension.mode == 'prob':
             self.__class__.devices = {
@@ -32,6 +33,7 @@ class AutomatonGenerator(PageMixin, Gtk.Box):
                 'C++': CPPGeneratorProbabilistic,
                 'Kilobot': KilobotGeneratorProbabilistic,
                 'Python': PythonGeneratorProbabilistic,
+                'Raspberry Pi': RaspberryPiGenerator,
             }
         else:
             self.__class__.devices = {
@@ -40,6 +42,7 @@ class AutomatonGenerator(PageMixin, Gtk.Box):
                 'C++': CPPGenerator,
                 'Kilobot': KilobotGenerator,
                 'Python': PythonGenerator,
+                'Raspberry Pi': RaspberryPiGenerator,
             }
 
         self.selected_automatons = None
@@ -126,6 +129,27 @@ class AutomatonGenerator(PageMixin, Gtk.Box):
                     combobox = self.prop_box.add_combobox(
                         opts['label'], opts['options'], data=opt_name)
                     combobox.set_active(0)
+                    
+                # mudei
+                elif opts['widget_type'] == 'event_table':
+                    try:
+                        available_events = []
+                        if self.selected_automatons:
+                            for item in self.selected_automatons:
+                                automaton = item[1] if isinstance(item, tuple) else item
+                                if hasattr(automaton, 'events'):
+                                    for event in automaton.events:
+                                        if event not in available_events:
+                                            available_events.append(event)
+                        
+                        self.prop_box.add_event_table(
+                            label=opts['label'], 
+                            columns=opts['columns'], 
+                            events=available_events, 
+                            data=opt_name
+                        )
+                    except Exception as e:
+                            print(f"Erroooo: {e}")
 
     def on_prop_change(self, prop_box, value, property_name, name=None):
         if property_name == 'selected_device':
@@ -138,4 +162,3 @@ class AutomatonGenerator(PageMixin, Gtk.Box):
             self.selected_automatons = value
         else:
             self.codegen_args.update({property_name: value})
-
